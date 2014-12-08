@@ -1,6 +1,6 @@
 voxelToy
 ========
 
-OpenGL application implementing distance-field raymarching
+OpenGL application implementing voxel rendering via raymarching.
 
-![alt tag](https://github.com/joesfer/voxelToy/blob/master/resources/screenshot.png)
+![alt tag](https://github.com/joesfer/voxelToy/blob/master/resources/screenshot02.png)
