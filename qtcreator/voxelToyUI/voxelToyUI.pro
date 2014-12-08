@@ -30,6 +30,8 @@ FORMS    += ../../src/mainwindow.ui
 
 LIBS += -lglut -lGLU -lGLEW
 
+DEFINES += SHADER_DIR=$$PWD/../../resources
+
 # to compile OpenEXR
 CONFIG +=link_pkgconfig
 PKGCONFIG += OpenEXR

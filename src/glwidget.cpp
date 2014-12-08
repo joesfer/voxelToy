@@ -11,8 +11,8 @@
 
 #include <math.h>
 
-// FIXME change to installation path
-#define SHADERS_PATH "/home/jose/workspace/dev/ProgrammingDropbox/voxelToy/resources/" 
+#define _STRINGIFY(x) #x
+#define STRINGIFY(x) _STRINGIFY(x)
 
 GLWidget::GLWidget(QWidget *parent)
      : QGLWidget(QGLFormat(QGL::SampleBuffers), parent)
@@ -52,9 +52,13 @@ Imath::V3f GLWidget::lightDirection() const
 
 void GLWidget::reloadShaders()
 {
-    std::string shaderPath = SHADERS_PATH; 
-    std::string vs = shaderPath + "raymarch.vs";
-    std::string fs = shaderPath + "raymarch.fs";
+	std::string shaderPath(STRINGIFY(SHADER_DIR));
+
+	QString vsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("raymarch.vs");
+	QString fsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("raymarch.fs");
+
+	std::string vs(vsPath.toUtf8().constData());
+	std::string fs(fsPath.toUtf8().constData());
 
     if ( Shader::compileProgramFromFile("shader",
                                         vs, "",
