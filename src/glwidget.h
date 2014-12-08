@@ -46,6 +46,9 @@ private:
 	GLuint m_uniformVolumeBoundsMin;
 	GLuint m_uniformVolumeBoundsMax;
 	GLuint m_uniformViewport;
+	GLuint m_uniformCameraNear;
+	GLuint m_uniformCameraFar;
+	GLuint m_uniformCameraProj;
 	GLuint m_uniformCameraInverseProj;
 	GLuint m_uniformCameraInverseModelView;
 	GLuint m_uniformLightDir;

@@ -61,10 +61,19 @@ public:
 	float fovY() const;
 	void setFovY(float fov);
 
+	float nearDistance() const;
+	void setNearDistance(float d);
+
+	float farDistance() const;
+	void setFarDistance(float d);
+
+
 private:
 	Imath::V3f	 m_target;
     float        m_targetDistance;
     float		 m_phi;
 	float		 m_theta;
 	float		 m_fovY;
+	float		 m_near;
+	float		 m_far;
 };

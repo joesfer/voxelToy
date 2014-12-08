@@ -67,13 +67,16 @@ void GLWidget::reloadShaders()
     {
         glUseProgram(m_shader);
 
-		m_uniformDistanceTexture = glGetUniformLocation(m_shader, "distanceTexture");
-		m_uniformVolumeBoundsMin = glGetUniformLocation(m_shader, "volumeBoundsMin");
-		m_uniformVolumeBoundsMax = glGetUniformLocation(m_shader, "volumeBoundsMax");
-		m_uniformViewport = glGetUniformLocation(m_shader, "viewport");
-		m_uniformCameraInverseProj = glGetUniformLocation(m_shader, "cameraInverseProj");
+		m_uniformDistanceTexture        = glGetUniformLocation(m_shader, "distanceTexture");
+		m_uniformVolumeBoundsMin        = glGetUniformLocation(m_shader, "volumeBoundsMin");
+		m_uniformVolumeBoundsMax        = glGetUniformLocation(m_shader, "volumeBoundsMax");
+		m_uniformViewport               = glGetUniformLocation(m_shader, "viewport");
+		m_uniformCameraNear             = glGetUniformLocation(m_shader, "cameraNear");
+		m_uniformCameraFar              = glGetUniformLocation(m_shader, "cameraFar");
+		m_uniformCameraProj             = glGetUniformLocation(m_shader, "cameraProj");
+		m_uniformCameraInverseProj      = glGetUniformLocation(m_shader, "cameraInverseProj");
 		m_uniformCameraInverseModelView = glGetUniformLocation(m_shader, "cameraInverseModelView");
-		m_uniformLightDir = glGetUniformLocation(m_shader, "wsLightDir");
+		m_uniformLightDir               = glGetUniformLocation(m_shader, "wsLightDir");
 
         glViewport(0,0,width(), height());
         glUniform4f(m_uniformViewport, 0, 0, (float)width(), (float)height());
@@ -116,35 +119,42 @@ void GLWidget::updateCameraMatrices()
 
 	{ // gluLookAt
 		mvm.makeIdentity();
-        mvm.x[0][0] = right[0] ; mvm.x[0][1] = up[0]  ; mvm.x[0][2] = -forward[0] ; mvm.x[0][3] = 0 ;
-        mvm.x[1][0] = right[1] ; mvm.x[1][1] = up[1]  ; mvm.x[1][2] = -forward[1] ; mvm.x[1][3] = 0 ;
-        mvm.x[2][0] = right[2] ; mvm.x[2][1] = up[2]  ; mvm.x[2][2] = -forward[2] ; mvm.x[2][3] = 0 ;
-        mvm.x[3][0] = -eye.x   ; mvm.x[3][1] = -eye.y ; mvm.x[3][2] = -eye.z      ; mvm.x[3][3] = 1 ;
+        mvm.x[0][0] = right[0]    ; mvm.x[0][1] = right[1]    ; mvm.x[0][2] = right[2]    ; mvm.x[0][3] = -eye.dot(right) ;
+        mvm.x[1][0] = up[0]       ; mvm.x[1][1] = up[1]       ; mvm.x[1][2] = up[2]       ; mvm.x[1][3] = -eye.dot(up);
+        mvm.x[2][0] = -forward[0] ; mvm.x[2][1] = -forward[1] ; mvm.x[2][2] = -forward[2] ; mvm.x[2][3] = eye.dot(forward) ;
+        mvm.x[3][0] = 0           ; mvm.x[3][1] = 0           ; mvm.x[3][2] = 0           ; mvm.x[3][3] = 1 ;
 	}
 
 	{ // gluPerspective
 		const float a = (float)width() / height();
-		float n = 0.1f;
-		float f = 100000.0f;
+		const float n = m_camera.nearDistance();
+		const float f = m_camera.farDistance();
 		const float e = 1.0f / tan(m_camera.fovY()/2);
 
-		pm.x[0][0] = e ; pm.x[0][1] = 0     ; pm.x[0][2] = 0            ; pm.x[0][3] = 0               ;
-		pm.x[1][0] = 0 ; pm.x[1][1] = e / a ; pm.x[1][2] = 0            ; pm.x[1][3] = 0               ;
-		pm.x[2][0] = 0 ; pm.x[2][1] = 0     ; pm.x[2][2] = -(f+n)/(f-n) ; pm.x[2][3] = -2.0f*f*n/(f-n) ;
-		pm.x[3][0] = 0 ; pm.x[3][1] = 0     ; pm.x[3][2] = -1           ; pm.x[3][3] = 0               ;
-		pm.transpose();
+		pm.x[0][0] = e/a ; pm.x[0][1] = 0 ; pm.x[0][2] = 0           ; pm.x[0][3] = 0              ;
+		pm.x[1][0] = 0   ; pm.x[1][1] = e ; pm.x[1][2] = 0           ; pm.x[1][3] = 0              ;
+		pm.x[2][0] = 0   ; pm.x[2][1] = 0 ; pm.x[2][2] = (f+n)/(n-f) ; pm.x[2][3] = 2.0f*f*n/(n-f) ;
+		pm.x[3][0] = 0   ; pm.x[3][1] = 0 ; pm.x[3][2] = -1          ; pm.x[3][3] = 0              ;
 	}
+
+	glUniform1f(m_uniformCameraNear, m_camera.nearDistance());
+	glUniform1f(m_uniformCameraFar, m_camera.farDistance());
 
     M44f invModelView = mvm.inverse();
     glUniformMatrix4fv(m_uniformCameraInverseModelView,
                        1,
-                       GL_FALSE,
+                       GL_TRUE,
                        &invModelView.x[0][0]);
+
+    glUniformMatrix4fv(m_uniformCameraProj,
+					   1,
+                       GL_TRUE,
+					   &pm.x[0][0]);
 
     M44f invProj = pm.inverse();
     glUniformMatrix4fv(m_uniformCameraInverseProj,
 					   1,
-                       GL_FALSE,
+                       GL_TRUE,
 					   &invProj.x[0][0]);
 	
 }
@@ -165,10 +175,10 @@ void GLWidget::paintGL()
 	
 	// draw quad
 	glBegin(GL_QUADS);
-		glTexCoord2f( 1.0f, 1.0f ); glVertex3f( 1.0f, 1.0f, 0.1f); 
-		glTexCoord2f( 0.0f, 1.0f ); glVertex3f(-1.0f, 1.0f, 0.1f);  
-		glTexCoord2f( 0.0f, 0.0f ); glVertex3f(-1.0f,-1.0f, 0.1f);  
-		glTexCoord2f( 1.0f, 0.0f ); glVertex3f( 1.0f,-1.0f, 0.1f);  
+		glVertex3f( 1.0f, 1.0f, 0.1f) ;
+		glVertex3f(-1.0f, 1.0f, 0.1f) ;
+		glVertex3f(-1.0f,-1.0f, 0.1f) ;
+		glVertex3f( 1.0f,-1.0f, 0.1f) ;
 	glEnd();
 
 	// run continuously?
@@ -188,7 +198,7 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event)
     if (event->buttons() & Qt::LeftButton)
     {
         const float speed = 1.f;
-        const float theta = (float)dy / this->height() * M_PI * speed + m_camera.rotationTheta();
+        const float theta = -(float)dy / this->height() * M_PI * speed + m_camera.rotationTheta();
         const float phi = -(float)dx / this->width() * 2.0f * M_PI * speed + m_camera.rotationPhi();
 
         m_camera.setOrbitRotation(theta, phi);

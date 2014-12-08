@@ -8,7 +8,9 @@ Camera::Camera() :
     m_targetDistance(1.0f),
     m_phi(-M_PI/2),
     m_theta(M_PI/2),
-    m_fovY(M_PI/2)
+    m_fovY(M_PI/2),
+	m_near(0.1f),
+	m_far(10000)
 {
 }
 
@@ -80,3 +82,21 @@ void Camera::setFovY(float fov)
 {
 	m_fovY = fov;
 }
+
+float Camera::nearDistance() const
+{
+	return m_near;	
+}
+void Camera::setNearDistance(float d)
+{
+	m_near = std::max(0.0f, d);
+}
+float Camera::farDistance() const
+{
+	return m_far;	
+}
+void Camera::setFarDistance(float d)
+{
+	m_far = std::max(m_near, d);
+}
+

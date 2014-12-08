@@ -5,11 +5,12 @@ uniform vec3 volumeBoundsMin;
 uniform vec3 volumeBoundsMax;
 
 uniform vec4 viewport;
+uniform float cameraNear;
+uniform float cameraFar;
+uniform mat4 cameraProj;
 uniform mat4 cameraInverseProj;
 uniform mat4 cameraInverseModelView;
 uniform vec3 wsLightDir;
-
-varying vec2 texCoord;
 
 float rayAABBIntersection(vec3 o, vec3 d)
 {
@@ -72,26 +73,28 @@ vec4 shade(vec3 p)
 	return vec4(max(0, dot(normal(p), -wsLightDir)));
 }
 
-vec3 screenToWorldSpace(vec2 screenPos)
+vec3 screenToWorldSpace(vec3 windowSpace)
 {
 	// https://www.opengl.org/wiki/Compute_eye_space_from_window_space
-	vec4 ndcPos;
-	ndcPos.xy = ((2.0 * screenPos) - (2.0 * viewport.xy)) / (viewport.zw) - 1;
-	ndcPos.z = (2.0 * gl_FragCoord.z - gl_DepthRange.near - gl_DepthRange.far) / (gl_DepthRange.far - gl_DepthRange.near);
-	ndcPos.w = 1.0;
-	vec4 clipPos = ndcPos / gl_FragCoord.w;
-	vec4 eyePos = clipPos * cameraInverseProj; 
-	eyePos /= eyePos.w;
-	eyePos.z *= -1;
+	vec3 ndcPos;
+	ndcPos.xy = ((2.0 * windowSpace.xy) - (2.0 * viewport.xy)) / (viewport.zw) - 1;
+	ndcPos.z = (2.0 * windowSpace.z - cameraNear - cameraFar) / (cameraFar - cameraNear);
+ 
+	vec4 clipPos;
+	clipPos.w = cameraProj[3][2] / (ndcPos.z - (cameraProj[2][2] / cameraProj[2][3]));
+	clipPos.xyz = ndcPos * clipPos.w;
+ 
+	vec4 eyePos = cameraInverseProj * clipPos;
 	return (cameraInverseModelView * eyePos).xyz;
 }
 
 void main()
 {
 	// https://www.opengl.org/wiki/Compute_eye_space_from_window_space
-	vec3 rayOrigin = (cameraInverseModelView * vec4(0,0,0,1)).xyz;
-	vec3 rayDir = normalize(screenToWorldSpace(gl_FragCoord.xy) - rayOrigin);
-
+	vec3 rayOrigin = (cameraInverseModelView * vec4(0,0,1,1)).xyz;
+	vec3 rayDir = normalize(screenToWorldSpace(vec3(gl_FragCoord.xy, cameraNear)) - rayOrigin);
+	rayOrigin.z *=-1;
+	rayDir.z *=-1;
 	float aabbIsectDist = rayAABBIntersection(rayOrigin, rayDir); 
 	if (aabbIsectDist < 0)
 	{
