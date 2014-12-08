@@ -31,18 +31,20 @@ protected:
 	void mouseMoveEvent(QMouseEvent *event);
 	void keyPressEvent(QKeyEvent *);
 	void updateCameraMatrices();
-	void createDistanceTexture();
+	void createVoxelDataTexture();
 
 private:
 	QPoint lastPos;
 
 	Imath::Box3f m_volumeBounds;
+	Imath::V3i	 m_volumeResolution;
 
 	Camera m_camera;
     GLuint m_densityTexture;
 	GLuint m_shader;
 
-	GLuint m_uniformDistanceTexture;
+	GLuint m_uniformVoxelDataTexture;
+	GLuint m_uniformVoxelDataResolution;
 	GLuint m_uniformVolumeBoundsMin;
 	GLuint m_uniformVolumeBoundsMax;
 	GLuint m_uniformViewport;

@@ -41,9 +41,14 @@ void GLWidget::initializeGL()
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
-	createDistanceTexture();
+    glEnable(GL_TEXTURE_3D);
+    if (glIsTexture(m_densityTexture)) glDeleteTextures(1, &m_densityTexture);
+    glGenTextures(1, &m_densityTexture);
+
+	createVoxelDataTexture();
 	reloadShaders();
 }
+
 Imath::V3f GLWidget::lightDirection() const
 {
 	Imath::V3f d(1, -1, 1);
@@ -54,8 +59,8 @@ void GLWidget::reloadShaders()
 {
 	std::string shaderPath(STRINGIFY(SHADER_DIR));
 
-	QString vsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("raymarch.vs");
-	QString fsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("raymarch.fs");
+	QString vsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("dda.vs");
+	QString fsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("dda.fs");
 
 	std::string vs(vsPath.toUtf8().constData());
 	std::string fs(fsPath.toUtf8().constData());
@@ -67,7 +72,8 @@ void GLWidget::reloadShaders()
     {
         glUseProgram(m_shader);
 
-		m_uniformDistanceTexture        = glGetUniformLocation(m_shader, "distanceTexture");
+		m_uniformVoxelDataTexture       = glGetUniformLocation(m_shader, "voxelData");
+		m_uniformVoxelDataResolution    = glGetUniformLocation(m_shader, "voxelResolution");
 		m_uniformVolumeBoundsMin        = glGetUniformLocation(m_shader, "volumeBoundsMin");
 		m_uniformVolumeBoundsMax        = glGetUniformLocation(m_shader, "volumeBoundsMax");
 		m_uniformViewport               = glGetUniformLocation(m_shader, "viewport");
@@ -86,19 +92,25 @@ void GLWidget::reloadShaders()
 
         updateCameraMatrices();
 
-		glUniform3f(m_uniformVolumeBoundsMin, 
-                    m_volumeBounds.min.x,
-                    m_volumeBounds.min.y,
-                    m_volumeBounds.min.z);
-		glUniform3f(m_uniformVolumeBoundsMax,
-                    m_volumeBounds.max.x,
-                    m_volumeBounds.max.y,
-                    m_volumeBounds.max.z);
+        const int textureUnit = 0;
+        glUniform1i(m_uniformVoxelDataTexture, textureUnit);
+        glActiveTexture( GL_TEXTURE0 + textureUnit);
+        glBindTexture(GL_TEXTURE_3D, m_densityTexture);
 
-		const int textureUnit = 0;
-		glUniform1i(m_uniformDistanceTexture, textureUnit);
-		glActiveTexture( GL_TEXTURE0 + textureUnit);
-		glBindTexture(GL_TEXTURE_2D, m_densityTexture);
+		glUniform3i(m_uniformVoxelDataResolution, 
+					m_volumeResolution.x, 
+					m_volumeResolution.y, 
+					m_volumeResolution.z);
+
+		glUniform3f(m_uniformVolumeBoundsMin,
+					m_volumeBounds.min.x,
+					m_volumeBounds.min.y,
+					m_volumeBounds.min.z);
+		glUniform3f(m_uniformVolumeBoundsMax,
+					m_volumeBounds.max.x,
+					m_volumeBounds.max.y,
+					m_volumeBounds.max.z);
+
     }
     else
     {
@@ -221,15 +233,31 @@ void GLWidget::keyPressEvent(QKeyEvent* event)
 	update();
 }
 
-void GLWidget::createDistanceTexture()
+void GLWidget::createVoxelDataTexture()
 {
     using namespace Imath;
 	// Texture resolution 
-    size_t width  = 256;
-    size_t height = 256;
-    size_t depth  = 256;
+    size_t width  = 128;
+    size_t height = 128;
+    size_t depth  = 128;
 
-    float* texels = (float*)malloc(width * height * depth * sizeof(float));
+	struct RGBA
+	{
+		GLubyte r;
+		GLubyte g; 
+		GLubyte b;
+		GLubyte a;
+
+		RGBA(GLubyte r, GLubyte g, GLubyte b, GLubyte a)
+		{
+			this->r = r;
+			this->g = g;
+			this->b = b;
+			this->a = a;
+		}
+	};
+
+    RGBA* texels = (RGBA*)malloc(width * height * depth * sizeof(RGBA));
 
     m_volumeBounds = Box3f( V3f(-0.5f, -0.5f, -0.5f), V3f(0.5f, 0.5f, 0.5f) );
 
@@ -237,15 +265,15 @@ void GLWidget::createDistanceTexture()
                   m_volumeBounds.size().y / height,
                   m_volumeBounds.size().z / depth);
 
-	// Seed the distance values with a sphere centered in the volume bounds,
-	// which surface is perturbed by Simplex noise. 
     const V3f sphereCenter = (m_volumeBounds.max + m_volumeBounds.min) * 0.5f;
-    const float sphereRadius = 0.125f * (sphereCenter - m_volumeBounds.min).length();
+    const float sphereRadius = 0.25f * (sphereCenter - m_volumeBounds.min).length();
+    const V3f sphereCenter2 = sphereCenter + V3f(sphereRadius, 0, sphereRadius) * 0.5f;
+    const float sphereRadius2 = sphereRadius * 0.75f;
 
     float octaves = 8;
     float persistence = 0.5f;
     float scale = 10.0f;
-	float noiseScale = 0.025f;
+    float noiseScale = 0.5f;
 
     for( size_t k = 0; k < depth; ++k )
     {
@@ -257,23 +285,46 @@ void GLWidget::createDistanceTexture()
                 V3f voxelCenter = V3f(i + 0.5f, j + 0.5f, k + 0.5f) * voxelSize + m_volumeBounds.min;
 
                 float distance = (voxelCenter - sphereCenter).length() - sphereRadius;
-				float distOffset = octave_noise_3d( octaves,
-													persistence,
-													scale,
-													(float)i/width,
-													(float)j/width,
-													(float)k/width) * noiseScale; 
+                float distance2 = -((voxelCenter - sphereCenter2).length() - sphereRadius2);
 
-                texels[offset] = distance + distOffset;
+                const bool hasVoxel = std::max(distance, distance2) <= 0;
+
+				if (hasVoxel)
+				{
+					float noiseR = octave_noise_3d(octaves,
+												  persistence,
+												  scale,
+												  (float)i/width,
+												  (float)j/width,
+                                                  (float)k/width) * noiseScale + 1.0f;
+					float noiseG = octave_noise_3d(octaves / 2,
+												  persistence,
+												  scale,
+												  (float)i/width,
+												  (float)j/width,
+                                                  (float)k/width) * noiseScale + 1.0f;
+					float noiseB = octave_noise_3d(octaves / 4,
+												  persistence,
+												  scale,
+												  (float)i/width,
+												  (float)j/width,
+                                                  (float)k/width) * noiseScale + 1.0f;
+
+                    texels[offset] = RGBA( GLubyte(noiseR * (float)i / width * 255),
+										   GLubyte(noiseG * (float)j / height * 255),
+										   GLubyte(noiseB * (float)k / depth * 255),
+										   255); 
+				}
+				else
+				{
+					texels[offset] = RGBA(0,0,0,0);
+				}
             }
         }
     }
 
 	// Upload texture data to card
 
-	if (glIsTexture(m_densityTexture)) glDeleteTextures(1, &m_densityTexture);
-    glGenTextures(1, &m_densityTexture);
-    glEnable(GL_TEXTURE_3D);
     glBindTexture(GL_TEXTURE_3D, m_densityTexture);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -284,14 +335,18 @@ void GLWidget::createDistanceTexture()
     glPixelStorei(GL_UNPACK_ALIGNMENT,1);
     glTexImage3D(GL_TEXTURE_3D,
 				 0,
-               	 GL_R32F,
+               	 GL_RGBA,
                	 width,
                	 height,
                	 depth,
                	 0,
-               	 GL_RED,
-               	 GL_FLOAT,
+               	 GL_RGBA,
+               	 GL_UNSIGNED_BYTE,
                  texels);
+
+	m_volumeResolution.x = width;
+	m_volumeResolution.y = height;
+	m_volumeResolution.z = depth;
 
     free(texels);
 }
