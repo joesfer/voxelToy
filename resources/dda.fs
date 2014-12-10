@@ -1,6 +1,7 @@
 #version 130
 
-uniform sampler3D voxelData;
+uniform sampler3D occupancyTexture;
+uniform sampler3D voxelColorTexture;
 uniform ivec3 voxelResolution;
 uniform vec3 volumeBoundsMin;
 uniform vec3 volumeBoundsMax;
@@ -45,6 +46,100 @@ vec4 shade(vec3 n)
 	// Basic dot lighting
 	vec4 ambient = vec4(0.1);
 	return vec4(max(0, dot(n, -wsLightDir))) + ambient;
+}
+
+vec3 offset[8] = vec3[8](vec3(-1,-1,0),
+						 vec3( 0,-1,0),
+				  		 vec3(+1,-1,0),
+				  		 vec3(-1, 0,0),
+				  		 //vec3( 0, 0,0),
+				  		 vec3(+1, 0,0),
+				  		 vec3(-1,+1,0),
+				  		 vec3( 0,+1,0),
+				  		 vec3(+1,+1,0));
+
+// approximate ambient occlusion by checking voxel adjacency on the top 2 out 
+// of 3 possible slabs of 9x9 voxels around the central voxel p. This is a very
+// rough approximation of a hemisphere which requires 17 instead of 26 samples
+// for the full cube.
+float ambientOcclusion(vec3 p, vec3 n)
+{
+	/*
+	 *          ____
+	 *         /   /|
+	 *        /___/ | p + n
+	 *        |   | /
+	 *        |___|/  
+	 *          n   / offset
+	 *       ___|__/______ 
+	 *      /   |   /   /|
+	 *     /___/|__/___/ |  second slab
+	 *    /   /|| /   /| /
+	 *   /___/_|_/___/ |/
+	 *  /   /   /   /| /____ offset
+	 * /___/___/___/ |/
+	 * |   |   |   | /
+	 * |___|___|___|/ 
+	 *       ___|________
+	 *      /   |   /   /|
+	 *     /___/|__/___/ |  first slab
+	 *    /   /|P /   /| /
+	 *   /___/_|_/___/ |/
+	 *  /   /   /   /| / 
+	 * /___/___/___/ |/
+	 * |   |   |   | /
+	 * |___|___|___|/ 
+	 * 
+	 *
+	 */
+
+	// n is expected to be {x, 0, 0}, {0, y, 0} or {0, 0, z} for
+	// x,y,z e [-1,1]
+	bvec3 mask = greaterThan(abs(n), vec3(0));
+
+	float hit = 0.0;
+	if(mask.z)
+	{
+		// first slab
+		for( int i = 0; i < 8; ++i ) hit += texelFetch(occupancyTexture, 
+													   ivec3(p+offset[i].xyz),
+													   0).r > 0 ? 1.0 : 0.0;
+		// second slab
+		for( int i = 0; i < 8; ++i ) hit += texelFetch(occupancyTexture, 
+													   ivec3(p+n+offset[i].xyz),
+													   0).r > 0 ? 1.0 : 0.0;
+	}
+	else if(mask.y)
+	{
+		// first slab
+		for( int i = 0; i < 8; ++i ) hit += texelFetch(occupancyTexture, 
+													   ivec3(p+offset[i].xzy),
+													   0).r > 0 ? 1.0 : 0.0;
+		// second slab
+		for( int i = 0; i < 8; ++i ) hit += texelFetch(occupancyTexture, 
+													   ivec3(p+n+offset[i].xzy),
+													   0).r > 0 ? 1.0 : 0.0;
+	}
+	else
+	{
+
+		// first slab
+		for( int i = 0; i < 8; ++i ) hit += texelFetch(occupancyTexture, 
+													   ivec3(p+offset[i].yzx),
+													   0).r > 0 ? 1.0 : 0.0;
+		// second slab
+		for( int i = 0; i < 8; ++i ) hit += texelFetch(occupancyTexture, 
+													   ivec3(p+n+offset[i].yzx),
+													   0).r > 0 ? 1.0 : 0.0;
+	}
+
+	// fill central gap on second slab
+	hit += texelFetch(occupancyTexture, 
+				   ivec3(p+n),
+				   0).r > 0 ? 1.0 : 0.0;
+
+	return 1.0f - hit / 17;
+
 }
 
 vec3 screenToWorldSpace(vec3 windowSpace)
@@ -96,12 +191,12 @@ void main()
 
 	vec3 mask=vec3(0.0);
 
-	vec4 voxelValue = vec4(0);
+	float voxelOccupancy = 0.0;
 	int steps = 0;
 	while(steps < MAX_STEPS) 
 	{
-		voxelValue = texelFetch(voxelData, ivec3(voxelPos.x, voxelPos.y, voxelPos.z), 0);
-		bool hit = (voxelValue.a > 0);
+		bool hit = (texelFetch(occupancyTexture, 
+							   ivec3(voxelPos.x, voxelPos.y, voxelPos.z), 0).r > 0);
 		if (hit)
 		{
 			isect = true;
@@ -122,8 +217,12 @@ void main()
 	if ( isect )
 	{
 		vec3 hitNormal = -mask*rayDirSign;
-		voxelValue.w = 1.0f; // discard alpha channel as we use it to denote whether there is a voxel or not
-		gl_FragColor = voxelValue * shade(hitNormal);
+		vec4 voxelColor = texelFetch(voxelColorTexture,
+								     ivec3(voxelPos.x, voxelPos.y, voxelPos.z), 0);
+
+		float ao = ambientOcclusion(voxelPos, hitNormal);
+
+		gl_FragColor = ao * voxelColor * shade(hitNormal);
 	}
 	else
 	{

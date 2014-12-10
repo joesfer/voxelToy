@@ -42,8 +42,10 @@ void GLWidget::initializeGL()
 	glEnable(GL_CULL_FACE);
 
     glEnable(GL_TEXTURE_3D);
-    if (glIsTexture(m_densityTexture)) glDeleteTextures(1, &m_densityTexture);
-    glGenTextures(1, &m_densityTexture);
+    if (glIsTexture(m_occupancyTexture)) glDeleteTextures(1, &m_occupancyTexture);
+    glGenTextures(1, &m_occupancyTexture);
+    if (glIsTexture(m_voxelColorTexture)) glDeleteTextures(1, &m_voxelColorTexture);
+    glGenTextures(1, &m_voxelColorTexture);
 
 	createVoxelDataTexture();
 	reloadShaders();
@@ -72,7 +74,8 @@ void GLWidget::reloadShaders()
     {
         glUseProgram(m_shader);
 
-		m_uniformVoxelDataTexture       = glGetUniformLocation(m_shader, "voxelData");
+		m_uniformVoxelOccupancyTexture  = glGetUniformLocation(m_shader, "occupancyTexture");
+		m_uniformVoxelColorTexture      = glGetUniformLocation(m_shader, "voxelColorTexture");
 		m_uniformVoxelDataResolution    = glGetUniformLocation(m_shader, "voxelResolution");
 		m_uniformVolumeBoundsMin        = glGetUniformLocation(m_shader, "volumeBoundsMin");
 		m_uniformVolumeBoundsMax        = glGetUniformLocation(m_shader, "volumeBoundsMax");
@@ -92,10 +95,8 @@ void GLWidget::reloadShaders()
 
         updateCameraMatrices();
 
-        const int textureUnit = 0;
-        glUniform1i(m_uniformVoxelDataTexture, textureUnit);
-        glActiveTexture( GL_TEXTURE0 + textureUnit);
-        glBindTexture(GL_TEXTURE_3D, m_densityTexture);
+        glUniform1i(m_uniformVoxelOccupancyTexture, 0);
+        glUniform1i(m_uniformVoxelColorTexture, 1);
 
 		glUniform3i(m_uniformVoxelDataResolution, 
 					m_volumeResolution.x, 
@@ -106,6 +107,7 @@ void GLWidget::reloadShaders()
 					m_volumeBounds.min.x,
 					m_volumeBounds.min.y,
 					m_volumeBounds.min.z);
+
 		glUniform3f(m_uniformVolumeBoundsMax,
 					m_volumeBounds.max.x,
 					m_volumeBounds.max.y,
@@ -241,23 +243,26 @@ void GLWidget::createVoxelDataTexture()
     size_t height = 128;
     size_t depth  = 128;
 
-	struct RGBA
-	{
-		GLubyte r;
-		GLubyte g; 
-		GLubyte b;
-		GLubyte a;
 
-		RGBA(GLubyte r, GLubyte g, GLubyte b, GLubyte a)
+	struct RGB
+	{
+		GLubyte r, g, b;
+		RGB(GLubyte r, GLubyte g, GLubyte b)
 		{
 			this->r = r;
 			this->g = g;
 			this->b = b;
-			this->a = a;
 		}
+        RGB(const RGB& other)
+        {
+            r = other.r;
+            g = other.g;
+            b = other.b;
+        }
 	};
 
-    RGBA* texels = (RGBA*)malloc(width * height * depth * sizeof(RGBA));
+    GLubyte* occupancyTexels = (GLubyte*)malloc(width * height * depth * sizeof(GLubyte));
+    RGB* colorTexels = (RGB*)malloc(width * height * depth * sizeof(RGB));
 
     m_volumeBounds = Box3f( V3f(-0.5f, -0.5f, -0.5f), V3f(0.5f, 0.5f, 0.5f) );
 
@@ -310,14 +315,15 @@ void GLWidget::createVoxelDataTexture()
 												  (float)j/width,
                                                   (float)k/width) * noiseScale + 1.0f;
 
-                    texels[offset] = RGBA( GLubyte(noiseR * (float)i / width * 255),
-										   GLubyte(noiseG * (float)j / height * 255),
-										   GLubyte(noiseB * (float)k / depth * 255),
-										   255); 
+					occupancyTexels[offset] = 255;
+                    colorTexels[offset] = RGB( GLubyte(noiseR * (float)i / width * 255),
+											   GLubyte(noiseG * (float)j / height * 255),
+											   GLubyte(noiseB * (float)k / depth * 255));
 				}
 				else
 				{
-					texels[offset] = RGBA(0,0,0,0);
+					occupancyTexels[offset] = 0; 
+					colorTexels[offset] = RGB(0,0,0);
 				}
             }
         }
@@ -325,7 +331,9 @@ void GLWidget::createVoxelDataTexture()
 
 	// Upload texture data to card
 
-    glBindTexture(GL_TEXTURE_3D, m_densityTexture);
+
+	glActiveTexture( GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_3D, m_occupancyTexture);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP);
@@ -335,18 +343,39 @@ void GLWidget::createVoxelDataTexture()
     glPixelStorei(GL_UNPACK_ALIGNMENT,1);
     glTexImage3D(GL_TEXTURE_3D,
 				 0,
-               	 GL_RGBA,
+               	 GL_R8,
                	 width,
                	 height,
                	 depth,
                	 0,
-               	 GL_RGBA,
+               	 GL_RED,
                	 GL_UNSIGNED_BYTE,
-                 texels);
+                 occupancyTexels);
+
+	glActiveTexture( GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_3D, m_voxelColorTexture);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP);
+    glPixelStorei(GL_PACK_ALIGNMENT,1);
+    glPixelStorei(GL_UNPACK_ALIGNMENT,1);
+    glTexImage3D(GL_TEXTURE_3D,
+				 0,
+               	 GL_RGB8,
+               	 width,
+               	 height,
+               	 depth,
+               	 0,
+               	 GL_RGB,
+               	 GL_UNSIGNED_BYTE,
+                 colorTexels);
 
 	m_volumeResolution.x = width;
 	m_volumeResolution.y = height;
 	m_volumeResolution.z = depth;
 
-    free(texels);
+    free(occupancyTexels);
+    free(colorTexels);
 }

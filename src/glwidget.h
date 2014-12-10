@@ -40,10 +40,12 @@ private:
 	Imath::V3i	 m_volumeResolution;
 
 	Camera m_camera;
-    GLuint m_densityTexture;
+    GLuint m_occupancyTexture;
+    GLuint m_voxelColorTexture;
 	GLuint m_shader;
 
-	GLuint m_uniformVoxelDataTexture;
+	GLuint m_uniformVoxelOccupancyTexture;
+	GLuint m_uniformVoxelColorTexture;
 	GLuint m_uniformVoxelDataResolution;
 	GLuint m_uniformVolumeBoundsMin;
 	GLuint m_uniformVolumeBoundsMax;
