@@ -18,13 +18,15 @@ SOURCES += ../../src/mainwindow.cpp \
     ../../src/glwidget.cpp \
     ../../src/camera.cpp \
     ../../src/shader.cpp \
-    ../../src/noise.cpp
+    ../../src/noise.cpp \
+        ../../src/content.cpp
 
 HEADERS  += ../../src/mainwindow.h \
     ../../src/glwidget.h \
     ../../src/camera.h \
     ../../src/shader.h \
-    ../../src/noise.h
+    ../../src/noise.h \
+        ../../src/content.h
 
 FORMS    += ../../src/mainwindow.ui
 

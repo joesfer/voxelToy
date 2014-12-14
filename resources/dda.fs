@@ -13,6 +13,7 @@ uniform mat4 cameraProj;
 uniform mat4 cameraInverseProj;
 uniform mat4 cameraInverseModelView;
 uniform vec3 wsLightDir;
+uniform vec4 backgroundColor = vec4(0.2, 0.2, 0.2, 1);
 
 float rayAABBIntersection(vec3 o, vec3 d)
 {
@@ -38,14 +39,13 @@ float rayAABBIntersection(vec3 o, vec3 d)
 		return -1; 
 	}
 
-	return tminf; 
+	return tminf >= 0 ? tminf : tmaxf;
 }
 
 vec4 shade(vec3 n)
 {
 	// Basic dot lighting
-	vec4 ambient = vec4(0.1);
-	return vec4(max(0, dot(n, -wsLightDir))) + ambient;
+	return vec4(max(0, dot(n, -wsLightDir)));
 }
 
 vec3 offset[8] = vec3[8](vec3(-1,-1,0),
@@ -122,7 +122,6 @@ float ambientOcclusion(vec3 p, vec3 n)
 	}
 	else
 	{
-
 		// first slab
 		for( int i = 0; i < 8; ++i ) hit += texelFetch(occupancyTexture, 
 													   ivec3(p+offset[i].yzx),
@@ -157,41 +156,29 @@ vec3 screenToWorldSpace(vec3 windowSpace)
 	return (cameraInverseModelView * eyePos).xyz;
 }
 
-void main()
-{
-	vec3 rayOrigin = (cameraInverseModelView * vec4(0,0,1,1)).xyz;
-	vec3 rayDir = normalize(screenToWorldSpace(vec3(gl_FragCoord.xy, cameraNear)) - rayOrigin);
-	rayOrigin.z *=-1;
-	rayDir.z *=-1;
+// Variable naming conventions:
+// ws = world space
+// vs = voxel space (texture)
 
-	// test intersection with bounds to trivially discard rays before entering
-	// traversal.
-	float aabbIsectDist = rayAABBIntersection(rayOrigin, rayDir); 
-	if (aabbIsectDist < 0)
-	{
-		gl_FragColor = vec4(0);
-		return;
-	}
-	
+bool raymarch(vec3 wsRayOrigin, vec3 wsRayDir,
+			  out vec3 vsHitPos, out vec3 vsHitNormal)
+{
 	// We have a potential intersection. Traverse the grid using DDA, the code
 	// is inspired in iq's Voxel Edges demo in Shadertoy at https://www.shadertoy.com/view/4dfGzs
 	vec3 res = vec3(voxelResolution);
-	int MAX_STEPS = int(ceil(sqrt(res.x*res.x + res.y*res.y + res.z*res.z)));
+	int MAX_STEPS = 2 * int(ceil(sqrt(res.x*res.x + res.y*res.y + res.z*res.z)));
 
-	float rayLength = aabbIsectDist;
 	bool isect = false;
-	vec3 rayPoint = rayOrigin + rayLength * rayDir;
 	vec3 voxelExtent = vec3(1.0) / (volumeBoundsMax - volumeBoundsMin);
-	vec3 voxelOrigin = (rayPoint - volumeBoundsMin) * voxelExtent * voxelResolution;
+	vec3 voxelOrigin = (wsRayOrigin - volumeBoundsMin) * voxelExtent * voxelResolution;
 
 	vec3 voxelPos = floor(voxelOrigin);
-	vec3 rayDirIncrement = vec3(1.0f) / rayDir;
-	vec3 rayDirSign = sign(rayDir);
-	vec3 dis = (voxelPos-voxelOrigin + 0.5 + rayDirSign*0.5) * rayDirIncrement;
+	vec3 wsRayDirIncrement = vec3(1.0f) / wsRayDir;
+	vec3 wsRayDirSign = sign(wsRayDir);
+	vec3 dis = (voxelPos-voxelOrigin + 0.5 + wsRayDirSign*0.5) * wsRayDirIncrement;
 
 	vec3 mask=vec3(0.0);
 
-	float voxelOccupancy = 0.0;
 	int steps = 0;
 	while(steps < MAX_STEPS) 
 	{
@@ -203,8 +190,8 @@ void main()
 			break;
 		}
 		mask = step(dis.xyz, dis.yxy) * step(dis.xyz, dis.zzx);
-		dis += mask * rayDirSign * rayDirIncrement;
-		voxelPos += mask * rayDirSign;
+		dis += mask * wsRayDirSign * wsRayDirIncrement;
+		voxelPos += mask * wsRayDirSign;
 
 		// break the traversal if we've gone out of bounds 
 		if (any(lessThan(voxelPos, vec3(0.0))) || 
@@ -214,20 +201,63 @@ void main()
 
 	}
 
-	if ( isect )
-	{
-		vec3 hitNormal = -mask*rayDirSign;
-		vec4 voxelColor = texelFetch(voxelColorTexture,
-								     ivec3(voxelPos.x, voxelPos.y, voxelPos.z), 0);
+	vsHitNormal = -mask*wsRayDirSign;
+	vsHitPos = voxelPos;
 
-		float ao = ambientOcclusion(voxelPos, hitNormal);
+	return isect;
+}
+			  
 
-		gl_FragColor = ao * voxelColor * shade(hitNormal);
-	}
-	else
+void main()
+{
+	vec3 wsRayOrigin = (cameraInverseModelView * vec4(0,0,0,1)).xyz;
+	vec3 wsRayDir = normalize(screenToWorldSpace(vec3(gl_FragCoord.xy, cameraNear)) - wsRayOrigin);
+	wsRayOrigin.z *=-1;
+	wsRayDir.z *=-1;
+
+	// test intersection with bounds to trivially discard rays before entering
+	// traversal.
+	float aabbIsectDist = rayAABBIntersection(wsRayOrigin, wsRayDir); 
+
+	if (aabbIsectDist < 0)
 	{
-		gl_FragColor = vec4(0.0);
+		gl_FragColor = backgroundColor;
+		return;
 	}
+
+	vec3 voxelExtent = vec3(1.0) / (volumeBoundsMax - volumeBoundsMin);
+
+	float rayLength = aabbIsectDist;
+	vec3 rayPoint = wsRayOrigin + rayLength * wsRayDir;
+	vec3 vsHitPos, vsHitNormal;
+	if ( !raymarch(rayPoint, wsRayDir, vsHitPos, vsHitNormal) )
+	{
+		gl_FragColor = backgroundColor;
+		return;
+	}
+
+	vec4 voxelColor = texelFetch(voxelColorTexture,
+							     ivec3(vsHitPos.x, vsHitPos.y, vsHitPos.z), 0);
+
+	float ao = ambientOcclusion(vsHitPos, vsHitNormal); 
+
+	float lighting = shade(vsHitNormal);
+	vsHitPos += vsHitNormal;
+	vec3 wsHitPos = (vsHitPos + vec3(0.5))/(voxelResolution*voxelExtent) + volumeBoundsMin; 
+	vec3 toLight = normalize(wsLightDir);
+	if ( raymarch(wsHitPos, -wsLightDir, vsHitPos, vsHitNormal) )
+	{
+		// we hit something between us and the light - thus this voxel is in
+		// shadow.
+		lighting = vec3(0);
+	}
+
+	vec3 ambient = vec3(0.2);
+	lighting += ambient;
+
+	lighting *= ao;
+
+	gl_FragColor = voxelColor * lighting;
 
 }
 
