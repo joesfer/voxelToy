@@ -18,6 +18,8 @@ GLWidget::GLWidget(QWidget *parent)
      : QGLWidget(QGLFormat(QGL::SampleBuffers), parent)
 {
 	m_camera.setDistanceToTarget(1.1f);
+	m_activeSampleTexture = 0;
+	m_numberSamples = 0;
 }
 
 GLWidget::~GLWidget()
@@ -49,6 +51,7 @@ void GLWidget::initializeGL()
     glGenTextures(1, &m_voxelColorTexture);
 
 	createVoxelDataTexture();
+    createFramebuffer();
 	reloadShaders();
 }
 
@@ -58,66 +61,134 @@ Imath::V3f GLWidget::lightDirection() const
 	return d.normalized();
 }
 
-void GLWidget::reloadShaders()
+bool GLWidget::reloadTexturedShader()
 {
 	std::string shaderPath(STRINGIFY(SHADER_DIR));
 
-	QString vsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("dda.vs");
+	QString vsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("screenSpace.vs");
+	QString fsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("textureMap.fs");
+
+	std::string vs(vsPath.toUtf8().constData());
+	std::string fs(fsPath.toUtf8().constData());
+
+    if ( !Shader::compileProgramFromFile("textured",
+                                        vs, "",
+                                        fs, "",
+                                        m_settingsTextured.m_shader) )
+	{
+		return false;
+	}
+    
+	glUseProgram(m_settingsTextured.m_shader);
+
+	m_settingsTextured.m_uniformTexture  = glGetUniformLocation(m_settingsTextured.m_shader, "texture");
+	m_settingsTextured.m_uniformViewport = glGetUniformLocation(m_settingsTextured.m_shader, "viewport");
+
+    glUniform4f(m_settingsTextured.m_uniformViewport, 0, 0, (float)width(), (float)height());
+
+	return true;
+}
+
+bool GLWidget::reloadAverageShader()
+{
+	std::string shaderPath(STRINGIFY(SHADER_DIR));
+
+	QString vsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("screenSpace.vs");
+	QString fsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("accumulation.fs");
+
+	std::string vs(vsPath.toUtf8().constData());
+	std::string fs(fsPath.toUtf8().constData());
+
+    if ( !Shader::compileProgramFromFile("accumulation",
+                                        vs, "",
+                                        fs, "",
+                                        m_settingsAverage.m_shader) )
+	{
+		return false;
+	}
+    
+	glUseProgram(m_settingsAverage.m_shader);
+
+	m_settingsAverage.m_uniformSampleTexture  = glGetUniformLocation(m_settingsAverage.m_shader, "sampleTexture");
+	m_settingsAverage.m_uniformAverageTexture = glGetUniformLocation(m_settingsAverage.m_shader, "averageTexture");
+	m_settingsAverage.m_uniformSampleCount    = glGetUniformLocation(m_settingsAverage.m_shader, "sampleCount");
+	m_settingsAverage.m_uniformViewport       = glGetUniformLocation(m_settingsAverage.m_shader, "viewport");
+
+    glUniform4f(m_settingsAverage.m_uniformViewport, 0, 0, (float)width(), (float)height());
+
+	return true;
+}
+
+bool GLWidget::reloadDDAShader()
+{
+	std::string shaderPath(STRINGIFY(SHADER_DIR));
+
+	QString vsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("screenSpace.vs");
 	QString fsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("dda.fs");
 
 	std::string vs(vsPath.toUtf8().constData());
 	std::string fs(fsPath.toUtf8().constData());
 
-    if ( Shader::compileProgramFromFile("shader",
+    if ( !Shader::compileProgramFromFile("dda",
                                         vs, "",
                                         fs, "",
-                                        m_shader) )
-    {
-        glUseProgram(m_shader);
+                                        m_settingsDDA.m_shader) )
+	{
+		return false;
+	}
+    
+	glUseProgram(m_settingsDDA.m_shader);
 
-		m_uniformVoxelOccupancyTexture  = glGetUniformLocation(m_shader, "occupancyTexture");
-		m_uniformVoxelColorTexture      = glGetUniformLocation(m_shader, "voxelColorTexture");
-		m_uniformVoxelDataResolution    = glGetUniformLocation(m_shader, "voxelResolution");
-		m_uniformVolumeBoundsMin        = glGetUniformLocation(m_shader, "volumeBoundsMin");
-		m_uniformVolumeBoundsMax        = glGetUniformLocation(m_shader, "volumeBoundsMax");
-		m_uniformViewport               = glGetUniformLocation(m_shader, "viewport");
-		m_uniformCameraNear             = glGetUniformLocation(m_shader, "cameraNear");
-		m_uniformCameraFar              = glGetUniformLocation(m_shader, "cameraFar");
-		m_uniformCameraProj             = glGetUniformLocation(m_shader, "cameraProj");
-		m_uniformCameraInverseProj      = glGetUniformLocation(m_shader, "cameraInverseProj");
-		m_uniformCameraInverseModelView = glGetUniformLocation(m_shader, "cameraInverseModelView");
-		m_uniformLightDir               = glGetUniformLocation(m_shader, "wsLightDir");
+	m_settingsDDA.m_uniformVoxelOccupancyTexture  = glGetUniformLocation(m_settingsDDA.m_shader, "occupancyTexture");
+	m_settingsDDA.m_uniformVoxelColorTexture      = glGetUniformLocation(m_settingsDDA.m_shader, "voxelColorTexture");
+	m_settingsDDA.m_uniformNoiseTexture           = glGetUniformLocation(m_settingsDDA.m_shader, "noiseTexture");
+	m_settingsDDA.m_uniformVoxelDataResolution    = glGetUniformLocation(m_settingsDDA.m_shader, "voxelResolution");
+	m_settingsDDA.m_uniformVolumeBoundsMin        = glGetUniformLocation(m_settingsDDA.m_shader, "volumeBoundsMin");
+	m_settingsDDA.m_uniformVolumeBoundsMax        = glGetUniformLocation(m_settingsDDA.m_shader, "volumeBoundsMax");
+	m_settingsDDA.m_uniformViewport               = glGetUniformLocation(m_settingsDDA.m_shader, "viewport");
+	m_settingsDDA.m_uniformCameraNear             = glGetUniformLocation(m_settingsDDA.m_shader, "cameraNear");
+	m_settingsDDA.m_uniformCameraFar              = glGetUniformLocation(m_settingsDDA.m_shader, "cameraFar");
+	m_settingsDDA.m_uniformCameraProj             = glGetUniformLocation(m_settingsDDA.m_shader, "cameraProj");
+	m_settingsDDA.m_uniformCameraInverseProj      = glGetUniformLocation(m_settingsDDA.m_shader, "cameraInverseProj");
+	m_settingsDDA.m_uniformCameraInverseModelView = glGetUniformLocation(m_settingsDDA.m_shader, "cameraInverseModelView");
+	m_settingsDDA.m_uniformLightDir               = glGetUniformLocation(m_settingsDDA.m_shader, "wsLightDir");
+	m_settingsDDA.m_uniformSampleCount            = glGetUniformLocation(m_settingsDDA.m_shader, "sampleCount");
 
-        glViewport(0,0,width(), height());
-        glUniform4f(m_uniformViewport, 0, 0, (float)width(), (float)height());
+	glViewport(0,0,width(), height());
+	glUniform4f(m_settingsDDA.m_uniformViewport, 0, 0, (float)width(), (float)height());
 
-		Imath::V3f lightDir = lightDirection();
-        glUniform3f(m_uniformLightDir, lightDir.x, lightDir.y, -lightDir.z);
+	Imath::V3f lightDir = lightDirection();
+	glUniform3f(m_settingsDDA.m_uniformLightDir, lightDir.x, lightDir.y, -lightDir.z);
 
-        updateCameraMatrices();
+	updateCameraMatrices();
 
-        glUniform1i(m_uniformVoxelOccupancyTexture, 0);
-        glUniform1i(m_uniformVoxelColorTexture, 1);
+	glUniform1i(m_settingsDDA.m_uniformVoxelOccupancyTexture, TEXTURE_UNIT_OCCUPANCY);
+	glUniform1i(m_settingsDDA.m_uniformVoxelColorTexture, TEXTURE_UNIT_COLOR);
+	glUniform1i(m_settingsDDA.m_uniformNoiseTexture, TEXTURE_UNIT_NOISE);
 
-		glUniform3i(m_uniformVoxelDataResolution, 
-					m_volumeResolution.x, 
-					m_volumeResolution.y, 
-					m_volumeResolution.z);
+	glUniform3i(m_settingsDDA.m_uniformVoxelDataResolution, 
+				m_volumeResolution.x, 
+				m_volumeResolution.y, 
+				m_volumeResolution.z);
 
-		glUniform3f(m_uniformVolumeBoundsMin,
-					m_volumeBounds.min.x,
-					m_volumeBounds.min.y,
-					m_volumeBounds.min.z);
+	glUniform3f(m_settingsDDA.m_uniformVolumeBoundsMin,
+				m_volumeBounds.min.x,
+				m_volumeBounds.min.y,
+				m_volumeBounds.min.z);
 
-		glUniform3f(m_uniformVolumeBoundsMax,
-					m_volumeBounds.max.x,
-					m_volumeBounds.max.y,
-					m_volumeBounds.max.z);
+	glUniform3f(m_settingsDDA.m_uniformVolumeBoundsMax,
+				m_volumeBounds.max.x,
+				m_volumeBounds.max.y,
+				m_volumeBounds.max.z);
 
-    }
-    else
-    {
-        std::cout << "Shader loading failed" << std::endl;
+	return true;
+}
+
+void GLWidget::reloadShaders()
+{
+	if (!reloadDDAShader() || !reloadAverageShader() || !reloadTexturedShader())
+	{
+		std::cout << "Shader loading failed" << std::endl;
     }
 }
 
@@ -152,22 +223,24 @@ void GLWidget::updateCameraMatrices()
 		pm.x[3][0] = 0   ; pm.x[3][1] = 0 ; pm.x[3][2] = -1          ; pm.x[3][3] = 0              ;
 	}
 
-	glUniform1f(m_uniformCameraNear, m_camera.nearDistance());
-	glUniform1f(m_uniformCameraFar, m_camera.farDistance());
+    glUseProgram(m_settingsDDA.m_shader);
+
+    glUniform1f(m_settingsDDA.m_uniformCameraNear, m_camera.nearDistance());
+	glUniform1f(m_settingsDDA.m_uniformCameraFar, m_camera.farDistance());
 
     M44f invModelView = mvm.inverse();
-    glUniformMatrix4fv(m_uniformCameraInverseModelView,
+    glUniformMatrix4fv(m_settingsDDA.m_uniformCameraInverseModelView,
                        1,
                        GL_TRUE,
                        &invModelView.x[0][0]);
 
-    glUniformMatrix4fv(m_uniformCameraProj,
+    glUniformMatrix4fv(m_settingsDDA.m_uniformCameraProj,
 					   1,
                        GL_TRUE,
 					   &pm.x[0][0]);
 
     M44f invProj = pm.inverse();
-    glUniformMatrix4fv(m_uniformCameraInverseProj,
+    glUniformMatrix4fv(m_settingsDDA.m_uniformCameraInverseProj,
 					   1,
                        GL_TRUE,
 					   &invProj.x[0][0]);
@@ -177,7 +250,24 @@ void GLWidget::updateCameraMatrices()
 void GLWidget::resizeGL(int width, int height)
 {
 	glViewport(0,0,width, height);
-	glUniform4f(m_uniformViewport, 0, 0, (float)width, (float)height);
+    glUseProgram(m_settingsDDA.m_shader);
+	glUniform4f(m_settingsDDA.m_uniformViewport, 0, 0, (float)width, (float)height);
+    glUseProgram(m_settingsAverage.m_shader);
+    glUniform4f(m_settingsAverage.m_uniformViewport, 0, 0, (float)width, (float)height);
+    glUseProgram(m_settingsTextured.m_shader);
+    glUniform4f(m_settingsTextured.m_uniformViewport, 0, 0, (float)width, (float)height);
+    glUseProgram(0);
+}
+
+void GLWidget::drawFullscreenQuad()
+{
+	// draw quad
+	glBegin(GL_QUADS);
+		glVertex3f(  1.0f,  1.0f, m_camera.nearDistance());
+		glVertex3f( -1.0f,  1.0f, m_camera.nearDistance());
+		glVertex3f( -1.0f, -1.0f, m_camera.nearDistance());
+		glVertex3f(  1.0f, -1.0f, m_camera.nearDistance());
+	glEnd();
 }
 
 void GLWidget::paintGL()
@@ -187,17 +277,50 @@ void GLWidget::paintGL()
     glLoadIdentity();
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-	
-	// draw quad
-	glBegin(GL_QUADS);
-		glVertex3f( 1.0f, 1.0f, m_camera.nearDistance()) ;
-		glVertex3f(-1.0f, 1.0f, m_camera.nearDistance()) ;
-		glVertex3f(-1.0f,-1.0f, m_camera.nearDistance()) ;
-		glVertex3f( 1.0f,-1.0f, m_camera.nearDistance()) ;
-	glEnd();
+    glDisable(GL_DEPTH_TEST);
 
+
+    // draw into m_sampleTexture
+
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER,
+                           GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D,
+                           m_sampleTexture, // where we'll write to
+                           0);
+
+    glUseProgram(m_settingsDDA.m_shader);
+    glUniform1i(m_settingsDDA.m_uniformSampleCount, m_numberSamples);
+
+    drawFullscreenQuad();
+
+    // m_sampleTexture and m_average[active] ---> m_average[active^1]
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER,
+                           GL_COLOR_ATTACHMENT0,
+                           GL_TEXTURE_2D,
+                           m_averageTexture[m_activeSampleTexture ^ 1], // where we'll write to
+                           0);
+
+    glUseProgram(m_settingsAverage.m_shader);
+    glUniform1i(m_settingsAverage.m_uniformSampleTexture, TEXTURE_UNIT_SAMPLE);
+    glUniform1i(m_settingsAverage.m_uniformAverageTexture, TEXTURE_UNIT_AVERAGE0 + m_activeSampleTexture);
+    glUniform1i(m_settingsAverage.m_uniformSampleCount, m_numberSamples);
+    drawFullscreenQuad();
+
+    // finally draw to screen
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glUseProgram(m_settingsTextured.m_shader);
+    glUniform1i(m_settingsTextured.m_uniformTexture, TEXTURE_UNIT_AVERAGE0 + (m_activeSampleTexture^1));
+    drawFullscreenQuad();
+	
 	// run continuously?
-    //update(); 
+    if ( m_numberSamples++ < MAX_FRAME_SAMPLES)
+    {
+        m_activeSampleTexture ^= 1;
+        update();
+    }
 }
 
 void GLWidget::mousePressEvent(QMouseEvent *event)
@@ -228,17 +351,118 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event)
     lastPos = event->pos();
 	updateCameraMatrices();
 
+    m_numberSamples = 0;
+
 	update();
 }
 
 void GLWidget::keyPressEvent(QKeyEvent* event)
 {
+    m_numberSamples = 0;
 	update();
 }
 
 inline float remap(float uniform, float min, float max)
 {
     return min + (max-min)*uniform;
+}
+
+void GLWidget::createFramebuffer()
+{
+    glEnable(GL_TEXTURE_2D);
+
+    if (glIsTexture(m_sampleTexture)) glDeleteTextures(1, &m_sampleTexture);
+    glGenTextures(1, &m_sampleTexture);
+
+    if (glIsTexture(m_noiseTexture)) glDeleteTextures(1, &m_noiseTexture);
+    glGenTextures(1, &m_noiseTexture);
+
+    if (glIsTexture(m_averageTexture[0])) glDeleteTextures(2, m_averageTexture);
+    glGenTextures(2, m_averageTexture);
+
+	// create noise texture
+	{
+		float* noise = (float*)malloc(MAX_FRAME_SAMPLES * 4 * sizeof(float));
+		for( int i = 0; i < 4 * MAX_FRAME_SAMPLES; ++i ) noise[i] = (float)rand()/RAND_MAX;
+		glActiveTexture(GL_TEXTURE0 + TEXTURE_UNIT_NOISE);
+		glBindTexture(GL_TEXTURE_2D, m_noiseTexture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP);
+		glTexImage2D(GL_TEXTURE_2D,
+					 0,
+					 GL_RGBA,
+					 MAX_FRAME_SAMPLES, 
+					 1,
+					 0,
+					 GL_RGBA,
+					 GL_FLOAT,
+                     noise);
+		free(noise);
+	}
+
+	// create sample texture
+	for( int i = 0; i < 3; ++i )
+	{
+		switch(i)
+		{
+			case 0: 
+                glActiveTexture(GL_TEXTURE0 + TEXTURE_UNIT_SAMPLE);
+				glBindTexture(GL_TEXTURE_2D, m_sampleTexture);
+				break;
+			case 1: 
+                glActiveTexture(GL_TEXTURE0 + TEXTURE_UNIT_AVERAGE0);
+				glBindTexture(GL_TEXTURE_2D, m_averageTexture[0]);
+				break;
+			case 2: 
+                glActiveTexture(GL_TEXTURE0 + TEXTURE_UNIT_AVERAGE1);
+				glBindTexture(GL_TEXTURE_2D, m_averageTexture[1]);
+				break;
+			default: break;
+		}
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP);
+		glTexImage2D(GL_TEXTURE_2D,
+					 0,
+					 GL_RGBA,
+					 width(),
+					 height(),
+					 0,
+					 GL_RGBA,
+					 GL_FLOAT,
+                     NULL);
+	}
+
+    if (glIsRenderbuffer(m_rbo)) glDeleteRenderbuffers(1, &m_rbo);
+    glGenRenderbuffers(1, &m_rbo);
+
+    glBindRenderbuffer(GL_RENDERBUFFER, m_rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, 
+						  GL_DEPTH_COMPONENT,
+						  width(),
+						  height());
+
+    //
+    if (glIsFramebuffer(m_fbo)) glDeleteFramebuffers(1, &m_fbo);
+    glGenFramebuffers(1, &m_fbo);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+	
+	// attach a texture to depth attachment point
+
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER,
+							  GL_DEPTH_ATTACHMENT, 
+							  GL_RENDERBUFFER,
+                              m_rbo);
+
+	// note fbo is not complete yet
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void GLWidget::createVoxelDataTexture()
@@ -275,7 +499,7 @@ void GLWidget::createVoxelDataTexture()
 
 	// Upload texture data to card
 
-	glActiveTexture( GL_TEXTURE0);
+	glActiveTexture( GL_TEXTURE0 + TEXTURE_UNIT_OCCUPANCY);
     glBindTexture(GL_TEXTURE_3D, m_occupancyTexture);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -295,7 +519,7 @@ void GLWidget::createVoxelDataTexture()
                	 GL_UNSIGNED_BYTE,
                  occupancyTexels);
 
-	glActiveTexture( GL_TEXTURE1);
+	glActiveTexture( GL_TEXTURE0 + TEXTURE_UNIT_COLOR);
     glBindTexture(GL_TEXTURE_3D, m_voxelColorTexture);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

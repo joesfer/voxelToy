@@ -20,5 +20,47 @@ public:
 										const std::string &fragmentShaderCode,
 										const std::string &fragmentShaderPreprocessor,
 										GLuint& result );
-			
+
 };
+
+struct DDAShaderSettings
+{
+	GLuint m_shader;
+
+	// uniforms
+	GLuint m_uniformVoxelOccupancyTexture;
+	GLuint m_uniformVoxelColorTexture;
+	GLuint m_uniformNoiseTexture;
+	GLuint m_uniformVoxelDataResolution;
+	GLuint m_uniformVolumeBoundsMin;
+	GLuint m_uniformVolumeBoundsMax;
+	GLuint m_uniformViewport;
+	GLuint m_uniformCameraNear;
+	GLuint m_uniformCameraFar;
+	GLuint m_uniformCameraProj;
+	GLuint m_uniformCameraInverseProj;
+	GLuint m_uniformCameraInverseModelView;
+	GLuint m_uniformLightDir;
+	GLuint m_uniformSampleCount;
+};
+			
+struct AccumulationShaderSettings
+{
+	GLuint m_shader;
+	
+	// uniforms
+	GLuint m_uniformSampleTexture;
+	GLuint m_uniformAverageTexture;
+	GLuint m_uniformSampleCount;
+    GLuint m_uniformViewport;
+};
+
+struct TexturedShaderSettings 
+{
+	GLuint m_shader;
+	
+	// uniforms
+	GLuint m_uniformTexture;
+    GLuint m_uniformViewport;
+};
+

@@ -1,5 +1,7 @@
 #pragma once
-#include <camera.h>
+
+#include "camera.h"
+#include "shader.h"
 
 #include <GL/gl.h>
 #include <QGLWidget>
@@ -32,6 +34,11 @@ protected:
 	void keyPressEvent(QKeyEvent *);
 	void updateCameraMatrices();
 	void createVoxelDataTexture();
+	bool reloadTexturedShader();
+	bool reloadAverageShader();
+	bool reloadDDAShader();
+	void drawFullscreenQuad();
+	void createFramebuffer();
 
 private:
 	QPoint lastPos;
@@ -39,21 +46,33 @@ private:
 	Imath::Box3f m_volumeBounds;
 	Imath::V3i	 m_volumeResolution;
 
+	int m_activeSampleTexture;
+	int m_numberSamples;
+
 	Camera m_camera;
+
+	GLuint m_fbo;
+	GLuint m_rbo;
+    GLuint m_sampleTexture;
+    GLuint m_averageTexture[2];
+    GLuint m_noiseTexture;
+
     GLuint m_occupancyTexture;
     GLuint m_voxelColorTexture;
-	GLuint m_shader;
 
-	GLuint m_uniformVoxelOccupancyTexture;
-	GLuint m_uniformVoxelColorTexture;
-	GLuint m_uniformVoxelDataResolution;
-	GLuint m_uniformVolumeBoundsMin;
-	GLuint m_uniformVolumeBoundsMax;
-	GLuint m_uniformViewport;
-	GLuint m_uniformCameraNear;
-	GLuint m_uniformCameraFar;
-	GLuint m_uniformCameraProj;
-	GLuint m_uniformCameraInverseProj;
-	GLuint m_uniformCameraInverseModelView;
-	GLuint m_uniformLightDir;
+	DDAShaderSettings            m_settingsDDA;
+	AccumulationShaderSettings   m_settingsAverage;
+	TexturedShaderSettings       m_settingsTextured;
+
+	enum TextureUnits
+	{
+		TEXTURE_UNIT_OCCUPANCY = 0,
+		TEXTURE_UNIT_COLOR,
+		TEXTURE_UNIT_SAMPLE,
+		TEXTURE_UNIT_AVERAGE0,
+		TEXTURE_UNIT_AVERAGE1,
+		TEXTURE_UNIT_NOISE,
+    };
+	
+    static const unsigned int MAX_FRAME_SAMPLES = 64;
 };

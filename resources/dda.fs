@@ -2,6 +2,7 @@
 
 uniform sampler3D occupancyTexture;
 uniform sampler3D voxelColorTexture;
+uniform sampler2D noiseTexture;
 uniform ivec3 voxelResolution;
 uniform vec3 volumeBoundsMin;
 uniform vec3 volumeBoundsMax;
@@ -14,6 +15,7 @@ uniform mat4 cameraInverseProj;
 uniform mat4 cameraInverseModelView;
 uniform vec3 wsLightDir;
 uniform vec4 backgroundColor = vec4(0.2, 0.2, 0.2, 1);
+uniform int sampleCount;
 
 float rayAABBIntersection(vec3 o, vec3 d)
 {
@@ -211,7 +213,8 @@ bool raymarch(vec3 wsRayOrigin, vec3 wsRayDir,
 void main()
 {
 	vec3 wsRayOrigin = (cameraInverseModelView * vec4(0,0,0,1)).xyz;
-	vec3 wsRayDir = normalize(screenToWorldSpace(vec3(gl_FragCoord.xy, cameraNear)) - wsRayOrigin);
+	vec2 jittering = texelFetch(noiseTexture, ivec2(sampleCount, 0), 0).xy;
+	vec3 wsRayDir = normalize(screenToWorldSpace(vec3(gl_FragCoord.xy + jittering, cameraNear)) - wsRayOrigin);
 	wsRayOrigin.z *=-1;
 	wsRayDir.z *=-1;
 
