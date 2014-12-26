@@ -5,6 +5,8 @@ uniform sampler2D averageTexture;
 uniform int sampleCount;
 uniform vec4 viewport;
 
+out vec4 outColor;
+
 void main()
 {
 	ivec2 uv = ivec2(gl_FragCoord.xy);
@@ -12,5 +14,5 @@ void main()
 	vec4 average = texelFetch(averageTexture, uv, 0);
 
 	// running average
-	gl_FragColor = (sample + average * sampleCount) / (sampleCount + 1);
+	outColor = (sample + average * sampleCount) / (sampleCount + 1);
 }

@@ -3,8 +3,10 @@
 uniform sampler2D texture;
 uniform vec4 viewport;
 
+out vec4 outColor;
+
 void main()
 {
-	gl_FragColor = texelFetch(texture, ivec2(gl_FragCoord.xy), 0);
+	outColor = texelFetch(texture, ivec2(gl_FragCoord.xy), 0);
 }
 

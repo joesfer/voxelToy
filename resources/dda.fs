@@ -22,6 +22,8 @@ uniform vec4        backgroundColor = vec4(0.2,   0.2,   0.2,   1);
 uniform int         sampleCount;
 uniform int			enableDOF;
 
+out vec4 outColor;
+
 #include <coordinates.h>
 #include <dda.h>
 #include <ao.h>
@@ -76,7 +78,7 @@ void main()
 
 	if (aabbIsectDist < 0)
 	{
-		gl_FragColor = backgroundColor;
+		outColor = backgroundColor;
 		return;
 	}
 
@@ -87,7 +89,7 @@ void main()
 	vec3 vsHitPos, vsHitNormal;
 	if ( !raymarch(rayPoint, wsRayDir, vsHitPos, vsHitNormal) )
 	{
-		gl_FragColor = backgroundColor;
+		outColor = backgroundColor;
 		return;
 	}
 
@@ -112,7 +114,7 @@ void main()
 
 	lighting *= ao;
 
-	gl_FragColor = voxelColor * lighting;
+	outColor = voxelColor * lighting;
 
 }
 
