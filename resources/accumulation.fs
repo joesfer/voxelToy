@@ -1,4 +1,4 @@
-#version 120
+#version 130
 
 uniform sampler2D sampleTexture;
 uniform sampler2D averageTexture;
@@ -7,9 +7,9 @@ uniform vec4 viewport;
 
 void main()
 {
-	vec2 uv = gl_FragCoord.xy / viewport.zw;
-	vec4 sample = texture2D(sampleTexture, uv);
-	vec4 average = texture2D(averageTexture, uv);
+	ivec2 uv = ivec2(gl_FragCoord.xy);
+	vec4 sample = texelFetch(sampleTexture, uv, 0);
+	vec4 average = texelFetch(averageTexture, uv, 0);
 
 	// running average
 	gl_FragColor = (sample + average * sampleCount) / (sampleCount + 1);
