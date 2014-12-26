@@ -18,8 +18,8 @@ void addVoxelSphere( const Imath::V3f sphereCenter, float sphereRadius,
     float scale = 10.0f;
     float noiseScale = 0.5f;
 
-    V3i voxelSphereBoundsMin = ((sphereCenter - V3f(sphereRadius)) - volumeBounds.min) * volumeResolution;
-    V3i voxelSphereBoundsMax = ((sphereCenter + V3f(sphereRadius)) - volumeBounds.min) * volumeResolution;
+    V3i voxelSphereBoundsMin = ((sphereCenter - V3f(sphereRadius)) - volumeBounds.min) / volumeBounds.size() * volumeResolution;
+    V3i voxelSphereBoundsMax = ((sphereCenter + V3f(sphereRadius)) - volumeBounds.min) / volumeBounds.size() * volumeResolution;
 
     for( size_t k = std::max(0, voxelSphereBoundsMin.z); 
           k < (size_t)std::min(volumeResolution.z, voxelSphereBoundsMax.z);

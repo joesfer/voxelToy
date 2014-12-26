@@ -67,13 +67,38 @@ public:
 	float farDistance() const;
 	void setFarDistance(float d);
 
+	float focalLength() const;
+	void setFocalLength(float length);
+
+	float focalDistance() const;
+	void setFocalDistance(float distance);
+
+	float filmSize() const;
+	void setFilmSize(float radius);
+
+	float lensRadius() const;
+	void setLensRadius(float radius);
+	void setFStop(float fstop);
+
+	enum CameraLensModel
+	{
+		CLM_PINHOLE,
+		CLM_THIN_LENS
+	};
+	CameraLensModel lensModel() const;
+	void setLensModel(CameraLensModel model);
 
 private:
-	Imath::V3f	 m_target;
-    float        m_targetDistance;
-    float		 m_phi;
-	float		 m_theta;
-	float		 m_fovY;
-	float		 m_near;
-	float		 m_far;
+	Imath::V3f	    m_target;
+    float           m_targetDistance;
+    float		    m_phi;
+	float		    m_theta;
+	float		    m_fovY;
+	float		    m_near;
+	float		    m_far;
+	float		    m_focalLength;
+	float		    m_focalDistance;
+	float		    m_lensRadius;
+	float		    m_filmSize;
+	CameraLensModel m_lensModel;
 };

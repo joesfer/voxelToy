@@ -1,6 +1,6 @@
 #include <GL/glew.h>
 
-#include <shader.h>
+#include "shader.h"
 #include <stdio.h>
 #include <iostream>
 
@@ -9,7 +9,7 @@ void log( const std::string& msg )
 	std::cout << msg << std::endl;
 }
 
-bool parseShader( const std::string& file, std::string& contents )
+bool loadFile( const std::string& file, std::string& contents )
 {
 	using namespace std;
 
@@ -30,7 +30,64 @@ bool parseShader( const std::string& file, std::string& contents )
 	return len > 0;
 }
 
-bool Shader::compileProgramFromFile( const std::string& name,
+// search for #include directives (not supported in GLSL, and emulate them
+// by pasting the header contents within the output stream
+bool includeHeaders( std::string& code, const std::string& parentPath )
+{
+	using namespace std;	
+
+	string::size_type s;
+	while((s = code.find("#include", 0)) != string::npos)
+	{
+		string::size_type includeStart = s;
+		string::size_type includeEnd = code.find('\n', s);
+		if (includeEnd == string::npos) break; 
+		string includeDirective = code.substr(includeStart, includeEnd - includeStart);
+		code.erase(includeStart, includeEnd - includeStart);
+
+		string headerFile;
+		{
+			// TODO: handle double quotes as well
+			string::size_type openBracket = includeDirective.find('<', 0);
+			string::size_type closeBracket = includeDirective.find('>',0); 
+			if (openBracket == string::npos ||
+				closeBracket == string::npos)
+			{
+				log("Failed to parse include directive " + includeDirective);
+				return false;
+			}
+            headerFile = includeDirective.substr(openBracket + 1, closeBracket - openBracket - 1);
+		}
+
+		string headercode;
+		if ( !loadFile(parentPath + headerFile, headercode) )
+		{
+			log("Failed to load header " + headerFile);
+			return false;	
+		}
+		code.insert(includeStart, headercode);
+	}
+
+	return true;
+}
+
+bool parseShader( const std::string& file, std::string& contents )
+{
+	using namespace std;
+
+	if (!loadFile( file, contents )) return false;
+
+	string parentPath;
+	string::size_type lastSlash = file.rfind('/', file.size() - 1);
+	if (lastSlash != string::npos)
+	{
+		parentPath = file.substr(0, lastSlash + 1);
+	}
+	
+	return includeHeaders(contents, parentPath);
+}
+
+bool Shader::compileProgramFromFile( const std::string& name, 
 									 const std::string &vertexShaderFile,
 									 const std::string &vertexShaderPreprocessor,
 									 const std::string &fragmentShaderFile,

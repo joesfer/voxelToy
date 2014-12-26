@@ -23,16 +23,21 @@ public:
 
 private slots:
 	void reloadShaders();
-	Imath::V3f lightDirection() const;
+    void cameraFStopChanged(QString fstop);
+	void cameraFocalLengthChanged(QString length);
+	void cameraFocalDistanceChanged(QString distance);
+	void cameraLensModelChanged(bool dof);
 
 protected:
 	void initializeGL();
 	void paintGL();
 	void resizeGL(int width, int height);
 	void mousePressEvent(QMouseEvent *event);
+    void mouseReleaseEvent(QMouseEvent *event);
 	void mouseMoveEvent(QMouseEvent *event);
 	void keyPressEvent(QKeyEvent *);
 	void updateCameraMatrices();
+	void updateCameraLens();
 	void createVoxelDataTexture();
 	bool reloadTexturedShader();
 	bool reloadAverageShader();
@@ -41,7 +46,10 @@ protected:
 	void createFramebuffer();
 
 private:
-	QPoint lastPos;
+    Imath::V3f lightDirection() const;
+
+    QPoint           m_lastPos;
+	Qt::MouseButtons m_lastMouseButtons;
 
 	Imath::Box3f m_volumeBounds;
 	Imath::V3i	 m_volumeResolution;
@@ -56,6 +64,7 @@ private:
     GLuint m_sampleTexture;
     GLuint m_averageTexture[2];
     GLuint m_noiseTexture;
+	GLint m_textureDimensions[2];
 
     GLuint m_occupancyTexture;
     GLuint m_voxelColorTexture;
@@ -74,5 +83,5 @@ private:
 		TEXTURE_UNIT_NOISE,
     };
 	
-    static const unsigned int MAX_FRAME_SAMPLES = 64;
+    static const unsigned int MAX_FRAME_SAMPLES = 256;
 };

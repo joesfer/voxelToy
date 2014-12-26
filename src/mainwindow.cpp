@@ -17,3 +17,8 @@ void MainWindow::on_reloadShaders_clicked()
 {
 
 }
+
+void MainWindow::on_cameraFStop_currentTextChanged(const QString &arg1)
+{
+
+}

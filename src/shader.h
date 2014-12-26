@@ -40,8 +40,13 @@ struct DDAShaderSettings
 	GLuint m_uniformCameraProj;
 	GLuint m_uniformCameraInverseProj;
 	GLuint m_uniformCameraInverseModelView;
+	GLuint m_uniformCameraFocalLength;
+	GLuint m_uniformCameraFocalDistance;
+	GLuint m_uniformCameraLensRadius;
+	GLuint m_uniformCameraFilmSize;
 	GLuint m_uniformLightDir;
 	GLuint m_uniformSampleCount;
+	GLuint m_uniformEnableDOF;
 };
 			
 struct AccumulationShaderSettings

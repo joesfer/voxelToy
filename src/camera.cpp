@@ -10,7 +10,11 @@ Camera::Camera() :
     m_theta(M_PI/2),
     m_fovY(M_PI/2),
 	m_near(0.1f),
-	m_far(10000)
+	m_far(10000),
+	m_focalLength(50),
+	m_focalDistance(100),
+	m_lensRadius(0),
+	m_filmSize(36)
 {
 }
 
@@ -22,6 +26,10 @@ Imath::V3f Camera::eye() const
 Imath::V3f Camera::target() const
 {
 	return m_target;
+}
+void Camera::centerAt(const Imath::V3f &target)
+{
+    m_target = target;
 }
 
 float Camera::distanceToTarget() const
@@ -98,5 +106,54 @@ float Camera::farDistance() const
 void Camera::setFarDistance(float d)
 {
 	m_far = std::max(m_near, d);
+}
+
+float Camera::focalLength() const
+{
+	return m_focalLength;
+}
+void Camera::setFocalLength(float length)
+{
+	m_focalLength = std::max(0.0f, length);
+}
+
+float Camera::focalDistance() const
+{
+	return m_focalDistance;
+}
+void Camera::setFocalDistance(float distance)
+{
+    m_focalDistance = std::max(0.0f, distance);
+}
+
+float Camera::filmSize() const
+{
+	return m_filmSize;
+}
+void Camera::setFilmSize(float radius)
+{
+	m_filmSize = std::max(0.0f, radius);
+}
+
+float Camera::lensRadius() const
+{
+	return m_lensRadius;
+}
+void Camera::setLensRadius(float radius)
+{
+	m_lensRadius = std::max(0.0f, radius);
+}
+void Camera::setFStop(float fstop)
+{
+	m_lensRadius = (m_focalLength / std::max(1e-4f, fstop)) * 0.5f;
+}
+
+Camera::CameraLensModel Camera::lensModel() const
+{
+	return m_lensModel;
+}
+void Camera::setLensModel(Camera::CameraLensModel model)
+{
+	m_lensModel = model;
 }
 

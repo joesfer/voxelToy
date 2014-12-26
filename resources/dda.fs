@@ -13,9 +13,14 @@ uniform float       cameraFar;
 uniform mat4        cameraProj;
 uniform mat4        cameraInverseProj;
 uniform mat4        cameraInverseModelView;
+uniform float       cameraFocalLength;
+uniform float       cameraFocalDistance;
+uniform float       cameraLensRadius;
+uniform float		cameraFilmSize;
 uniform vec3        wsLightDir;
 uniform vec4        backgroundColor = vec4(0.2,   0.2,   0.2,   1);
 uniform int         sampleCount;
+uniform int			enableDOF;
 
 #include <coordinates.h>
 #include <dda.h>
@@ -29,72 +34,41 @@ vec4 shade(vec3 n)
 	return vec4(max(0, dot(n, -wsLightDir)));
 }
 
+void generateRay(out vec3 wsRayOrigin, out vec3 wsRayDir)
 {
+	vec3 esLensSamplePoint;
+	if (enableDOF != 0)
 	{
+		// thin lens model
+		vec4 uniformRandomSample = texelFetch(noiseTexture, ivec2(sampleCount, 0), 0);
+		vec2 unitDiskSample = sampleDisk(uniformRandomSample.xy);
+		esLensSamplePoint = vec3(unitDiskSample * cameraLensRadius, 0);
 	}
 	else
 	{
+		// pinhole
+		esLensSamplePoint = vec3(0,0,0);
 	}
 
-// Variable naming conventions:
-// ws = world space
-// vs = voxel space (texture)
+	vec3 esImagePlanePoint = (vec3((gl_FragCoord.xy/viewport.zw * vec2(2) - vec2(1)) * cameraFilmSize, 0)).xyz;
+	esImagePlanePoint.z = -cameraFocalLength;
 
-bool raymarch(vec3 wsRayOrigin, vec3 wsRayDir,
-			  out vec3 vsHitPos, out vec3 vsHitNormal)
-{
-	// We have a potential intersection. Traverse the grid using DDA, the code
-	// is inspired in iq's Voxel Edges demo in Shadertoy at https://www.shadertoy.com/view/4dfGzs
-	vec3 res = vec3(voxelResolution);
-	int MAX_STEPS = 2 * int(ceil(sqrt(res.x*res.x + res.y*res.y + res.z*res.z)));
+	vec3 esFilmToPinhole = normalize(-esImagePlanePoint);
+	float t = (-cameraFocalDistance - esImagePlanePoint.z) / esFilmToPinhole.z;
+	// intersection of ray originating at film plane, passing through an ideal 
+	// pinhole (i.e. completely sharp)
+	vec3 esFocalPlanePoint = esImagePlanePoint + t * esFilmToPinhole;
+	vec3 wsFocalPlanePoint = (cameraInverseModelView * vec4(esFocalPlanePoint, 1)).xyz;
 
-	bool isect = false;
-	vec3 voxelExtent = vec3(1.0) / (volumeBoundsMax - volumeBoundsMin);
-	vec3 voxelOrigin = (wsRayOrigin - volumeBoundsMin) * voxelExtent * voxelResolution;
-
-	vec3 voxelPos = floor(voxelOrigin);
-	vec3 wsRayDirIncrement = vec3(1.0f) / wsRayDir;
-	vec3 wsRayDirSign = sign(wsRayDir);
-	vec3 dis = (voxelPos-voxelOrigin + 0.5 + wsRayDirSign*0.5) * wsRayDirIncrement;
-
-	vec3 mask=vec3(0.0);
-
-	int steps = 0;
-	while(steps < MAX_STEPS) 
-	{
-		bool hit = (texelFetch(occupancyTexture, 
-							   ivec3(voxelPos.x, voxelPos.y, voxelPos.z), 0).r > 0);
-		if (hit)
-		{
-			isect = true;
-			break;
-		}
-		mask = step(dis.xyz, dis.yxy) * step(dis.xyz, dis.zzx);
-		dis += mask * wsRayDirSign * wsRayDirIncrement;
-		voxelPos += mask * wsRayDirSign;
-
-		// break the traversal if we've gone out of bounds 
-		if (any(lessThan(voxelPos, vec3(0.0))) || 
-			any(greaterThanEqual(voxelPos,voxelResolution))) break;
-
-		steps++;
-
-	}
-
-	vsHitNormal = -mask*wsRayDirSign;
-	vsHitPos = voxelPos;
-
-	return isect;
+	wsRayOrigin = (cameraInverseModelView * vec4(esLensSamplePoint,1)).xyz;
+	wsRayDir =  normalize(wsFocalPlanePoint - wsRayOrigin);
 }
-			  
 
 void main()
 {
-	vec3 wsRayOrigin = (cameraInverseModelView * vec4(0,0,0,1)).xyz;
-	vec2 jittering = texelFetch(noiseTexture, ivec2(sampleCount, 0), 0).xy;
-	vec3 wsRayDir = normalize(screenToWorldSpace(vec3(gl_FragCoord.xy + jittering, cameraNear)) - wsRayOrigin);
-	wsRayOrigin.z *=-1;
-	wsRayDir.z *=-1;
+	vec3 wsRayOrigin;
+	vec3 wsRayDir;
+	generateRay(wsRayOrigin, wsRayDir);
 
 	// test intersection with bounds to trivially discard rays before entering
 	// traversal.

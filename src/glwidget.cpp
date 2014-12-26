@@ -17,7 +17,9 @@
 GLWidget::GLWidget(QWidget *parent)
      : QGLWidget(QGLFormat(QGL::SampleBuffers), parent)
 {
-	m_camera.setDistanceToTarget(1.1f);
+    m_camera.centerAt(Imath::V3f(0,0,0));
+    m_camera.setDistanceToTarget(100);
+    m_camera.setFStop(16);
 	m_activeSampleTexture = 0;
 	m_numberSamples = 0;
 }
@@ -53,6 +55,7 @@ void GLWidget::initializeGL()
 	createVoxelDataTexture();
     createFramebuffer();
 	reloadShaders();
+	updateCameraLens();
 }
 
 Imath::V3f GLWidget::lightDirection() const
@@ -151,8 +154,13 @@ bool GLWidget::reloadDDAShader()
 	m_settingsDDA.m_uniformCameraProj             = glGetUniformLocation(m_settingsDDA.m_shader, "cameraProj");
 	m_settingsDDA.m_uniformCameraInverseProj      = glGetUniformLocation(m_settingsDDA.m_shader, "cameraInverseProj");
 	m_settingsDDA.m_uniformCameraInverseModelView = glGetUniformLocation(m_settingsDDA.m_shader, "cameraInverseModelView");
+	m_settingsDDA.m_uniformCameraFocalLength      = glGetUniformLocation(m_settingsDDA.m_shader, "cameraFocalLength");             
+	m_settingsDDA.m_uniformCameraFocalDistance    = glGetUniformLocation(m_settingsDDA.m_shader, "cameraFocalDistance");
+	m_settingsDDA.m_uniformCameraLensRadius       = glGetUniformLocation(m_settingsDDA.m_shader, "cameraLensRadius");
+	m_settingsDDA.m_uniformCameraFilmSize         = glGetUniformLocation(m_settingsDDA.m_shader, "cameraFilmSize");
 	m_settingsDDA.m_uniformLightDir               = glGetUniformLocation(m_settingsDDA.m_shader, "wsLightDir");
 	m_settingsDDA.m_uniformSampleCount            = glGetUniformLocation(m_settingsDDA.m_shader, "sampleCount");
+	m_settingsDDA.m_uniformEnableDOF              = glGetUniformLocation(m_settingsDDA.m_shader, "enableDOF");
 
 	glViewport(0,0,width(), height());
 	glUniform4f(m_settingsDDA.m_uniformViewport, 0, 0, (float)width(), (float)height());
@@ -165,7 +173,7 @@ bool GLWidget::reloadDDAShader()
 	glUniform1i(m_settingsDDA.m_uniformVoxelOccupancyTexture, TEXTURE_UNIT_OCCUPANCY);
 	glUniform1i(m_settingsDDA.m_uniformVoxelColorTexture, TEXTURE_UNIT_COLOR);
 	glUniform1i(m_settingsDDA.m_uniformNoiseTexture, TEXTURE_UNIT_NOISE);
-
+	
 	glUniform3i(m_settingsDDA.m_uniformVoxelDataResolution, 
 				m_volumeResolution.x, 
 				m_volumeResolution.y, 
@@ -245,6 +253,24 @@ void GLWidget::updateCameraMatrices()
                        GL_TRUE,
 					   &invProj.x[0][0]);
 	
+    glUniform1f(m_settingsDDA.m_uniformCameraFocalLength  , m_camera.focalLength());
+    glUniform1f(m_settingsDDA.m_uniformCameraFocalDistance, m_camera.focalDistance());
+    glUniform1f(m_settingsDDA.m_uniformCameraLensRadius   , m_camera.lensRadius());
+    glUniform1f(m_settingsDDA.m_uniformCameraFilmSize     , m_camera.filmSize());
+}
+
+void GLWidget::updateCameraLens()
+{
+	bool enableDOF = m_camera.lensModel() == Camera::CLM_THIN_LENS; 
+	enableDOF &= !(m_lastMouseButtons & Qt::LeftButton);
+
+	// TODO the focal length can be extracted from the perspective matrix (FOV)
+	// so we should choose either method, but not both.
+    glUseProgram(m_settingsDDA.m_shader);
+    glUniform1f(m_settingsDDA.m_uniformCameraFocalLength  , m_camera.focalLength());
+    glUniform1f(m_settingsDDA.m_uniformCameraFocalDistance, m_camera.focalDistance());
+    glUniform1f(m_settingsDDA.m_uniformCameraLensRadius   , m_camera.lensRadius());
+    glUniform1i(m_settingsDDA.m_uniformEnableDOF          , enableDOF ? 1 : 0 );
 }
 
 void GLWidget::resizeGL(int width, int height)
@@ -257,6 +283,51 @@ void GLWidget::resizeGL(int width, int height)
     glUseProgram(m_settingsTextured.m_shader);
     glUniform4f(m_settingsTextured.m_uniformViewport, 0, 0, (float)width, (float)height);
     glUseProgram(0);
+	
+	// create texture
+	for( int i = 0; i < 3; ++i )
+	{
+		switch(i)
+		{
+			case 0: 
+                glActiveTexture(GL_TEXTURE0 + TEXTURE_UNIT_SAMPLE);
+				glBindTexture(GL_TEXTURE_2D, m_sampleTexture);
+				break;
+			case 1: 
+                glActiveTexture(GL_TEXTURE0 + TEXTURE_UNIT_AVERAGE0);
+				glBindTexture(GL_TEXTURE_2D, m_averageTexture[0]);
+				break;
+			case 2: 
+                glActiveTexture(GL_TEXTURE0 + TEXTURE_UNIT_AVERAGE1);
+				glBindTexture(GL_TEXTURE_2D, m_averageTexture[1]);
+				break;
+			default: break;
+		}
+
+		glTexImage2D(GL_TEXTURE_2D,
+					 0,
+					 GL_RGBA,
+					 width,
+					 height,
+					 0,
+					 GL_RGBA,
+					 GL_FLOAT,
+                     NULL);
+
+	}
+
+	// these should match the viewport resolution, but maybe some older hardware
+	// still performs some power-of-two rounding so we'll store the actual
+	// values to match the viewport when rendering to texture.
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &m_textureDimensions[0]);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &m_textureDimensions[1]);
+	
+    glBindRenderbuffer(GL_RENDERBUFFER, m_rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, 
+						  GL_DEPTH_COMPONENT,
+						  width,
+						  height);
+
 }
 
 void GLWidget::drawFullscreenQuad()
@@ -279,7 +350,6 @@ void GLWidget::paintGL()
     glLoadIdentity();
     glDisable(GL_DEPTH_TEST);
 
-
     // draw into m_sampleTexture
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
@@ -291,8 +361,9 @@ void GLWidget::paintGL()
                            0);
 
     glUseProgram(m_settingsDDA.m_shader);
-    glUniform1i(m_settingsDDA.m_uniformSampleCount, m_numberSamples);
+    glUniform1i(m_settingsDDA.m_uniformSampleCount, std::min(m_numberSamples, (int)MAX_FRAME_SAMPLES - 1));
 
+	glViewport(0,0,m_textureDimensions[0], m_textureDimensions[1]);
     drawFullscreenQuad();
 
     // m_sampleTexture and m_average[active] ---> m_average[active^1]
@@ -308,15 +379,17 @@ void GLWidget::paintGL()
     glUniform1i(m_settingsAverage.m_uniformAverageTexture, TEXTURE_UNIT_AVERAGE0 + m_activeSampleTexture);
     glUniform1i(m_settingsAverage.m_uniformSampleCount, m_numberSamples);
     drawFullscreenQuad();
-
+	
     // finally draw to screen
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glUseProgram(m_settingsTextured.m_shader);
     glUniform1i(m_settingsTextured.m_uniformTexture, TEXTURE_UNIT_AVERAGE0 + (m_activeSampleTexture^1));
+	glViewport(0,0,m_textureDimensions[0], m_textureDimensions[1]);
     drawFullscreenQuad();
 	
 	// run continuously?
-    if ( m_numberSamples++ < MAX_FRAME_SAMPLES)
+    if ( m_numberSamples++ < (int)MAX_FRAME_SAMPLES)
     {
         m_activeSampleTexture ^= 1;
         update();
@@ -325,14 +398,15 @@ void GLWidget::paintGL()
 
 void GLWidget::mousePressEvent(QMouseEvent *event)
 {
-    lastPos = event->pos();
+    m_lastPos = event->pos();
 }
 
 void GLWidget::mouseMoveEvent(QMouseEvent *event)
 {
-    int dx = event->x() - lastPos.x();
-    int dy = event->y() - lastPos.y();
+    int dx = event->x() - m_lastPos.x();
+    int dy = event->y() - m_lastPos.y();
 
+    bool change = false;
     if (event->buttons() & Qt::LeftButton)
     {
         const float speed = 1.f;
@@ -340,23 +414,39 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event)
         const float phi = -(float)dx / this->width() * 2.0f * M_PI * speed + m_camera.rotationPhi();
 
         m_camera.setOrbitRotation(theta, phi);
+		change = true;
     }
     else if( event->buttons() & Qt::RightButton)
     {
         const float speed = 0.99f;
         m_camera.setDistanceToTarget( dy > 0 ? m_camera.distanceToTarget() * speed :
                                                m_camera.distanceToTarget() / speed );
+		change = true;
     }
 
-    lastPos = event->pos();
+    m_lastPos = event->pos();
+	m_lastMouseButtons = event->buttons();
+
+	if ( change )
+	{
+		updateCameraMatrices();
+		updateCameraLens();
+		m_numberSamples = 0;
+		update();
+	}
+}
+
+void GLWidget::mouseReleaseEvent(QMouseEvent *event)
+{
+    m_lastPos = event->pos();
+	m_lastMouseButtons = event->buttons();
 	updateCameraMatrices();
-
-    m_numberSamples = 0;
-
+	updateCameraLens();
+	m_numberSamples = 0;
 	update();
 }
 
-void GLWidget::keyPressEvent(QKeyEvent* event)
+void GLWidget::keyPressEvent(QKeyEvent* /*event*/)
 {
     m_numberSamples = 0;
 	update();
@@ -383,7 +473,7 @@ void GLWidget::createFramebuffer()
 	// create noise texture
 	{
 		float* noise = (float*)malloc(MAX_FRAME_SAMPLES * 4 * sizeof(float));
-		for( int i = 0; i < 4 * MAX_FRAME_SAMPLES; ++i ) noise[i] = (float)rand()/RAND_MAX;
+        for( int i = 0; i < 4 * (int)MAX_FRAME_SAMPLES; ++i ) noise[i] = (float)rand()/RAND_MAX;
 		glActiveTexture(GL_TEXTURE0 + TEXTURE_UNIT_NOISE);
 		glBindTexture(GL_TEXTURE_2D, m_noiseTexture);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -477,7 +567,8 @@ void GLWidget::createVoxelDataTexture()
     GLubyte* occupancyTexels = (GLubyte*)malloc(numVoxels * sizeof(GLubyte));
     RGB* colorTexels = (RGB*)malloc(numVoxels * sizeof(RGB));
 
-    m_volumeBounds = Box3f( V3f(-0.5f, -0.5f, -0.5f), V3f(0.5f, 0.5f, 0.5f) );
+    float sizeMultiplier = 100;
+    m_volumeBounds = Box3f( V3f(-0.5f, -0.5f, -0.5f) * sizeMultiplier, V3f(0.5f, 0.5f, 0.5f) * sizeMultiplier );
 
     memset(occupancyTexels, 0, numVoxels * sizeof(GLubyte));
 
@@ -543,3 +634,35 @@ void GLWidget::createVoxelDataTexture()
     free(occupancyTexels);
     free(colorTexels);
 }
+
+void GLWidget::cameraFStopChanged(QString fstop)
+{
+    m_camera.setFStop(fstop.toFloat());
+	updateCameraLens();
+	m_numberSamples = 0;
+    update();
+}
+
+void GLWidget::cameraFocalLengthChanged(QString length)
+{
+    m_camera.setFocalLength(length.toFloat());
+	updateCameraLens();
+	m_numberSamples = 0;
+    update();
+}
+
+void GLWidget::cameraFocalDistanceChanged(QString distance)
+{
+    m_camera.setFocalDistance(distance.toFloat() * 10); // cm to mm
+	updateCameraLens();
+	m_numberSamples = 0;
+    update();
+}
+void GLWidget::cameraLensModelChanged(bool dof)
+{
+	m_camera.setLensModel( dof ? Camera::CLM_THIN_LENS : Camera::CLM_PINHOLE );
+    updateCameraLens();
+    m_numberSamples = 0;
+    update();
+}
+

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1021</width>
+    <width>1064</width>
     <height>720</height>
    </rect>
   </property>
@@ -15,8 +15,11 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout_2">
-    <item row="0" column="0">
-     <layout class="QVBoxLayout" name="verticalLayout">
+    <item row="1" column="1">
+     <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0">
+      <property name="spacing">
+       <number>0</number>
+      </property>
       <item>
        <widget class="GLWidget" name="glWidget" native="true">
         <property name="mouseTracking">
@@ -24,14 +27,168 @@
         </property>
        </widget>
       </item>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <property name="sizeConstraint">
+         <enum>QLayout::SetMinimumSize</enum>
+        </property>
+        <item>
+         <widget class="QGroupBox" name="CameraParameters">
+          <property name="title">
+           <string>Camera Parameters</string>
+          </property>
+          <property name="flat">
+           <bool>false</bool>
+          </property>
+          <layout class="QFormLayout" name="formLayout">
+           <property name="fieldGrowthPolicy">
+            <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+           </property>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>f-Stop</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QComboBox" name="cameraFStop">
+             <property name="editable">
+              <bool>true</bool>
+             </property>
+             <item>
+              <property name="text">
+               <string>1.4</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>2</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>2.8</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>4</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>5.6</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>7.1</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>8.0</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>11</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>16</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>22</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>32</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QCheckBox" name="enableDOF">
+             <property name="text">
+              <string>Depth of Field</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>Lens Model</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QDoubleSpinBox" name="cameraFocalDistance">
+             <property name="decimals">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <double>100000.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>10.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>100.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_3">
+             <property name="text">
+              <string>Focal Distance (cm)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="label_2">
+             <property name="text">
+              <string>Focal Length (mm)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QDoubleSpinBox" name="cameraFocalLength">
+             <property name="decimals">
+              <number>0</number>
+             </property>
+             <property name="minimum">
+              <double>1.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>300.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>10.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>50.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="reloadShaders">
+          <property name="text">
+           <string>Reload Shaders</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
      </layout>
-    </item>
-    <item row="1" column="0">
-     <widget class="QPushButton" name="reloadShaders">
-      <property name="text">
-       <string>Reload Shaders</string>
-      </property>
-     </widget>
     </item>
    </layout>
   </widget>
@@ -40,7 +197,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1021</width>
+     <width>1064</width>
      <height>25</height>
     </rect>
    </property>
@@ -65,6 +222,10 @@
    <slots>
     <signal>shadersReloaded()</signal>
     <slot>reloadShaders()</slot>
+    <slot>cameraFStopChanged(QString)</slot>
+    <slot>cameraFocalLengthChanged(QString)</slot>
+    <slot>cameraFocalDistanceChanged(QString)</slot>
+    <slot>cameraLensModelChanged(bool)</slot>
    </slots>
   </customwidget>
  </customwidgets>
@@ -77,12 +238,124 @@
    <slot>reloadShaders()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>510</x>
-     <y>675</y>
+     <x>1052</x>
+     <y>686</y>
     </hint>
     <hint type="destinationlabel">
-     <x>510</x>
+     <x>10</x>
      <y>351</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cameraFStop</sender>
+   <signal>activated(QString)</signal>
+   <receiver>glWidget</receiver>
+   <slot>cameraFStopChanged(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1043</x>
+     <y>128</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>10</x>
+     <y>163</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cameraFStop</sender>
+   <signal>editTextChanged(QString)</signal>
+   <receiver>glWidget</receiver>
+   <slot>cameraFStopChanged(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1043</x>
+     <y>128</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>10</x>
+     <y>263</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cameraFocalLength</sender>
+   <signal>valueChanged(QString)</signal>
+   <receiver>glWidget</receiver>
+   <slot>cameraFocalLengthChanged(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1043</x>
+     <y>206</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>10</x>
+     <y>229</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cameraFocalDistance</sender>
+   <signal>valueChanged(QString)</signal>
+   <receiver>glWidget</receiver>
+   <slot>cameraFocalDistanceChanged(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1043</x>
+     <y>167</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>10</x>
+     <y>312</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>enableDOF</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>cameraFStop</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>962</x>
+     <y>91</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>953</x>
+     <y>120</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>enableDOF</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>glWidget</receiver>
+   <slot>cameraLensModelChanged(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>983</x>
+     <y>84</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>10</x>
+     <y>116</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>enableDOF</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>cameraFocalDistance</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1019</x>
+     <y>86</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1013</x>
+     <y>151</y>
     </hint>
    </hints>
   </connection>
