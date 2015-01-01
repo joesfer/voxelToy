@@ -31,6 +31,7 @@ struct DDAShaderSettings
 	GLuint m_uniformVoxelOccupancyTexture;
 	GLuint m_uniformVoxelColorTexture;
 	GLuint m_uniformNoiseTexture;
+	GLuint m_uniformFocalDistanceTexture;
 	GLuint m_uniformVoxelDataResolution;
 	GLuint m_uniformVolumeBoundsMin;
 	GLuint m_uniformVolumeBoundsMax;
@@ -41,7 +42,6 @@ struct DDAShaderSettings
 	GLuint m_uniformCameraInverseProj;
 	GLuint m_uniformCameraInverseModelView;
 	GLuint m_uniformCameraFocalLength;
-	GLuint m_uniformCameraFocalDistance;
 	GLuint m_uniformCameraLensRadius;
 	GLuint m_uniformCameraFilmSize;
 	GLuint m_uniformLightDir;
@@ -67,5 +67,24 @@ struct TexturedShaderSettings
 	// uniforms
 	GLuint m_uniformTexture;
     GLuint m_uniformViewport;
+};
+
+struct FocalDistanceShaderSettings 
+{
+	GLuint m_shader;
+	
+	// uniforms
+	GLuint m_uniformVoxelOccupancyTexture;
+	GLuint m_uniformVoxelDataResolution;
+	GLuint m_uniformVolumeBoundsMin;
+	GLuint m_uniformVolumeBoundsMax;
+	GLuint m_uniformViewport;
+	GLuint m_uniformCameraNear;
+	GLuint m_uniformCameraFar;
+	GLuint m_uniformCameraProj;
+	GLuint m_uniformCameraInverseProj;
+	GLuint m_uniformCameraInverseModelView;
+	GLuint m_uniformCameraFocalLength;
+	GLuint m_uniformSampledFragment;
 };
 

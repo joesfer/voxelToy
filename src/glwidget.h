@@ -36,9 +36,9 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event);
 	void mouseMoveEvent(QMouseEvent *event);
 	void keyPressEvent(QKeyEvent *);
-	void updateCameraMatrices();
-	void updateCameraLens();
+	void updateCamera();
 	void createVoxelDataTexture();
+	bool reloadFocalDistanceShader();
 	bool reloadTexturedShader();
 	bool reloadAverageShader();
 	bool reloadDDAShader();
@@ -59,12 +59,20 @@ private:
 
 	Camera m_camera;
 
-	GLuint m_fbo;
-	GLuint m_rbo;
+	GLuint m_mainFBO;
+	GLuint m_mainRBO;
     GLuint m_sampleTexture;
     GLuint m_averageTexture[2];
     GLuint m_noiseTexture;
 	GLint m_textureDimensions[2];
+
+	// Normalized coordinates in screen space from where the focal distance is
+	// retrieved (the actual pixel coordinates are calculated as
+	// m_screenFocalPoint * viewportSize;
+	Imath::V2f m_screenFocalPoint;
+	GLuint m_focalDistanceFBO;
+	GLuint m_focalDistanceRBO;
+    GLuint m_focalDistanceTexture;
 
     GLuint m_occupancyTexture;
     GLuint m_voxelColorTexture;
@@ -72,6 +80,7 @@ private:
 	DDAShaderSettings            m_settingsDDA;
 	AccumulationShaderSettings   m_settingsAverage;
 	TexturedShaderSettings       m_settingsTextured;
+	FocalDistanceShaderSettings  m_settingsFocalDistance;
 
 	enum TextureUnits
 	{
@@ -81,6 +90,7 @@ private:
 		TEXTURE_UNIT_AVERAGE0,
 		TEXTURE_UNIT_AVERAGE1,
 		TEXTURE_UNIT_NOISE,
+		TEXTURE_UNIT_FOCAL_DISTANCE
     };
 	
     static const unsigned int MAX_FRAME_SAMPLES = 256;

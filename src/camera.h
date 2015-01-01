@@ -58,7 +58,8 @@ public:
 	// Set the camera direction explicitly from eye and target points.
 	void setEyeTarget(const Imath::V3f& eye, const Imath::V3f& target);
 
-	float fovY() const;
+	// get and set vertical fov, in radians
+	float fovY() const; 
 	void setFovY(float fov);
 
 	float nearDistance() const;
@@ -73,8 +74,8 @@ public:
 	float focalDistance() const;
 	void setFocalDistance(float distance);
 
-	float filmSize() const;
-	void setFilmSize(float radius);
+	Imath::V2f filmSize() const;
+	void setFilmSize(float filmW, float filmH);
 
 	float lensRadius() const;
 	void setLensRadius(float radius);
@@ -88,6 +89,8 @@ public:
 	CameraLensModel lensModel() const;
 	void setLensModel(CameraLensModel model);
 
+    static float FILM_SIZE_35MM;
+
 private:
 	Imath::V3f	    m_target;
     float           m_targetDistance;
@@ -99,6 +102,6 @@ private:
 	float		    m_focalLength;
 	float		    m_focalDistance;
 	float		    m_lensRadius;
-	float		    m_filmSize;
+	Imath::V2f		m_filmSize;
 	CameraLensModel m_lensModel;
 };

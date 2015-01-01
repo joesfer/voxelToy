@@ -8,7 +8,7 @@ bool raymarch(vec3 wsRayOrigin, vec3 wsRayDir,
 	// We have a potential intersection. Traverse the grid using DDA, the code
 	// is inspired in iq's Voxel Edges demo in Shadertoy at https://www.shadertoy.com/view/4dfGzs
 	vec3 res = vec3(voxelResolution);
-	int MAX_STEPS = 2 * int(ceil(sqrt(res.x*res.x + res.y*res.y + res.z*res.z)));
+	int MAX_STEPS = 2 * int(ceil(length(res)));
 
 	bool isect = false;
 	vec3 voxelExtent = vec3(1.0) / (volumeBoundsMax - volumeBoundsMin);
@@ -35,7 +35,7 @@ bool raymarch(vec3 wsRayOrigin, vec3 wsRayDir,
 		dis += mask * wsRayDirSign * wsRayDirIncrement;
 		voxelPos += mask * wsRayDirSign;
 
-		// break the traversal if we've gone out of bounds 
+		// break from the traversal if we've gone out of bounds 
 		if (any(lessThan(voxelPos, vec3(0.0))) || 
 			any(greaterThanEqual(voxelPos,voxelResolution))) break;
 

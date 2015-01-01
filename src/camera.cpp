@@ -3,19 +3,21 @@
 #include <OpenEXR/ImathMatrixAlgo.h>
 #include <math.h>
 
+// shorthand for a 35 milimiter (36 * 24mm) frame sensor
+float Camera::FILM_SIZE_35MM = 36.0f;
+
 Camera::Camera() :
     m_target(Imath::V3f(0,0,0)),
     m_targetDistance(1.0f),
     m_phi(-M_PI/2),
     m_theta(M_PI/2),
-    m_fovY(M_PI/2),
 	m_near(0.1f),
 	m_far(10000),
-	m_focalLength(50),
 	m_focalDistance(100),
 	m_lensRadius(0),
 	m_filmSize(36)
 {
+	this->setFocalLength(50);
 }
 
 Imath::V3f Camera::eye() const
@@ -89,6 +91,7 @@ float Camera::fovY() const
 void Camera::setFovY(float fov)
 {
 	m_fovY = fov;
+	m_focalLength = filmSize().y / (2.0f * tan(0.5f * m_fovY));
 }
 
 float Camera::nearDistance() const
@@ -115,6 +118,7 @@ float Camera::focalLength() const
 void Camera::setFocalLength(float length)
 {
 	m_focalLength = std::max(0.0f, length);
+	m_fovY = atan2(this->filmSize().y * 0.5f, m_focalLength) * 2.0f;
 }
 
 float Camera::focalDistance() const
@@ -126,13 +130,15 @@ void Camera::setFocalDistance(float distance)
     m_focalDistance = std::max(0.0f, distance);
 }
 
-float Camera::filmSize() const
+Imath::V2f Camera::filmSize() const
 {
 	return m_filmSize;
 }
-void Camera::setFilmSize(float radius)
+void Camera::setFilmSize(float filmW, float filmH)
 {
-	m_filmSize = std::max(0.0f, radius);
+	m_filmSize = Imath::V2f(std::max(0.0f, filmW),
+							std::max(0.0f, filmH));
+	m_fovY = atan2(this->filmSize().y * 0.5f, m_focalLength) * 2.0f;
 }
 
 float Camera::lensRadius() const

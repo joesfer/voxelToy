@@ -1,9 +1,10 @@
-float rayAABBIntersection(vec3 o, vec3 d)
+float rayAABBIntersection(in vec3 o, in vec3 d, 
+						  in vec3 boundsMin, in vec3 boundsMax)
 {
 	vec3 invDir = vec3(1.0f) / d; 
 
-	vec3 tMin3 = (volumeBoundsMin - o) * invDir;
-	vec3 tMax3 = (volumeBoundsMax - o) * invDir;
+	vec3 tMin3 = (boundsMin - o) * invDir;
+	vec3 tMax3 = (boundsMax - o) * invDir;
 
 	vec3 tmin = min(tMin3, tMax3);
 	float tminf = max(tmin.x, max(tmin.y, tmin.z));

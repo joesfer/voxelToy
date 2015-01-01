@@ -3,6 +3,7 @@
 uniform sampler3D   occupancyTexture;
 uniform sampler3D   voxelColorTexture;
 uniform sampler2D   noiseTexture;
+uniform sampler2D   focalDistanceTexture;
 uniform ivec3       voxelResolution;
 uniform vec3        volumeBoundsMin;
 uniform vec3        volumeBoundsMax;
@@ -14,13 +15,13 @@ uniform mat4        cameraProj;
 uniform mat4        cameraInverseProj;
 uniform mat4        cameraInverseModelView;
 uniform float       cameraFocalLength;
-uniform float       cameraFocalDistance;
+
 uniform float       cameraLensRadius;
-uniform float		cameraFilmSize;
+uniform vec2        cameraFilmSize;
 uniform vec3        wsLightDir;
 uniform vec4        backgroundColor = vec4(0.2,   0.2,   0.2,   1);
 uniform int         sampleCount;
-uniform int			enableDOF;
+uniform int         enableDOF;
 
 out vec4 outColor;
 
@@ -28,6 +29,7 @@ out vec4 outColor;
 #include <dda.h>
 #include <ao.h>
 #include <sampling.h>
+#include <generateRay.h>
 #include <aabb.h>
 
 vec4 shade(vec3 n)
@@ -38,32 +40,15 @@ vec4 shade(vec3 n)
 
 void generateRay(out vec3 wsRayOrigin, out vec3 wsRayDir)
 {
-	vec3 esLensSamplePoint;
 	if (enableDOF != 0)
 	{
-		// thin lens model
-		vec4 uniformRandomSample = texelFetch(noiseTexture, ivec2(sampleCount, 0), 0);
-		vec2 unitDiskSample = sampleDisk(uniformRandomSample.xy);
-		esLensSamplePoint = vec3(unitDiskSample * cameraLensRadius, 0);
+		generateRay_ThinLens(gl_FragCoord.xyz, wsRayOrigin, wsRayDir);
 	}
 	else
 	{
-		// pinhole
-		esLensSamplePoint = vec3(0,0,0);
+		generateRay_Pinhole(gl_FragCoord.xyz, wsRayOrigin, wsRayDir);
 	}
 
-	vec3 esImagePlanePoint = (vec3((gl_FragCoord.xy/viewport.zw * vec2(2) - vec2(1)) * cameraFilmSize, 0)).xyz;
-	esImagePlanePoint.z = -cameraFocalLength;
-
-	vec3 esFilmToPinhole = normalize(-esImagePlanePoint);
-	float t = (-cameraFocalDistance - esImagePlanePoint.z) / esFilmToPinhole.z;
-	// intersection of ray originating at film plane, passing through an ideal 
-	// pinhole (i.e. completely sharp)
-	vec3 esFocalPlanePoint = esImagePlanePoint + t * esFilmToPinhole;
-	vec3 wsFocalPlanePoint = (cameraInverseModelView * vec4(esFocalPlanePoint, 1)).xyz;
-
-	wsRayOrigin = (cameraInverseModelView * vec4(esLensSamplePoint,1)).xyz;
-	wsRayDir =  normalize(wsFocalPlanePoint - wsRayOrigin);
 }
 
 void main()
@@ -74,15 +59,14 @@ void main()
 
 	// test intersection with bounds to trivially discard rays before entering
 	// traversal.
-	float aabbIsectDist = rayAABBIntersection(wsRayOrigin, wsRayDir); 
+	float aabbIsectDist = rayAABBIntersection(wsRayOrigin, wsRayDir,
+											  volumeBoundsMin, volumeBoundsMax); 
 
 	if (aabbIsectDist < 0)
 	{
 		outColor = backgroundColor;
 		return;
 	}
-
-	vec3 voxelExtent = vec3(1.0) / (volumeBoundsMax - volumeBoundsMin);
 
 	float rayLength = aabbIsectDist;
 	vec3 rayPoint = wsRayOrigin + rayLength * wsRayDir;
@@ -98,24 +82,28 @@ void main()
 
 	float ao = ambientOcclusion(vsHitPos, vsHitNormal); 
 
-	float lighting = shade(vsHitNormal);
-	vsHitPos += vsHitNormal;
-	vec3 wsHitPos = (vsHitPos + vec3(0.5))/(voxelResolution*voxelExtent) + volumeBoundsMin; 
-	vec3 toLight = normalize(wsLightDir);
-	if ( raymarch(wsHitPos, -wsLightDir, vsHitPos, vsHitNormal) )
-	{
-		// we hit something between us and the light - thus this voxel is in
-		// shadow.
-		lighting = vec3(0);
-	}
+	// vsHitPos marks the lower-left corner of the voxel. Calculate the
+	// precise ray/voxel intersection in world-space
+	vec3 wsVoxelSize = (volumeBoundsMax - volumeBoundsMin) / voxelResolution;
+	vec3 wsVoxelMin = vsHitPos * wsVoxelSize + volumeBoundsMin; 
+	vec3 wsVoxelMax = wsVoxelMin + wsVoxelSize; 
+	float voxelHitDistance = rayAABBIntersection(wsRayOrigin, wsRayDir, wsVoxelMin, wsVoxelMax);
+	vec3 wsHitPos = wsRayOrigin + wsRayDir * voxelHitDistance; 
 
 	vec3 ambient = vec3(0.2);
-	lighting += ambient;
+	vec3 lighting = ambient;
+	float EPSILON = 0.01; // avoid self-intersection
+	vec3 primaryRayHitNormal = vsHitNormal;
+	if ( !raymarch(wsHitPos + EPSILON * -wsLightDir, -wsLightDir, vsHitPos, vsHitNormal) )
+	{
+		// we didn't hit anything between us and the light - thus this voxel receives 
+		// contribution from this light
+		lighting += vec3(shade(primaryRayHitNormal));
+	}
 
 	lighting *= ao;
 
-	outColor = voxelColor * lighting;
-
+	outColor = voxelColor * vec4(lighting,1);
 }
 
 

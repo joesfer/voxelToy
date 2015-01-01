@@ -70,7 +70,7 @@ void addVoxelSphere( const Imath::V3f sphereCenter, float sphereRadius,
     }
 }
 
-void addPlane( const Imath::V3f& normal, const Imath::V3f& p,
+void addPlane( const Imath::V3f& normal, const Imath::V3f& /*p*/,
 			   const Imath::V3i volumeResolution,
 			   const Imath::Box3f volumeBounds,
 			   GLubyte* occupancyTexels, RGB* colorTexels )
@@ -84,11 +84,11 @@ void addPlane( const Imath::V3f& normal, const Imath::V3f& p,
     float scale = 10.0f;
     float noiseScale = 0.5f;
 
-    for( size_t k = 0; k < volumeResolution.z; ++k )
+    for( size_t k = 0; k < (size_t)volumeResolution.z; ++k )
     {
-		for( size_t j = 0; j < volumeResolution.y; ++j )
+        for( size_t j = 0; j < (size_t)volumeResolution.y; ++j )
         {
-			for( size_t i = 0; i < volumeResolution.x; ++i )
+            for( size_t i = 0; i < (size_t)volumeResolution.x; ++i )
             {
                 size_t offset = k * volumeResolution.x * volumeResolution.y + j * volumeResolution.x + i;
                 V3f voxelCenter = V3f(i + 0.5f, j + 0.5f, k + 0.5f) * voxelSize + volumeBounds.min;
