@@ -50,6 +50,7 @@ protected:
 private:
     Imath::V3f lightDirection() const;
     void resetRender();
+	void updateRenderSettings();
 
     QPoint           m_lastPos;
 	Qt::MouseButtons m_lastMouseButtons;
@@ -96,5 +97,18 @@ private:
 		TEXTURE_UNIT_FOCAL_DISTANCE
     };
 	
+	struct RenderSettings
+	{
+		bool m_ambientOcclusionEnabled;
+		// from 0.0 to 1.0, how long does the shadow ray traverse for the AO
+		// calculations, as a fraction of the number of voxels
+		float m_ambientOcclusionReach;
+		// from 0.0 to 1.0, cone spread used to generate shadow rays. This value
+		// is multiplied by PI when mapped to the polar theta angle.
+		float m_ambientOcclusionSpread;
+	};
+
+	RenderSettings m_renderSettings;
+
     static const unsigned int MAX_FRAME_SAMPLES = 256;
 };

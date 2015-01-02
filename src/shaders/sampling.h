@@ -49,6 +49,7 @@ vec2 sampleDisk( vec2 u )
 	return sample;
 }
 
+// pole at +Y (theta = 0)
 vec3 polarToVector(float phi, float theta)
 {
 	float sinTheta = sin(theta);

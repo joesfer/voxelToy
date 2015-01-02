@@ -2,9 +2,11 @@
 // ws = world space
 // vs = voxel space (texture)
 
-bool raymarch(in vec3 wsRayOrigin, in vec3 wsRayDir,
+bool raymarch(in vec3 wsRayOrigin, 
+			  in vec3 wsRayDir,
 			  in int maxSteps,
-			  out vec3 vsHitPos, out vec3 vsHitNormal)
+			  out vec3 vsHitPos, 
+			  out vec3 vsHitNormal)
 {
 	// Traverse the grid using DDA, the code is inspired in iq's Voxel Edges 
 	// demo in Shadertoy at https://www.shadertoy.com/view/4dfGzs
@@ -48,15 +50,19 @@ bool raymarch(in vec3 wsRayOrigin, in vec3 wsRayDir,
 	return isect;
 }
 
-bool traverse(in vec3 wsRayOrigin, in vec3 wsRayDir, in int maxSteps) 
+bool traverse(in vec3 wsRayOrigin, 
+			  in vec3 wsRayDir, 
+			  in int maxSteps,
+			  out vec3 vsHitPos, 
+			  out vec3 vsHitNormal)
 {
-	vec3 vsHitPos;
-	vec3 vsHitNormal;
 	return raymarch(wsRayOrigin, wsRayDir, maxSteps, vsHitPos, vsHitNormal);
 }
 
-bool traverse(in vec3 wsRayOrigin, in vec3 wsRayDir,
-			  out vec3 vsHitPos, out vec3 vsHitNormal)
+bool traverse(in vec3 wsRayOrigin, 
+			  in vec3 wsRayDir,
+			  out vec3 vsHitPos, 
+			  out vec3 vsHitNormal)
 {
 	vec3 res = vec3(voxelResolution);
 	int MAX_STEPS = int(ceil(length(res)));
