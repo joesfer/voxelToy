@@ -823,36 +823,42 @@ void GLWidget::createVoxelDataTexture()
     free(occupancyTexels);
     free(colorTexels);
 }
-
-void GLWidget::cameraFStopChanged(QString fstop)
+void GLWidget::resetRender()
 {
-    m_camera.setFStop(fstop.toFloat());
-	updateCamera();
-	m_numberSamples = 0;
-    update();
-}
-
-void GLWidget::cameraFocalLengthChanged(QString length)
-{
-    m_camera.setFocalLength(length.toFloat());
-	updateCamera();
-	m_numberSamples = 0;
-    update();
-}
-
-void GLWidget::cameraFocalDistanceChanged(QString distance)
-{
-    m_camera.setFocalDistance(distance.toFloat() * 10); // cm to mm
-	updateCamera();
-	m_numberSamples = 0;
-    update();
-}
-
-void GLWidget::cameraLensModelChanged(bool dof)
-{
-	m_camera.setLensModel( dof ? Camera::CLM_THIN_LENS : Camera::CLM_PINHOLE );
     updateCamera();
     m_numberSamples = 0;
     update();
 }
 
+void GLWidget::cameraFStopChanged(QString fstop)
+{
+    m_camera.setFStop(fstop.toFloat());
+    resetRender();
+}
+
+void GLWidget::cameraFocalLengthChanged(QString length)
+{
+    m_camera.setFocalLength(length.toFloat());
+    resetRender();
+}
+
+void GLWidget::cameraLensModelChanged(bool dof)
+{
+	m_camera.setLensModel( dof ? Camera::CLM_THIN_LENS : Camera::CLM_PINHOLE );
+    resetRender();
+}
+
+void GLWidget::onAmbientOcclusionEnabled(bool)
+{
+    resetRender();
+}
+
+void GLWidget::onAmbientOcclusionReachChanged(int)
+{
+    resetRender();
+}
+
+void GLWidget::onAmbientOcclusionSpreadChanged(int)
+{
+    resetRender();
+}

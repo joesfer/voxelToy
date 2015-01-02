@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CameraPropertiesUI</class>
+ <widget class="QWidget" name="CameraPropertiesUI">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>278</width>
+    <height>106</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QFormLayout" name="formLayout">
+   <item row="0" column="0">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>Lens Model</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QCheckBox" name="enableDOF">
+     <property name="text">
+      <string>Depth of Field</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>f-Stop</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QComboBox" name="cameraFStop">
+     <property name="editable">
+      <bool>true</bool>
+     </property>
+     <item>
+      <property name="text">
+       <string>1.4</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>2</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>2.8</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>4</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>5.6</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>7.1</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>8.0</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>11</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>16</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>22</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>32</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>Focal Length (mm)</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QDoubleSpinBox" name="cameraFocalLength">
+     <property name="decimals">
+      <number>0</number>
+     </property>
+     <property name="minimum">
+      <double>1.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>300.000000000000000</double>
+     </property>
+     <property name="singleStep">
+      <double>10.000000000000000</double>
+     </property>
+     <property name="value">
+      <double>50.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>enableDOF</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>cameraFStop</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>222</x>
+     <y>27</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>222</x>
+     <y>50</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>enableDOF</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>CameraPropertiesUI</receiver>
+   <slot>onLensModelChanged(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>172</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>94</x>
+     <y>41</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cameraFStop</sender>
+   <signal>currentIndexChanged(QString)</signal>
+   <receiver>CameraPropertiesUI</receiver>
+   <slot>onLensRadiusChanged(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>171</x>
+     <y>55</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>124</x>
+     <y>62</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cameraFocalLength</sender>
+   <signal>valueChanged(QString)</signal>
+   <receiver>CameraPropertiesUI</receiver>
+   <slot>onFocalLengthChanged(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>201</x>
+     <y>81</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>117</x>
+     <y>100</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <signal>lensModelChanged(bool)</signal>
+  <signal>lensRadiusChanged(QString)</signal>
+  <signal>focalLengthChanged(QString)</signal>
+  <slot>onLensModelChanged(bool)</slot>
+  <slot>onLensRadiusChanged(QString)</slot>
+  <slot>onFocalLengthChanged(QString)</slot>
+ </slots>
+</ui>

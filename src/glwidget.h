@@ -25,8 +25,10 @@ private slots:
 	void reloadShaders();
     void cameraFStopChanged(QString fstop);
 	void cameraFocalLengthChanged(QString length);
-	void cameraFocalDistanceChanged(QString distance);
 	void cameraLensModelChanged(bool dof);
+    void onAmbientOcclusionEnabled(bool);
+    void onAmbientOcclusionReachChanged(int);
+    void onAmbientOcclusionSpreadChanged(int);
 
 protected:
 	void initializeGL();
@@ -47,6 +49,7 @@ protected:
 
 private:
     Imath::V3f lightDirection() const;
+    void resetRender();
 
     QPoint           m_lastPos;
 	Qt::MouseButtons m_lastMouseButtons;

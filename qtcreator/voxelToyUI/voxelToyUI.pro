@@ -20,6 +20,8 @@ SOURCES += ../../src/ui/mainwindow.cpp \
 			../../src/shader.cpp \
 			../../src/noise.cpp \
 			../../src/content.cpp \
+    ../../src/ui/camerapropertiesui.cpp \
+    ../../src/ui/renderpropertiesui.cpp
 
 HEADERS  += ../../src/ui/mainwindow.h \
     ../../src/glwidget.h \
@@ -27,8 +29,12 @@ HEADERS  += ../../src/ui/mainwindow.h \
     ../../src/shader.h \
     ../../src/noise.h \
         ../../src/content.h \
+    ../../src/ui/camerapropertiesui.h \
+    ../../src/ui/renderpropertiesui.h
 
-FORMS    += ../../src/ui/mainwindow.ui
+FORMS    += ../../src/ui/mainwindow.ui \
+    ../../src/ui/camerapropertiesui.ui \
+    ../../src/ui/renderpropertiesui.ui
 
 LIBS += -lglut -lGLU -lGLEW
 
