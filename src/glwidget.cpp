@@ -25,6 +25,10 @@ GLWidget::GLWidget(QWidget *parent)
 	m_activeSampleTexture = 0;
 	m_numberSamples = 0;
 	m_screenFocalPoint = Imath::V2f(0.5f, 0.5f);
+
+	m_renderSettings.m_ambientOcclusionEnabled = true;
+	m_renderSettings.m_ambientOcclusionReach = 0.5f;
+	m_renderSettings.m_ambientOcclusionSpread = 0.33f;
 }
 
 GLWidget::~GLWidget()
@@ -59,6 +63,7 @@ void GLWidget::initializeGL()
     createFramebuffer();
 	reloadShaders();
 	updateCamera();
+	updateRenderSettings();
 }
 
 Imath::V3f GLWidget::lightDirection() const
@@ -220,6 +225,9 @@ bool GLWidget::reloadDDAShader()
 	m_settingsDDA.m_uniformLightDir               = glGetUniformLocation(m_settingsDDA.m_shader, "wsLightDir");
 	m_settingsDDA.m_uniformSampleCount            = glGetUniformLocation(m_settingsDDA.m_shader, "sampleCount");
 	m_settingsDDA.m_uniformEnableDOF              = glGetUniformLocation(m_settingsDDA.m_shader, "enableDOF");
+	m_settingsDDA.m_uniformAmbientOcclusionEnable = glGetUniformLocation(m_settingsDDA.m_shader, "ambientOcclusionEnable");
+	m_settingsDDA.m_uniformAmbientOcclusionReach  = glGetUniformLocation(m_settingsDDA.m_shader, "ambientOcclusionReach");
+	m_settingsDDA.m_uniformAmbientOcclusionSpread = glGetUniformLocation(m_settingsDDA.m_shader, "ambientOcclusionSpread");
 
 	glViewport(0,0,width(), height());
 	glUniform4f(m_settingsDDA.m_uniformViewport, 0, 0, (float)width(), (float)height());
@@ -261,6 +269,8 @@ void GLWidget::reloadShaders()
 	{
 		std::cout << "Shader loading failed" << std::endl;
     }
+	updateCamera();
+	updateRenderSettings();
 }
 
 void GLWidget::updateCamera()
@@ -830,6 +840,17 @@ void GLWidget::resetRender()
     update();
 }
 
+void GLWidget::updateRenderSettings()
+{
+	glUseProgram(m_settingsDDA.m_shader);
+    glUniform1i(m_settingsDDA.m_uniformAmbientOcclusionEnable, m_renderSettings.m_ambientOcclusionEnabled ? 1 : 0);
+	glUniform1f(m_settingsDDA.m_uniformAmbientOcclusionReach, m_renderSettings.m_ambientOcclusionReach);
+	glUniform1f(m_settingsDDA.m_uniformAmbientOcclusionSpread, m_renderSettings.m_ambientOcclusionSpread);
+
+	glUseProgram(0);
+    resetRender();
+}
+
 void GLWidget::cameraFStopChanged(QString fstop)
 {
     m_camera.setFStop(fstop.toFloat());
@@ -848,17 +869,20 @@ void GLWidget::cameraLensModelChanged(bool dof)
     resetRender();
 }
 
-void GLWidget::onAmbientOcclusionEnabled(bool)
+void GLWidget::onAmbientOcclusionEnabled(bool value)
 {
-    resetRender();
+	m_renderSettings.m_ambientOcclusionEnabled = value;
+	updateRenderSettings();
 }
 
-void GLWidget::onAmbientOcclusionReachChanged(int)
+void GLWidget::onAmbientOcclusionReachChanged(int value)
 {
-    resetRender();
+	m_renderSettings.m_ambientOcclusionReach = (float)value / 100;
+	updateRenderSettings();
 }
 
-void GLWidget::onAmbientOcclusionSpreadChanged(int)
+void GLWidget::onAmbientOcclusionSpreadChanged(int value)
 {
-    resetRender();
+	m_renderSettings.m_ambientOcclusionSpread = (float)value / 90;
+	updateRenderSettings();
 }

@@ -41,3 +41,8 @@ void MainWindow::on_cameraFStop_currentTextChanged(const QString &arg1)
 {
 
 }
+
+void MainWindow::on_actionReload_Shaders_triggered()
+{
+    ui->glWidget->reloadShaders();
+}

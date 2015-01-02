@@ -23,12 +23,21 @@ uniform vec4        backgroundColor = vec4(0.2,   0.2,   0.2,   1);
 uniform int         sampleCount;
 uniform int         enableDOF;
 
+// 0 or 1, toggles ambient occlusion
+uniform int         ambientOcclusionEnable;
+// from 0.0 to 1.0, how long does the shadow ray traverse for the AO
+// calculations, as a fraction of the number of voxels
+uniform float		ambientOcclusionReach;
+// from 0.0 to 1.0, cone spread used to generate shadow rays. This value is
+// multiplied by PI when mapped to the polar theta angle.
+uniform float		ambientOcclusionSpread;
+
 out vec4 outColor;
 
 #include <coordinates.h>
 #include <dda.h>
-#include <ao.h>
 #include <sampling.h>
+#include <ao.h>
 #include <generateRay.h>
 #include <aabb.h>
 
@@ -71,7 +80,7 @@ void main()
 	float rayLength = aabbIsectDist;
 	vec3 rayPoint = wsRayOrigin + rayLength * wsRayDir;
 	vec3 vsHitPos, vsHitNormal;
-	if ( !raymarch(rayPoint, wsRayDir, vsHitPos, vsHitNormal) )
+	if ( !traverse(rayPoint, wsRayDir, vsHitPos, vsHitNormal) )
 	{
 		outColor = backgroundColor;
 		return;
@@ -79,8 +88,6 @@ void main()
 
 	vec4 voxelColor = texelFetch(voxelColorTexture,
 							     ivec3(vsHitPos.x, vsHitPos.y, vsHitPos.z), 0);
-
-	float ao = ambientOcclusion(vsHitPos, vsHitNormal); 
 
 	// vsHitPos marks the lower-left corner of the voxel. Calculate the
 	// precise ray/voxel intersection in world-space
@@ -90,18 +97,20 @@ void main()
 	float voxelHitDistance = rayAABBIntersection(wsRayOrigin, wsRayDir, wsVoxelMin, wsVoxelMax);
 	vec3 wsHitPos = wsRayOrigin + wsRayDir * voxelHitDistance; 
 
-	vec3 ambient = vec3(0.2);
+	vec3 ambient = vec3(0.1);
 	vec3 lighting = ambient;
-	float EPSILON = 0.01; // avoid self-intersection
-	vec3 primaryRayHitNormal = vsHitNormal;
-	if ( !raymarch(wsHitPos + EPSILON * -wsLightDir, -wsLightDir, vsHitPos, vsHitNormal) )
-	{
-		// we didn't hit anything between us and the light - thus this voxel receives 
-		// contribution from this light
-		lighting += vec3(shade(primaryRayHitNormal));
-	}
+	
+	// note since we don't yet allow for transformation on the voxels, the 
+	// voxel-space and world-space normals coincide.
+	vec3 wsHitNormal = vsHitNormal; 
 
-	lighting *= ao;
+	// TODO it will probably be better to turn all these (and future) toggles
+	// into #defines and generate shader variations given the desired set of
+	// rendering traits. There's currently no divergence on the if statements,
+	// but still.
+	float ao = ambientOcclusionEnable != 0 ? ambientOcclusion(wsHitPos, vsHitPos, wsHitNormal) : 1.0;
+	
+	lighting = vec3(ao);
 
 	outColor = voxelColor * vec4(lighting,1);
 }
