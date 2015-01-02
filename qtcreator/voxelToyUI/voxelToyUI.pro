@@ -13,22 +13,28 @@ TEMPLATE = app
 
 INCLUDEPATH += ../../src
 
-SOURCES += ../../src/mainwindow.cpp \
-    ../../src/main.cpp \
-    ../../src/glwidget.cpp \
-    ../../src/camera.cpp \
-    ../../src/shader.cpp \
-    ../../src/noise.cpp \
-        ../../src/content.cpp
+SOURCES += ../../src/ui/mainwindow.cpp \
+			../../src/main.cpp \
+			../../src/glwidget.cpp \
+			../../src/camera.cpp \
+			../../src/shader.cpp \
+			../../src/noise.cpp \
+			../../src/content.cpp \
+    ../../src/ui/camerapropertiesui.cpp \
+    ../../src/ui/renderpropertiesui.cpp
 
-HEADERS  += ../../src/mainwindow.h \
+HEADERS  += ../../src/ui/mainwindow.h \
     ../../src/glwidget.h \
     ../../src/camera.h \
     ../../src/shader.h \
     ../../src/noise.h \
-        ../../src/content.h
+        ../../src/content.h \
+    ../../src/ui/camerapropertiesui.h \
+    ../../src/ui/renderpropertiesui.h
 
-FORMS    += ../../src/mainwindow.ui
+FORMS    += ../../src/ui/mainwindow.ui \
+    ../../src/ui/camerapropertiesui.ui \
+    ../../src/ui/renderpropertiesui.ui
 
 LIBS += -lglut -lGLU -lGLEW
 
