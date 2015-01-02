@@ -20,6 +20,8 @@ private slots:
 
     void on_cameraFStop_currentTextChanged(const QString &arg1);
 
+    void on_actionReload_Shaders_triggered();
+
 private:
     Ui::MainWindow *ui;
 };

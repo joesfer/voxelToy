@@ -21,7 +21,7 @@ public:
      QSize minimumSizeHint() const;
      QSize sizeHint() const;
 
-private slots:
+public slots:
 	void reloadShaders();
     void cameraFStopChanged(QString fstop);
 	void cameraFocalLengthChanged(QString length);

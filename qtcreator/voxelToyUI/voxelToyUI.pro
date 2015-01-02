@@ -43,3 +43,6 @@ DEFINES += SHADER_DIR=$$PWD/../../src/shaders
 # to compile OpenEXR
 CONFIG +=link_pkgconfig
 PKGCONFIG += OpenEXR
+
+RESOURCES += \
+    ../../src/ui/resources.qrc
