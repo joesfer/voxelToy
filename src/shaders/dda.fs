@@ -71,14 +71,15 @@ void main()
 	float rayLength = aabbIsectDist;
 	vec3 rayPoint = wsRayOrigin + rayLength * wsRayDir;
 	vec3 vsHitPos, vsHitNormal;
-	if ( !raymarch(rayPoint, wsRayDir, vsHitPos, vsHitNormal) )
+	if ( !traverse(rayPoint, wsRayDir, vsHitPos, vsHitNormal) )
 	{
 		outColor = backgroundColor;
 		return;
 	}
 
-	vec4 voxelColor = texelFetch(voxelColorTexture,
-							     ivec3(vsHitPos.x, vsHitPos.y, vsHitPos.z), 0);
+	//vec4 voxelColor = texelFetch(voxelColorTexture,
+	//						     ivec3(vsHitPos.x, vsHitPos.y, vsHitPos.z), 0);
+	vec4 voxelColor = vec4(1); 
 
 	float ao = ambientOcclusion(vsHitPos, vsHitNormal); 
 
@@ -92,16 +93,32 @@ void main()
 
 	vec3 ambient = vec3(0.2);
 	vec3 lighting = ambient;
-	float EPSILON = 0.01; // avoid self-intersection
+	float EPSILON = 0.1; // avoid self-intersection
 	vec3 primaryRayHitNormal = vsHitNormal;
-	if ( !raymarch(wsHitPos + EPSILON * -wsLightDir, -wsLightDir, vsHitPos, vsHitNormal) )
+
+vec3 tangent = cross(primaryRayHitNormal, wsRayDir);
+vec3 bitangent = cross(tangent, primaryRayHitNormal);
+
+	vec4 uniformRandomSample = texelFetch(noiseTexture, ivec2(sampleCount, 0), 0);
+	float phi = uniformRandomSample.x * 2.0 * PI;
+	float theta = uniformRandomSample.y * PI * 0.4; // just one hemisphere
+	vec3 toLight = polarToVector(phi, theta); 
+	toLight = toLight.x * tangent +
+			  toLight.z * bitangent +
+			  toLight.y * primaryRayHitNormal;
+
+	vec3 res = vec3(voxelResolution);
+	int maxReach = int(ceil(length(res) * 0.1)); // in voxels
+	if ( !traverse(wsHitPos + EPSILON * primaryRayHitNormal, 
+				   toLight, 
+				   maxReach) )
 	{
 		// we didn't hit anything between us and the light - thus this voxel receives 
 		// contribution from this light
-		lighting += vec3(shade(primaryRayHitNormal));
+		lighting += vec3(1);//vec3(shade(primaryRayHitNormal));
 	}
 
-	lighting *= ao;
+	//lighting *= ao;
 
 	outColor = voxelColor * vec4(lighting,1);
 }

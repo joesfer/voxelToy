@@ -2,13 +2,12 @@
 // ws = world space
 // vs = voxel space (texture)
 
-bool raymarch(vec3 wsRayOrigin, vec3 wsRayDir,
+bool raymarch(in vec3 wsRayOrigin, in vec3 wsRayDir,
+			  in int maxSteps,
 			  out vec3 vsHitPos, out vec3 vsHitNormal)
 {
-	// We have a potential intersection. Traverse the grid using DDA, the code
-	// is inspired in iq's Voxel Edges demo in Shadertoy at https://www.shadertoy.com/view/4dfGzs
-	vec3 res = vec3(voxelResolution);
-	int MAX_STEPS = 2 * int(ceil(length(res)));
+	// Traverse the grid using DDA, the code is inspired in iq's Voxel Edges 
+	// demo in Shadertoy at https://www.shadertoy.com/view/4dfGzs
 
 	bool isect = false;
 	vec3 voxelExtent = vec3(1.0) / (volumeBoundsMax - volumeBoundsMin);
@@ -22,7 +21,7 @@ bool raymarch(vec3 wsRayOrigin, vec3 wsRayDir,
 	vec3 mask=vec3(0.0);
 
 	int steps = 0;
-	while(steps < MAX_STEPS) 
+	while(steps < maxSteps) 
 	{
 		bool hit = (texelFetch(occupancyTexture, 
 							   ivec3(voxelPos.x, voxelPos.y, voxelPos.z), 0).r > 0);
@@ -48,4 +47,21 @@ bool raymarch(vec3 wsRayOrigin, vec3 wsRayDir,
 
 	return isect;
 }
+
+bool traverse(in vec3 wsRayOrigin, in vec3 wsRayDir, in int maxSteps) 
+{
+	vec3 vsHitPos;
+	vec3 vsHitNormal;
+	return raymarch(wsRayOrigin, wsRayDir, maxSteps, vsHitPos, vsHitNormal);
+}
+
+bool traverse(in vec3 wsRayOrigin, in vec3 wsRayDir,
+			  out vec3 vsHitPos, out vec3 vsHitNormal)
+{
+	vec3 res = vec3(voxelResolution);
+	int MAX_STEPS = int(ceil(length(res)));
+
+	return raymarch(wsRayOrigin, wsRayDir, MAX_STEPS, vsHitPos, vsHitNormal);
+}
+
 
