@@ -113,7 +113,7 @@ float ambientOcclusion(in vec3 wsP,
 	float theta = uniformRandomSample.y * PI * ambientOcclusionSpread; // just one hemisphere
 	
 	// random direction in the local hemisphere (with pole pointing along +Y axis)
-	vec3 lsShadowRay = polarToVector(phi, theta); 
+	vec3 lsShadowRay = sphericalToCartesian(phi, theta); 
 	// orient hemisphere with normal
 	vec3 wsShadowRay = lsShadowRay.x * tangent +
 					   lsShadowRay.y * wsN +
