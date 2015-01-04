@@ -19,4 +19,54 @@ vec3 screenToWorldSpace(vec3 windowSpace)
 	return (cameraInverseModelView * eyePos).xyz;
 }
 
+struct Basis
+{
+	vec3 position;
+	vec3 tangent;
+	vec3 normal;
+	vec3 binormal;
+};
+
+vec3 localToWorld(in vec3 lsV, 
+				  in Basis basis)
+{
+	return lsV.x * basis.tangent + 
+		   lsV.y * basis.normal + 
+		   lsV.z * basis.binormal;
+}
+
+vec3 worldToLocal(in vec3 wsV,
+				  in Basis basis)
+{
+	return vec3(dot(wsV, basis.tangent),
+				dot(wsV, basis.normal),
+				dot(wsV, basis.binormal));
+}
+
+void voxelSpaceToWorldSpace(in vec3 vsP, in vec3 vsN,
+							in vec3 wsRayOrigin, in vec3 wsRayDir,
+							out Basis wsHitBasis)
+{
+	// vsP marks the lower-left corner of the voxel. Calculate the
+	// precise ray/voxel intersection in world-space
+	vec3 wsVoxelSize = (volumeBoundsMax - volumeBoundsMin) / voxelResolution;
+	vec3 wsVoxelMin = vsP * wsVoxelSize + volumeBoundsMin; 
+	vec3 wsVoxelMax = wsVoxelMin + wsVoxelSize; 
+	float voxelHitDistance = rayAABBIntersection(wsRayOrigin, wsRayDir, wsVoxelMin, wsVoxelMax);
+
+	wsHitBasis.position = wsRayOrigin + wsRayDir * voxelHitDistance; 
+	
+	// note since we don't yet allow for transformation on the voxels, the 
+	// voxel-space and world-space normals coincide.
+	wsHitBasis.normal = vsN; 
+	
+	// since we're dealing with axis-aligned voxels, a diagonal unit vector is a
+	// safe choice for the cross product. 1/sqrt(3) = 0.57735026919 
+	vec3 tangent = cross(wsHitBasis.normal, vec3(0.57735026919));
+	wsHitBasis.binormal = normalize(cross(tangent, wsHitBasis.normal));
+	wsHitBasis.tangent = normalize(cross(wsHitBasis.binormal, wsHitBasis.normal));
+}
+
+
+
 

@@ -16,14 +16,10 @@ public:
     ~RenderPropertiesUI();
 
 signals:
-   void ambientOcclusionEnabled(bool);
-   void ambientOcclusionReachChanged(int);
-   void ambientOcclusionSpreadChanged(int);
+   void pathtracerMaxPathLengthChanged(int);
 
 public slots:
-   void onAmbientOcclusionEnabled(bool);
-   void onAmbientOcclusionReachChanged(int);
-   void onAmbientOcclusionSpreadChanged(int);
+   void onPathtracerMaxPathLengthChanged(int);
 
 private:
     Ui::RenderPropertiesUI *ui;

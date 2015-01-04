@@ -15,37 +15,28 @@ uniform mat4        cameraProj;
 uniform mat4        cameraInverseProj;
 uniform mat4        cameraInverseModelView;
 uniform float       cameraFocalLength;
-
 uniform float       cameraLensRadius;
 uniform vec2        cameraFilmSize;
-uniform vec3        wsLightDir;
-uniform vec4        backgroundColor = vec4(0.2,   0.2,   0.2,   1);
+
+uniform vec4        backgroundColorSky = vec4(153.0 / 255, 187.0 / 255, 201.0 / 255, 1) * 2;
+uniform vec4        backgroundColorGround = vec4(77.0 / 255, 64.0 / 255, 50.0 / 255, 1);
+
 uniform int         sampleCount;
 uniform int         enableDOF;
-
-// 0 or 1, toggles ambient occlusion
-uniform int         ambientOcclusionEnable;
-// from 0.0 to 1.0, how long does the shadow ray traverse for the AO
-// calculations, as a fraction of the number of voxels
-uniform float		ambientOcclusionReach;
-// from 0.0 to 1.0, cone spread used to generate shadow rays. This value is
-// multiplied by PI when mapped to the polar theta angle.
-uniform float		ambientOcclusionSpread;
+uniform int			pathtracerMaxPathLength;
 
 out vec4 outColor;
 
+#include <aabb.h>
 #include <coordinates.h>
 #include <dda.h>
 #include <sampling.h>
-#include <ao.h>
 #include <generateRay.h>
-#include <aabb.h>
+#include <random.h>
+#include <bsdf.h>
+#include <lights.h>
 
-vec4 shade(vec3 n)
-{
-	// Basic dot lighting
-	return vec4(max(0, dot(n, -wsLightDir)));
-}
+float ISECT_EPSILON = 0.01;
 
 void generateRay(out vec3 wsRayOrigin, out vec3 wsRayDir)
 {
@@ -60,8 +51,53 @@ void generateRay(out vec3 wsRayOrigin, out vec3 wsRayDir)
 
 }
 
+vec3 directLighting(in vec3 albedo, 
+					in Basis wsHitBasis, 
+					in vec3 wsWo, 
+					inout ivec2 rngOffset)
+{
+	// for now we only consider the environment light
+	
+	vec4 wsToLight_pdf;
+	vec3 lightRadiance = sampleEnvironmentRadiance(wsHitBasis, rngOffset, wsToLight_pdf);
+	if ( wsToLight_pdf.w < 1e-5 )
+	{
+		// don't bother with the visibility test, and early out.
+		return vec3(0);
+	}
+
+	// trace shadow ray to determine whether the radiance reaches the sampled
+	// point.
+	vec3 vsShadowHitPos;
+	vec3 vsShadowHitNormal;
+	if( traverse(wsHitBasis.position + ISECT_EPSILON * wsToLight_pdf.xyz, 
+				 wsToLight_pdf.xyz, vsShadowHitPos, vsShadowHitNormal) )
+	{
+		// light is not visible. No light contribution.
+		return vec3(0);
+	}
+
+	// Apply MIS weight for the sampled direction. PBRT2 page 748/749.
+	//
+	// TODO: in this particular case (Lambertians + infinite area lights only) I
+	// don't think MIS is actually making any difference since both distributions
+	// are pretty much uniform.
+	
+	// transform sampled directions to local space, which we need to evaluate
+	// the BSDF
+	vec3 lsWo = worldToLocal(wsWo, wsHitBasis);
+	vec3 lsWi = worldToLocal(wsToLight_pdf.xyz, wsHitBasis);
+	vec4 bsdfF_pdf = evaluateBsdf(albedo, lsWo, lsWi);
+
+	float misWeight = powerHeuristic(wsToLight_pdf.w, bsdfF_pdf.w);
+
+	return bsdfF_pdf.xyz * lightRadiance * abs(dot(wsToLight_pdf.xyz, wsHitBasis.normal)) * misWeight / max(1e-5, wsToLight_pdf.w);
+}
+
 void main()
 {
+	ivec2 rngOffset = randomNumberGeneratorOffset(ivec4(gl_FragCoord), sampleCount);
+
 	vec3 wsRayOrigin;
 	vec3 wsRayDir;
 	generateRay(wsRayOrigin, wsRayDir);
@@ -73,46 +109,77 @@ void main()
 
 	if (aabbIsectDist < 0)
 	{
-		outColor = backgroundColor;
+		// we're not even hitting the volume's bounding box. Early out.
+		outColor = vec4(getBackgroundColor(wsRayDir),1);
 		return;
 	}
 
 	float rayLength = aabbIsectDist;
-	vec3 rayPoint = wsRayOrigin + rayLength * wsRayDir;
+	vec3 wsRayEntryPoint = wsRayOrigin + rayLength * wsRayDir;
 	vec3 vsHitPos, vsHitNormal;
-	if ( !traverse(rayPoint, wsRayDir, vsHitPos, vsHitNormal) )
+
+	// Cast primary ray
+	vec3 throughput = vec3(1.0);
+	if ( !traverse(wsRayEntryPoint, wsRayDir, vsHitPos, vsHitNormal) )
 	{
-		outColor = backgroundColor;
+		outColor = vec4(getBackgroundColor(wsRayDir),1);
 		return;
 	}
 
-	vec4 voxelColor = texelFetch(voxelColorTexture,
-							     ivec3(vsHitPos.x, vsHitPos.y, vsHitPos.z), 0);
+	vec3 radiance = vec3(0.0);
 
-	// vsHitPos marks the lower-left corner of the voxel. Calculate the
-	// precise ray/voxel intersection in world-space
-	vec3 wsVoxelSize = (volumeBoundsMax - volumeBoundsMin) / voxelResolution;
-	vec3 wsVoxelMin = vsHitPos * wsVoxelSize + volumeBoundsMin; 
-	vec3 wsVoxelMax = wsVoxelMin + wsVoxelSize; 
-	float voxelHitDistance = rayAABBIntersection(wsRayOrigin, wsRayDir, wsVoxelMin, wsVoxelMax);
-	vec3 wsHitPos = wsRayOrigin + wsRayDir * voxelHitDistance; 
+	int pathLength = 1; // we've traced the primary ray already
 
-	vec3 ambient = vec3(0.1);
-	vec3 lighting = ambient;
-	
-	// note since we don't yet allow for transformation on the voxels, the 
-	// voxel-space and world-space normals coincide.
-	vec3 wsHitNormal = vsHitNormal; 
+	// PBRT2 section 16.3
+	while(pathLength <= pathtracerMaxPathLength)
+	{
+		// convert hit position from voxel space to world space. We also use the
+		// calculations to generate a world-space basis 
+		// <wsHitTangent, wsHitNormal, wsHitBinormal> which we'll use for the 
+		// local<->world space conversions.
+		Basis wsHitBasis;
+		voxelSpaceToWorldSpace(vsHitPos, vsHitNormal,
+							   wsRayOrigin, wsRayDir,
+							   wsHitBasis);
+		
+		vec3 albedo = texelFetch(voxelColorTexture,
+							     ivec3(vsHitPos.x, vsHitPos.y, vsHitPos.z), 0).xyz;
 
-	// TODO it will probably be better to turn all these (and future) toggles
-	// into #defines and generate shader variations given the desired set of
-	// rendering traits. There's currently no divergence on the if statements,
-	// but still.
-	float ao = ambientOcclusionEnable != 0 ? ambientOcclusion(wsHitPos, vsHitPos, wsHitNormal) : 1.0;
-	
-	lighting = vec3(ao);
+		// the salient direction for the incoming light, bounced back though the 
+		// current ray.
+		vec3 wsWo = -wsRayDir; 
+		vec3 lsWo = worldToLocal(wsWo, wsHitBasis);
 
-	outColor = voxelColor * vec4(lighting,1);
+		// TODO emission
+
+		// Sample illumination from lights to find path contribution
+		radiance += throughput * directLighting(albedo, wsHitBasis, wsWo, rngOffset);
+		
+		// Sample the BSDF to get the new path direction
+		vec4 bsdfF_pdf;
+		vec3 lsWi = sampleBSDF(albedo, lsWo, rngOffset, bsdfF_pdf); 
+		vec3 wsWi = localToWorld(lsWi, wsHitBasis);
+		
+		// update throughput
+		throughput *= (bsdfF_pdf.xyz * abs(dot(wsWi, wsHitBasis.normal)) / bsdfF_pdf.w);
+
+		wsRayOrigin = wsHitBasis.position;
+		wsRayDir = wsWi;
+
+		// find new vertex of path 
+		if ( !traverse(wsRayOrigin + wsRayDir * ISECT_EPSILON, wsRayDir, vsHitPos, vsHitNormal) )
+		{
+			// the ray missed the scene. Handle the environment light here.
+			vec4 environtmentRadiance_Pdf = evaluateEnvironmentRadiance(wsRayDir);
+			float misWeight = powerHeuristic(bsdfF_pdf.w, environtmentRadiance_Pdf.w);
+			radiance += throughput * environtmentRadiance_Pdf.xyz  * misWeight;
+			break;
+		}
+
+		pathLength++;
+	}
+
+	outColor = vec4(radiance,1);
 }
 
 

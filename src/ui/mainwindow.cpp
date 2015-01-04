@@ -19,12 +19,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // Render properties widget
 
-    connect(ui->renderProperties, SIGNAL(ambientOcclusionEnabled(bool)),
-            ui->glWidget, SLOT(onAmbientOcclusionEnabled(bool)));
-    connect(ui->renderProperties, SIGNAL(ambientOcclusionReachChanged(int)),
-            ui->glWidget, SLOT(onAmbientOcclusionReachChanged(int)));
-    connect(ui->renderProperties, SIGNAL(ambientOcclusionSpreadChanged(int)),
-            ui->glWidget, SLOT(onAmbientOcclusionSpreadChanged(int)));
+    connect(ui->renderProperties, SIGNAL(pathtracerMaxPathLengthChanged(int)),
+            ui->glWidget, SLOT(onPathtracerMaxPathLengthChanged(int)));
 }
 
 MainWindow::~MainWindow()

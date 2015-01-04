@@ -26,9 +26,7 @@ public slots:
     void cameraFStopChanged(QString fstop);
 	void cameraFocalLengthChanged(QString length);
 	void cameraLensModelChanged(bool dof);
-    void onAmbientOcclusionEnabled(bool);
-    void onAmbientOcclusionReachChanged(int);
-    void onAmbientOcclusionSpreadChanged(int);
+	void onPathtracerMaxPathLengthChanged(int);
 
 protected:
 	void initializeGL();
@@ -99,13 +97,9 @@ private:
 	
 	struct RenderSettings
 	{
-		bool m_ambientOcclusionEnabled;
-		// from 0.0 to 1.0, how long does the shadow ray traverse for the AO
-		// calculations, as a fraction of the number of voxels
-		float m_ambientOcclusionReach;
-		// from 0.0 to 1.0, cone spread used to generate shadow rays. This value
-		// is multiplied by PI when mapped to the polar theta angle.
-		float m_ambientOcclusionSpread;
+		// maximum path length allowed in the path tracer (1 = direct
+		// illumination only).
+		int m_pathtracerMaxPathLength;
 	};
 
 	RenderSettings m_renderSettings;

@@ -47,9 +47,7 @@ struct DDAShaderSettings
 	GLuint m_uniformLightDir;
 	GLuint m_uniformSampleCount;
 	GLuint m_uniformEnableDOF;
-	GLuint m_uniformAmbientOcclusionEnable;
-	GLuint m_uniformAmbientOcclusionReach;
-	GLuint m_uniformAmbientOcclusionSpread;
+	GLuint m_uniformPathtracerMaxPathLength;
 };
 			
 struct AccumulationShaderSettings

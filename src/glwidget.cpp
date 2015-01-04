@@ -10,6 +10,7 @@
 #include <QtOpenGLExtensions/qopenglextensions.h>
 
 #include <math.h>
+#include <stack>
 
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)
@@ -26,9 +27,7 @@ GLWidget::GLWidget(QWidget *parent)
 	m_numberSamples = 0;
 	m_screenFocalPoint = Imath::V2f(0.5f, 0.5f);
 
-	m_renderSettings.m_ambientOcclusionEnabled = true;
-	m_renderSettings.m_ambientOcclusionReach = 0.5f;
-	m_renderSettings.m_ambientOcclusionSpread = 0.33f;
+	m_renderSettings.m_pathtracerMaxPathLength = 1;
 }
 
 GLWidget::~GLWidget()
@@ -206,28 +205,26 @@ bool GLWidget::reloadDDAShader()
     
 	glUseProgram(m_settingsDDA.m_shader);
 
-	m_settingsDDA.m_uniformVoxelOccupancyTexture  = glGetUniformLocation(m_settingsDDA.m_shader, "occupancyTexture");
-	m_settingsDDA.m_uniformVoxelColorTexture      = glGetUniformLocation(m_settingsDDA.m_shader, "voxelColorTexture");
-	m_settingsDDA.m_uniformNoiseTexture           = glGetUniformLocation(m_settingsDDA.m_shader, "noiseTexture");
-	m_settingsDDA.m_uniformFocalDistanceTexture   = glGetUniformLocation(m_settingsDDA.m_shader, "focalDistanceTexture");
-	m_settingsDDA.m_uniformVoxelDataResolution    = glGetUniformLocation(m_settingsDDA.m_shader, "voxelResolution");
-	m_settingsDDA.m_uniformVolumeBoundsMin        = glGetUniformLocation(m_settingsDDA.m_shader, "volumeBoundsMin");
-	m_settingsDDA.m_uniformVolumeBoundsMax        = glGetUniformLocation(m_settingsDDA.m_shader, "volumeBoundsMax");
-	m_settingsDDA.m_uniformViewport               = glGetUniformLocation(m_settingsDDA.m_shader, "viewport");
-	m_settingsDDA.m_uniformCameraNear             = glGetUniformLocation(m_settingsDDA.m_shader, "cameraNear");
-	m_settingsDDA.m_uniformCameraFar              = glGetUniformLocation(m_settingsDDA.m_shader, "cameraFar");
-	m_settingsDDA.m_uniformCameraProj             = glGetUniformLocation(m_settingsDDA.m_shader, "cameraProj");
-	m_settingsDDA.m_uniformCameraInverseProj      = glGetUniformLocation(m_settingsDDA.m_shader, "cameraInverseProj");
-	m_settingsDDA.m_uniformCameraInverseModelView = glGetUniformLocation(m_settingsDDA.m_shader, "cameraInverseModelView");
-	m_settingsDDA.m_uniformCameraFocalLength      = glGetUniformLocation(m_settingsDDA.m_shader, "cameraFocalLength");             
-	m_settingsDDA.m_uniformCameraLensRadius       = glGetUniformLocation(m_settingsDDA.m_shader, "cameraLensRadius");
-	m_settingsDDA.m_uniformCameraFilmSize         = glGetUniformLocation(m_settingsDDA.m_shader, "cameraFilmSize");
-	m_settingsDDA.m_uniformLightDir               = glGetUniformLocation(m_settingsDDA.m_shader, "wsLightDir");
-	m_settingsDDA.m_uniformSampleCount            = glGetUniformLocation(m_settingsDDA.m_shader, "sampleCount");
-	m_settingsDDA.m_uniformEnableDOF              = glGetUniformLocation(m_settingsDDA.m_shader, "enableDOF");
-	m_settingsDDA.m_uniformAmbientOcclusionEnable = glGetUniformLocation(m_settingsDDA.m_shader, "ambientOcclusionEnable");
-	m_settingsDDA.m_uniformAmbientOcclusionReach  = glGetUniformLocation(m_settingsDDA.m_shader, "ambientOcclusionReach");
-	m_settingsDDA.m_uniformAmbientOcclusionSpread = glGetUniformLocation(m_settingsDDA.m_shader, "ambientOcclusionSpread");
+	m_settingsDDA.m_uniformVoxelOccupancyTexture   = glGetUniformLocation(m_settingsDDA.m_shader, "occupancyTexture");
+	m_settingsDDA.m_uniformVoxelColorTexture       = glGetUniformLocation(m_settingsDDA.m_shader, "voxelColorTexture");
+	m_settingsDDA.m_uniformNoiseTexture            = glGetUniformLocation(m_settingsDDA.m_shader, "noiseTexture");
+	m_settingsDDA.m_uniformFocalDistanceTexture    = glGetUniformLocation(m_settingsDDA.m_shader, "focalDistanceTexture");
+	m_settingsDDA.m_uniformVoxelDataResolution     = glGetUniformLocation(m_settingsDDA.m_shader, "voxelResolution");
+	m_settingsDDA.m_uniformVolumeBoundsMin         = glGetUniformLocation(m_settingsDDA.m_shader, "volumeBoundsMin");
+	m_settingsDDA.m_uniformVolumeBoundsMax         = glGetUniformLocation(m_settingsDDA.m_shader, "volumeBoundsMax");
+	m_settingsDDA.m_uniformViewport                = glGetUniformLocation(m_settingsDDA.m_shader, "viewport");
+	m_settingsDDA.m_uniformCameraNear              = glGetUniformLocation(m_settingsDDA.m_shader, "cameraNear");
+	m_settingsDDA.m_uniformCameraFar               = glGetUniformLocation(m_settingsDDA.m_shader, "cameraFar");
+	m_settingsDDA.m_uniformCameraProj              = glGetUniformLocation(m_settingsDDA.m_shader, "cameraProj");
+	m_settingsDDA.m_uniformCameraInverseProj       = glGetUniformLocation(m_settingsDDA.m_shader, "cameraInverseProj");
+	m_settingsDDA.m_uniformCameraInverseModelView  = glGetUniformLocation(m_settingsDDA.m_shader, "cameraInverseModelView");
+	m_settingsDDA.m_uniformCameraFocalLength       = glGetUniformLocation(m_settingsDDA.m_shader, "cameraFocalLength");
+	m_settingsDDA.m_uniformCameraLensRadius        = glGetUniformLocation(m_settingsDDA.m_shader, "cameraLensRadius");
+	m_settingsDDA.m_uniformCameraFilmSize          = glGetUniformLocation(m_settingsDDA.m_shader, "cameraFilmSize");
+	m_settingsDDA.m_uniformLightDir                = glGetUniformLocation(m_settingsDDA.m_shader, "wsLightDir");
+	m_settingsDDA.m_uniformSampleCount             = glGetUniformLocation(m_settingsDDA.m_shader, "sampleCount");
+	m_settingsDDA.m_uniformEnableDOF               = glGetUniformLocation(m_settingsDDA.m_shader, "enableDOF");
+	m_settingsDDA.m_uniformPathtracerMaxPathLength = glGetUniformLocation(m_settingsDDA.m_shader, "pathtracerMaxPathLength");
 
 	glViewport(0,0,width(), height());
 	glUniform4f(m_settingsDDA.m_uniformViewport, 0, 0, (float)width(), (float)height());
@@ -642,8 +639,9 @@ void GLWidget::createFramebuffer()
 	
 	// create noise texture
 	{
-		float* noise = (float*)malloc(MAX_FRAME_SAMPLES * 4 * sizeof(float));
-        for( int i = 0; i < 4 * (int)MAX_FRAME_SAMPLES; ++i ) noise[i] = (float)rand()/RAND_MAX;
+		const unsigned int noiseTextureSize = 1024;
+		float* noise = (float*)malloc(noiseTextureSize * noiseTextureSize * 4 * sizeof(float));
+        for( int i = 0; i < 4 * noiseTextureSize * noiseTextureSize; ++i ) noise[i] = (float)rand()/RAND_MAX;
 		glActiveTexture(GL_TEXTURE0 + TEXTURE_UNIT_NOISE);
 		glBindTexture(GL_TEXTURE_2D, m_noiseTexture);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -653,8 +651,8 @@ void GLWidget::createFramebuffer()
 		glTexImage2D(GL_TEXTURE_2D,
 					 0,
 					 GL_RGBA,
-					 MAX_FRAME_SAMPLES, 
-					 1,
+					 1024, 
+					 1024,
 					 0,
 					 GL_RGBA,
 					 GL_FLOAT,
@@ -754,6 +752,14 @@ void GLWidget::createFramebuffer()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+struct V4f
+{
+	float x,y,z,w;
+	V4f() {}
+	V4f(float _x, float _y, float _z, float _w) : x(_x), y(_y), z(_z), w(_w) {}
+};
+
+
 void GLWidget::createVoxelDataTexture()
 {
     using namespace Imath;
@@ -771,19 +777,43 @@ void GLWidget::createVoxelDataTexture()
 
     memset(occupancyTexels, 0, numVoxels * sizeof(GLubyte));
 
-    VoxelTools::addPlane( V3f(0.5f,1,0.5f).normalize(), V3f(0,0,0),
+    VoxelTools::addPlane( V3f(0.0f,1,0.0f), V3f(0,m_volumeBounds.min.y + m_volumeBounds.size().y * 0.25f ,0),
                           m_volumeResolution, m_volumeBounds,
                           occupancyTexels, colorTexels );
 
+	std::stack<V4f> activeSpheres;
+ 	float sphereRadius = 0.2f * m_volumeBounds.size()[m_volumeBounds.majorAxis()];
+    V3f sphereCenter = m_volumeBounds.min + 
+					   V3f(0,1,0) * sphereRadius +
+					   V3f(0.5f,0,0) * m_volumeBounds.size().x +
+					   V3f(0,0,0.5f) * m_volumeBounds.size().z;
+	activeSpheres.push(V4f(sphereCenter.x, sphereCenter.y, sphereCenter.z, sphereRadius));
 
-	for( int i = 0; i < 30; ++i)
+	while(!activeSpheres.empty())	
 	{
-		const V3f sphereCenter = m_volumeBounds.min + (m_volumeBounds.max - m_volumeBounds.min) * V3f((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX);
-        const float sphereRadius = remap((float)rand() / RAND_MAX, 0.01f, 0.1f) * m_volumeBounds.size()[m_volumeBounds.majorAxis()];
+		V4f sphere = activeSpheres.top();
+		activeSpheres.pop();
+		sphereCenter = V3f(sphere.x, sphere.y, sphere.z);
+        sphereRadius = sphere.w; 
 
 		VoxelTools::addVoxelSphere( sphereCenter, sphereRadius, 
 									m_volumeResolution, m_volumeBounds,
                         			occupancyTexels, colorTexels );
+
+        float childSphereRadius = sphereRadius * 0.5f;
+        int numChildSpheres = 0.3f * childSphereRadius / m_volumeBounds.size().length() * m_volumeResolution.length();
+		for( int j = 0; j < numChildSpheres; ++j )
+		{
+			float phi = 2.0f * M_PI * rand()/RAND_MAX;
+			float theta = M_PI * 0.5 * rand()/RAND_MAX;
+			float sinTheta = sin(theta);
+			V3f v(sinTheta * cos(phi), cos(theta), sinTheta * sin(phi));
+			V4f childSphere( sphereCenter.x + (childSphereRadius + sphereRadius) * v.x,
+							 sphereCenter.y + (childSphereRadius + sphereRadius) * v.y,
+							 sphereCenter.z + (childSphereRadius + sphereRadius) * v.z,
+							 childSphereRadius );
+			activeSpheres.push(childSphere);
+		}
 	}
 
 
@@ -843,9 +873,7 @@ void GLWidget::resetRender()
 void GLWidget::updateRenderSettings()
 {
 	glUseProgram(m_settingsDDA.m_shader);
-    glUniform1i(m_settingsDDA.m_uniformAmbientOcclusionEnable, m_renderSettings.m_ambientOcclusionEnabled ? 1 : 0);
-	glUniform1f(m_settingsDDA.m_uniformAmbientOcclusionReach, m_renderSettings.m_ambientOcclusionReach);
-	glUniform1f(m_settingsDDA.m_uniformAmbientOcclusionSpread, m_renderSettings.m_ambientOcclusionSpread);
+	glUniform1i(m_settingsDDA.m_uniformPathtracerMaxPathLength, m_renderSettings.m_pathtracerMaxPathLength);
 
 	glUseProgram(0);
     resetRender();
@@ -869,20 +897,9 @@ void GLWidget::cameraLensModelChanged(bool dof)
     resetRender();
 }
 
-void GLWidget::onAmbientOcclusionEnabled(bool value)
+void GLWidget::onPathtracerMaxPathLengthChanged(int value)
 {
-	m_renderSettings.m_ambientOcclusionEnabled = value;
+	m_renderSettings.m_pathtracerMaxPathLength = value;
 	updateRenderSettings();
 }
 
-void GLWidget::onAmbientOcclusionReachChanged(int value)
-{
-	m_renderSettings.m_ambientOcclusionReach = (float)value / 100;
-	updateRenderSettings();
-}
-
-void GLWidget::onAmbientOcclusionSpreadChanged(int value)
-{
-	m_renderSettings.m_ambientOcclusionSpread = (float)value / 90;
-	updateRenderSettings();
-}
