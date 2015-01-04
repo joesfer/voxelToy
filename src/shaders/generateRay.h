@@ -55,7 +55,7 @@ void generateRay_ThinLens(in vec3 fragmentPos, out vec3 wsRayOrigin, out vec3 ws
 	float cameraFocalDistance = texelFetch(focalDistanceTexture, ivec2(0,0), 0).r;
 
 	vec4 uniformRandomSample = texelFetch(noiseTexture, ivec2(sampleCount, 0), 0);
-	vec2 unitDiskSample = sampleDisk(uniformRandomSample.xy);
+	vec2 unitDiskSample = uniformlySampleDisk(uniformRandomSample.xy);
 	vec3 esLensSamplePoint = vec3(unitDiskSample * cameraLensRadius, 0);
 
 	// calculate the sample on the image plane (which corresponds to the

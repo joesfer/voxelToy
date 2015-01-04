@@ -12,17 +12,8 @@ RenderPropertiesUI::~RenderPropertiesUI()
 {
     delete ui;
 }
-void RenderPropertiesUI::onAmbientOcclusionEnabled(bool value)
+void RenderPropertiesUI::onPathtracerMaxPathLengthChanged(int value)
 {
-    emit ambientOcclusionEnabled(value);
+    emit pathtracerMaxPathLengthChanged(value);
 }
 
-void RenderPropertiesUI::onAmbientOcclusionReachChanged(int value)
-{
-    emit ambientOcclusionReachChanged(value);
-}
-
-void RenderPropertiesUI::onAmbientOcclusionSpreadChanged(int value)
-{
-   emit ambientOcclusionSpreadChanged(value);
-}

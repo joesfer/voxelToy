@@ -18,11 +18,11 @@ uniform vec2        sampledFragment;
 
 out float wsDistance;
 
+#include <aabb.h>
 #include <coordinates.h>
 #include <dda.h>
 #include <sampling.h>
 #include <generateRay.h>
-#include <aabb.h>
 
 // This fragment shader should run for a single fragment, and calculates the
 // distance to the closest intersection, in world-space. The distance is then

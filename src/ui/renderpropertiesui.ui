@@ -15,60 +15,25 @@
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <item>
-    <widget class="QGroupBox" name="ambientOcclusionGroup">
+    <widget class="QGroupBox" name="groupBox">
      <property name="title">
-      <string>Ambient Occlusion</string>
-     </property>
-     <property name="checkable">
-      <bool>true</bool>
+      <string>Path Tracing</string>
      </property>
      <layout class="QFormLayout" name="formLayout">
       <item row="0" column="0">
-       <widget class="QLabel" name="ambientOcclusionReachLabel">
+       <widget class="QLabel" name="label">
         <property name="text">
-         <string>reach</string>
+         <string>Maximum path length</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QSlider" name="ambientOcclusionReachSlider">
-        <property name="maximum">
-         <number>100</number>
-        </property>
-        <property name="value">
-         <number>50</number>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="invertedAppearance">
-         <bool>false</bool>
-        </property>
-        <property name="tickPosition">
-         <enum>QSlider::NoTicks</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="ambientOcclusionConeLabel">
-        <property name="text">
-         <string>spread</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QSlider" name="ambientOcclusionSpreadSlider">
-        <property name="maximum">
-         <number>90</number>
-        </property>
-        <property name="singleStep">
+       <widget class="QSpinBox" name="pathtracerMaxPathLengthSpinBox">
+        <property name="minimum">
          <number>1</number>
         </property>
-        <property name="value">
-         <number>30</number>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+        <property name="maximum">
+         <number>4</number>
         </property>
        </widget>
       </item>
@@ -80,60 +45,24 @@
  <resources/>
  <connections>
   <connection>
-   <sender>ambientOcclusionGroup</sender>
-   <signal>toggled(bool)</signal>
+   <sender>pathtracerMaxPathLengthSpinBox</sender>
+   <signal>valueChanged(int)</signal>
    <receiver>RenderPropertiesUI</receiver>
-   <slot>onAmbientOcclusionEnabled(bool)</slot>
+   <slot>onPathtracerMaxPathLengthChanged(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>124</x>
-     <y>15</y>
+     <x>226</x>
+     <y>43</y>
     </hint>
     <hint type="destinationlabel">
-     <x>210</x>
+     <x>240</x>
      <y>4</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>ambientOcclusionReachSlider</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>RenderPropertiesUI</receiver>
-   <slot>onAmbientOcclusionReachChanged(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>269</x>
-     <y>53</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>60</x>
-     <y>2</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>ambientOcclusionSpreadSlider</sender>
-   <signal>valueChanged(int)</signal>
-   <receiver>RenderPropertiesUI</receiver>
-   <slot>onAmbientOcclusionSpreadChanged(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>210</x>
-     <y>74</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>95</x>
-     <y>6</y>
     </hint>
    </hints>
   </connection>
  </connections>
  <slots>
-  <signal>ambientOcclusionEnabled(bool)</signal>
-  <signal>ambientOcclusionReachChanged(int)</signal>
-  <signal>ambientOcclusionSpreadChanged(int)</signal>
-  <slot>onAmbientOcclusionEnabled(bool)</slot>
-  <slot>onAmbientOcclusionReachChanged(int)</slot>
-  <slot>onAmbientOcclusionSpreadChanged(int)</slot>
+  <signal>pathtracerMaxPathLengthChanged(int)</signal>
+  <slot>onPathtracerMaxPathLengthChanged(int)</slot>
  </slots>
 </ui>
