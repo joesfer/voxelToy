@@ -23,7 +23,7 @@ public:
 
 };
 
-struct DDAShaderSettings
+struct PathtracerShaderSettings
 {
 	GLuint m_shader;
 

@@ -41,7 +41,7 @@ protected:
 	bool reloadFocalDistanceShader();
 	bool reloadTexturedShader();
 	bool reloadAverageShader();
-	bool reloadDDAShader();
+	bool reloadPathtracerShader();
 	void drawFullscreenQuad();
 	void createFramebuffer();
 
@@ -79,7 +79,7 @@ private:
     GLuint m_occupancyTexture;
     GLuint m_voxelColorTexture;
 
-	DDAShaderSettings            m_settingsDDA;
+	PathtracerShaderSettings     m_settingsPathtracer;
 	AccumulationShaderSettings   m_settingsAverage;
 	TexturedShaderSettings       m_settingsTextured;
 	FocalDistanceShaderSettings  m_settingsFocalDistance;
