@@ -2,6 +2,7 @@
 
 #include "camera.h"
 #include "shader.h"
+#include "mesh.h"
 
 #include <GL/gl.h>
 #include <QGLWidget>
@@ -23,6 +24,8 @@ public:
 
 public slots:
 	void reloadShaders();
+    void loadMesh(QString file);
+
     void cameraFStopChanged(QString fstop);
 	void cameraFocalLengthChanged(QString length);
 	void cameraLensModelChanged(bool dof);
@@ -105,4 +108,6 @@ private:
 	RenderSettings m_renderSettings;
 
     static const unsigned int MAX_FRAME_SAMPLES = 256;
+
+    Mesh* m_mesh;
 };

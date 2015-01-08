@@ -21,7 +21,10 @@ SOURCES += ../../src/ui/mainwindow.cpp \
 			../../src/noise.cpp \
 			../../src/content.cpp \
     ../../src/ui/camerapropertiesui.cpp \
-    ../../src/ui/renderpropertiesui.cpp
+    ../../src/ui/renderpropertiesui.cpp \
+    ../../src/mesh.cpp \
+    ../../src/meshLoader.cpp \
+    ../../src/thirdParty/tinyobjloader/tiny_obj_loader.cc
 
 HEADERS  += ../../src/ui/mainwindow.h \
     ../../src/glwidget.h \
@@ -30,7 +33,10 @@ HEADERS  += ../../src/ui/mainwindow.h \
     ../../src/noise.h \
         ../../src/content.h \
     ../../src/ui/camerapropertiesui.h \
-    ../../src/ui/renderpropertiesui.h
+    ../../src/ui/renderpropertiesui.h \
+    ../../src/mesh.h \
+    ../../src/meshLoader.h \
+    ../../src/thirdParty/tinyobjloader/tiny_obj_loader.h
 
 FORMS    += ../../src/ui/mainwindow.ui \
     ../../src/ui/camerapropertiesui.ui \

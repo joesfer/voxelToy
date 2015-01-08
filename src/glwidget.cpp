@@ -4,6 +4,7 @@
 #include "glwidget.h"
 #include "shader.h"
 #include "content.h"
+#include "meshLoader.h"
 
 #include <QtGui>
 #include <QtOpenGL>
@@ -28,6 +29,7 @@ GLWidget::GLWidget(QWidget *parent)
 	m_screenFocalPoint = Imath::V2f(0.5f, 0.5f);
 
 	m_renderSettings.m_pathtracerMaxPathLength = 1;
+	m_mesh = NULL;
 }
 
 GLWidget::~GLWidget()
@@ -457,6 +459,28 @@ void GLWidget::drawFullscreenQuad()
 void GLWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	if ( m_mesh != NULL )
+	{
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		gluLookAt(m_camera.eye().x, m_camera.eye().y, m_camera.eye().z,
+				  m_camera.target().x, m_camera.target().y, m_camera.target().z,
+				  m_camera.upUnitVector().x, m_camera.upUnitVector().y, m_camera.upUnitVector().z);
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		gluPerspective(m_camera.fovY(), 
+					   (float)width()/height(), 
+					   m_camera.nearDistance(), 
+					   m_camera.farDistance());
+		glUseProgram(0);
+		glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+		m_mesh->draw();
+		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+		return;
+	}
+
+
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glMatrixMode(GL_PROJECTION);
@@ -474,16 +498,17 @@ void GLWidget::paintGL()
 
 		drawFullscreenQuad();
 	}
-const float viewportAspectRatio = (float)width() / height();
-if (viewportAspectRatio >= 1.0f) 
-{
-	m_camera.setFilmSize(Camera::FILM_SIZE_35MM, Camera::FILM_SIZE_35MM / viewportAspectRatio);
-}
-else 
-{
-	m_camera.setFilmSize(Camera::FILM_SIZE_35MM * viewportAspectRatio, Camera::FILM_SIZE_35MM);
-}
-updateCamera();
+
+	const float viewportAspectRatio = (float)width() / height();
+	if (viewportAspectRatio >= 1.0f) 
+	{
+		m_camera.setFilmSize(Camera::FILM_SIZE_35MM, Camera::FILM_SIZE_35MM / viewportAspectRatio);
+	}
+	else 
+	{
+		m_camera.setFilmSize(Camera::FILM_SIZE_35MM * viewportAspectRatio, Camera::FILM_SIZE_35MM);
+	}
+	updateCamera();
 	
     // render frame into m_sampleTexture
 
@@ -509,19 +534,19 @@ updateCamera();
                            m_averageTexture[m_activeSampleTexture ^ 1], // where we'll write to
                            0);
 
-    glUseProgram(m_settingsAverage.m_shader);
-    glUniform1i(m_settingsAverage.m_uniformSampleTexture, TEXTURE_UNIT_SAMPLE);
-    glUniform1i(m_settingsAverage.m_uniformAverageTexture, TEXTURE_UNIT_AVERAGE0 + m_activeSampleTexture);
-    glUniform1i(m_settingsAverage.m_uniformSampleCount, m_numberSamples);
-    drawFullscreenQuad();
+	glUseProgram(m_settingsAverage.m_shader);
+	glUniform1i(m_settingsAverage.m_uniformSampleTexture, TEXTURE_UNIT_SAMPLE);
+	glUniform1i(m_settingsAverage.m_uniformAverageTexture, TEXTURE_UNIT_AVERAGE0 + m_activeSampleTexture);
+	glUniform1i(m_settingsAverage.m_uniformSampleCount, m_numberSamples);
+	drawFullscreenQuad();
 	
     // finally draw to screen
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glUseProgram(m_settingsTextured.m_shader);
-    glUniform1i(m_settingsTextured.m_uniformTexture, TEXTURE_UNIT_AVERAGE0 + (m_activeSampleTexture^1));
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glUseProgram(m_settingsTextured.m_shader);
+	glUniform1i(m_settingsTextured.m_uniformTexture, TEXTURE_UNIT_AVERAGE0 + (m_activeSampleTexture^1));
 	glViewport(0,0,m_textureDimensions[0], m_textureDimensions[1]);
-    drawFullscreenQuad();
+	drawFullscreenQuad();
 	
 	// run continuously?
     if ( m_numberSamples++ < (int)MAX_FRAME_SAMPLES)
@@ -782,7 +807,7 @@ void GLWidget::createVoxelDataTexture()
                           occupancyTexels, colorTexels );
 
 	std::stack<V4f> activeSpheres;
- 	float sphereRadius = 0.2f * m_volumeBounds.size()[m_volumeBounds.majorAxis()];
+	float sphereRadius = 0.2f * m_volumeBounds.size()[m_volumeBounds.majorAxis()];
     V3f sphereCenter = m_volumeBounds.min + 
 					   V3f(0,1,0) * sphereRadius +
 					   V3f(0.5f,0,0) * m_volumeBounds.size().x +
@@ -798,7 +823,7 @@ void GLWidget::createVoxelDataTexture()
 
 		VoxelTools::addVoxelSphere( sphereCenter, sphereRadius, 
 									m_volumeResolution, m_volumeBounds,
-                        			occupancyTexels, colorTexels );
+									occupancyTexels, colorTexels );
 
         float childSphereRadius = sphereRadius * 0.5f;
         int numChildSpheres = 0.3f * childSphereRadius / m_volumeBounds.size().length() * m_volumeResolution.length();
@@ -830,13 +855,13 @@ void GLWidget::createVoxelDataTexture()
     glPixelStorei(GL_UNPACK_ALIGNMENT,1);
     glTexImage3D(GL_TEXTURE_3D,
 				 0,
-               	 GL_R8,
+				 GL_R8,
                  m_volumeResolution.x,
                  m_volumeResolution.y,
                  m_volumeResolution.z,
-               	 0,
-               	 GL_RED,
-               	 GL_UNSIGNED_BYTE,
+				 0,
+				 GL_RED,
+				 GL_UNSIGNED_BYTE,
                  occupancyTexels);
 
 	glActiveTexture( GL_TEXTURE0 + TEXTURE_UNIT_COLOR);
@@ -850,13 +875,13 @@ void GLWidget::createVoxelDataTexture()
     glPixelStorei(GL_UNPACK_ALIGNMENT,1);
     glTexImage3D(GL_TEXTURE_3D,
 				 0,
-               	 GL_RGB8,
+				 GL_RGB8,
                  m_volumeResolution.x,
                  m_volumeResolution.y,
                  m_volumeResolution.z,
-               	 0,
-               	 GL_RGB,
-               	 GL_UNSIGNED_BYTE,
+				 0,
+				 GL_RGB,
+				 GL_UNSIGNED_BYTE,
                  colorTexels);
 
 
@@ -901,5 +926,10 @@ void GLWidget::onPathtracerMaxPathLengthChanged(int value)
 {
 	m_renderSettings.m_pathtracerMaxPathLength = value;
 	updateRenderSettings();
+}
+
+void GLWidget::loadMesh(QString file)
+{
+	m_mesh = MeshLoader::loadFromOBJ(file.toStdString().c_str());
 }
 

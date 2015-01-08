@@ -22,6 +22,8 @@ private slots:
 
     void on_actionReload_Shaders_triggered();
 
+    void on_actionLoad_Mesh_triggered();
+
 private:
     Ui::MainWindow *ui;
 };
