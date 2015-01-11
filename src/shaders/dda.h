@@ -18,15 +18,15 @@ bool raymarch(in vec3 wsRayOrigin,
 	vec3 voxelPos = floor(voxelOrigin);
 	vec3 wsRayDirIncrement = vec3(1.0f) / wsRayDir;
 	vec3 wsRayDirSign = sign(wsRayDir);
-	vec3 dis = (voxelPos-voxelOrigin + 0.5 + wsRayDirSign*0.5) * wsRayDirIncrement;
 
+	vec3 dis = (voxelPos-voxelOrigin + 0.5 + wsRayDirSign*0.5) * wsRayDirIncrement;
 	vec3 mask=vec3(0.0);
 
 	int steps = 0;
 	while(steps < maxSteps) 
 	{
 		bool hit = (texelFetch(occupancyTexture, 
-							   ivec3(voxelPos.x, voxelPos.y, voxelPos.z), 0).r > 0);
+							   ivec3(voxelPos), 0).r > 0);
 		if (hit)
 		{
 			isect = true;
@@ -35,7 +35,7 @@ bool raymarch(in vec3 wsRayOrigin,
 		mask = step(dis.xyz, dis.yxy) * step(dis.xyz, dis.zzx);
 		dis += mask * wsRayDirSign * wsRayDirIncrement;
 		voxelPos += mask * wsRayDirSign;
-
+		
 		// break from the traversal if we've gone out of bounds 
 		if (any(lessThan(voxelPos, vec3(0.0))) || 
 			any(greaterThanEqual(voxelPos,voxelResolution))) break;
@@ -64,9 +64,19 @@ bool traverse(in vec3 wsRayOrigin,
 			  out vec3 vsHitPos, 
 			  out vec3 vsHitNormal)
 {
-	vec3 res = vec3(voxelResolution);
-	int MAX_STEPS = int(ceil(length(res)));
-
+	// In theory I should not need to enforce any clamping because we test on
+	// the raymarching function whether we've gone out of the volume bounds and
+	// bail out there. But I can see very noticeable slowing downs the larger I
+	// make this threshold (fragment divergence? the compiler no longer
+	// unrolling the while loop?, or simply a bug somewhere). So better to make
+	// the maxsteps limit as small as we can. 
+	//
+	// I haven't found any formal proof for this, but the heuristic of
+	// multiplying by a factor of 2 the number of voxels in a straight line
+	// appears to be correct from my tests (worst case is a diagonal line, where 
+	// DDA would take one extra step for every advanced voxel as it jumps through 
+	// adjacent faces and not vertices).  
+	int MAX_STEPS = int(2 * ceil(length(vec3(voxelResolution))));
 	return raymarch(wsRayOrigin, wsRayDir, MAX_STEPS, vsHitPos, vsHitNormal);
 }
 
