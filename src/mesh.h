@@ -11,6 +11,8 @@ public:
 	void draw() const;
 	~Mesh();
 
+	Imath::Box3f bounds() const { return m_bounds; }
+
 private:
 	Mesh( const float* vertices, size_t numVertices,
 		  const unsigned int* indices, size_t numIndices);

@@ -2,6 +2,7 @@
 #include "mesh.h"
 
 #define ATTRIBUTE_LAYOUT_INDEX_POSITION 0
+#define ATTRIBUTE_LAYOUT_INDEX_NORMAL   1
 
 Mesh::Mesh( const float* vertices, size_t numVertices,
 			const unsigned int* indices, size_t numIndices)

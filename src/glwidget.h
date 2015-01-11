@@ -45,6 +45,7 @@ protected:
 	bool reloadTexturedShader();
 	bool reloadAverageShader();
 	bool reloadPathtracerShader();
+	bool reloadVoxelizeShader();
 	void drawFullscreenQuad();
 	void createFramebuffer();
 
@@ -86,6 +87,7 @@ private:
 	AccumulationShaderSettings   m_settingsAverage;
 	TexturedShaderSettings       m_settingsTextured;
 	FocalDistanceShaderSettings  m_settingsFocalDistance;
+	VoxelizeShaderSettings       m_settingsVoxelize;
 
 	enum TextureUnits
 	{
@@ -109,5 +111,6 @@ private:
 
     static const unsigned int MAX_FRAME_SAMPLES = 256;
 
+	Imath::M44f m_meshTransform;
     Mesh* m_mesh;
 };
