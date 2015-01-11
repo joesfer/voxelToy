@@ -812,13 +812,19 @@ void GLWidget::createVoxelDataTexture()
 
     const size_t numVoxels = (size_t)(m_volumeResolution.x * m_volumeResolution.y * m_volumeResolution.z);
 
+	// TODO I could pack the occupancy into the alpha channel of the voxel color
+	// texture, but the rationale is that we only access the voxel color when we
+	// finally have a hit, whereas the occupancy texture is used to perform the
+	// raymarch so it should be small to fit as many texels in a cache line as
+	// possible. This needs to be backed up by actual performance tests.
     GLubyte* occupancyTexels = (GLubyte*)malloc(numVoxels * sizeof(GLubyte));
-    RGB* colorTexels = (RGB*)malloc(numVoxels * sizeof(RGB));
+    GLubyte* colorTexels = (GLubyte*)malloc(numVoxels * 4 * sizeof(GLubyte));
 
     float sizeMultiplier = 100;
     m_volumeBounds = Box3f( V3f(-0.5f, -0.5f, -0.5f) * sizeMultiplier, V3f(0.5f, 0.5f, 0.5f) * sizeMultiplier );
 
     memset(occupancyTexels, 0, numVoxels * sizeof(GLubyte));
+    memset(colorTexels, 0, numVoxels * 4 * sizeof(GLubyte));
 
 	// Upload texture data to card
 
@@ -853,12 +859,12 @@ void GLWidget::createVoxelDataTexture()
     glPixelStorei(GL_UNPACK_ALIGNMENT,1);
     glTexImage3D(GL_TEXTURE_3D,
 				 0,
-				 GL_RGB8,
+				 GL_RGBA8,
                  m_volumeResolution.x,
                  m_volumeResolution.y,
                  m_volumeResolution.z,
 				 0,
-				 GL_RGB,
+				 GL_RGBA,
 				 GL_UNSIGNED_BYTE,
                  colorTexels);
 
@@ -925,18 +931,30 @@ void GLWidget::loadMesh(QString file)
     m_meshTransform.x[3][0] = 0 ; m_meshTransform.x[3][1] = 0 ; m_meshTransform.x[3][2] = 0 ; m_meshTransform.x[3][3] = 1.0f     ;
 
 	glUseProgram(m_settingsVoxelize.m_program);
+
 	glUniformMatrix4fv(m_settingsVoxelize.m_uniformModelTransform,
 					   1,
 					   GL_TRUE,
 					   &m_meshTransform.x[0][0]);
 
-	glBindImageTexture(0, // image unit
-					   m_occupancyTexture, // texture
-					   0, // level
-					   GL_TRUE, // layered
-					   0, // layer
-					   GL_WRITE_ONLY, // access
-					   GL_R8UI // format
+	// Connect output image textures for the geometry shader
+	
+	glBindImageTexture(0,                   // image unit
+					   m_occupancyTexture,  // texture
+					   0,                   // level
+					   GL_TRUE,             // layered
+					   0,                   // layer
+					   GL_WRITE_ONLY,       // access
+					   GL_R8UI              // format
+			);
+
+	glBindImageTexture(1,                   // image unit
+					   m_voxelColorTexture, // texture
+					   0,                   // level
+					   GL_TRUE,             // layered
+					   0,                   // layer
+					   GL_WRITE_ONLY,       // access
+					   GL_RGBA8             // format
 			);
 
 	m_mesh->draw();

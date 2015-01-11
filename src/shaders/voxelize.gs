@@ -26,7 +26,8 @@ layout(triangle_strip, max_vertices = 3) out;
 uniform ivec3 voxelResolution;
 
 //Voxel output
-layout(r8ui, binding = 0) uniform uimage3D Voxels;
+layout(r8ui, binding = 0) uniform uimage3D voxelOccupancy;
+layout(rgba8, binding = 1) uniform image3D voxelColor;
 
 in block
 {
@@ -107,10 +108,11 @@ void swizzleTri(inout vec3 v0,
 	}
 }
 
-void writeVoxels(ivec3 coord, uint val, vec3 color)
+void writeVoxels(ivec3 coord, uint val, vec4 color)
 {
 	//modify as necessary for attributes/storage type
-	imageStore(Voxels, coord, uvec4(val));
+	imageStore(voxelOccupancy, coord, uvec4(val));
+	imageStore(voxelColor, coord, color);
 }
 
 void voxelizeTriPostSwizzle(vec3 v0, vec3 v1, vec3 v2, vec3 n, mat3 unswizzle, ivec3 minVoxIndex, ivec3 maxVoxIndex)
@@ -220,7 +222,8 @@ void voxelizeTriPostSwizzle(vec3 v0, vec3 v1, vec3 v2, vec3 n, mat3 unswizzle, i
 
 					if(yz_overlap && zx_overlap)	//figure 17/18 line 19
 					{
-						writeVoxels(ivec3(unswizzle*p), 1, vec3(0));	//figure 17/18 line 20
+						writeVoxels(ivec3(unswizzle*p), 1,
+									vec4(unswizzle*p/voxelResolution,1));	//figure 17/18 line 20
 					}
 				} //z-loop
 			} //xy-overlap test
