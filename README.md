@@ -7,10 +7,8 @@ VoxelToy is a simple Qt/OpenGL-based voxel renderer. This is a pet project curre
 - Lambertian BRDF only.
 - Orbit camera.
 - Camera depth of field.
-- Dense voxel representation in 3D texture, currently hard-coded. 
-
-Most immediate improvements to follow:
-- Some authoring tools to create voxel content - I'll probably start porting the voxelization code in http://www.joesfer.com/?p=84
+- Dense voxel representation in 3D texture, DDA traversal. 
+- Voxels can be seeded from input meshes. Voxelization carried out in GPU.
 - The project is developed in Linux (Ubuntu) using Vim/QtCreator. A CMake-based script for cross-platform building is provided, but no Windows/Mac version has been tested yet.
 
-![alt tag](https://github.com/joesfer/voxelToy/blob/master/resources/screenshot07.png)
+![alt tag](https://github.com/joesfer/voxelToy/blob/master/resources/screenshot08.png)
