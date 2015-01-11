@@ -94,9 +94,27 @@ bool Shader::compileProgramFromFile( const std::string& name,
 									 const std::string &fragmentShaderPreprocessor,
 									 GLuint& result )
 {
+	return compileProgramFromFile(name,
+								  vertexShaderFile,
+								  vertexShaderPreprocessor,
+								  "", "",
+								  fragmentShaderFile,
+								  fragmentShaderPreprocessor,
+								  result);
+}
+
+bool Shader::compileProgramFromFile( const std::string& name, 
+									 const std::string &vertexShaderFile,
+									 const std::string &vertexShaderPreprocessor,
+									 const std::string &geometryShaderFile,
+									 const std::string &geometryShaderPreprocessor,
+									 const std::string &fragmentShaderFile,
+									 const std::string &fragmentShaderPreprocessor,
+									 GLuint& result )
+{
 	using namespace std;
 
-	string vs, fs;
+	string vs, gs, fs;
 	if (!parseShader( vertexShaderFile, vs ))
 	{
 		log(std::string("error parsing file ") + vertexShaderFile);
@@ -107,42 +125,69 @@ bool Shader::compileProgramFromFile( const std::string& name,
 		log(std::string("error parsing file ") + fragmentShaderFile);
 		return false;
 	}
+	
+	// Geometry shader is optional
+	if (!geometryShaderFile.empty() && 
+		!parseShader( geometryShaderFile, gs ))
+	{
+		log(std::string("error parsing file ") + geometryShaderFile);
+		return false;
+	}
 
 	return compileProgramFromCode( name,
 								   vs, vertexShaderPreprocessor,
+								   gs, geometryShaderPreprocessor,
 								   fs, fragmentShaderPreprocessor,
 								   result );
+}
+
+GLuint createShader(const std::string& programName,
+					GLuint shaderType,
+				    const std::string& shaderCode,
+				    const std::string& shaderPreprocessor,
+					char* infoLog, 
+                    GLsizei& logLength)
+{
+    GLuint shader = glCreateShader( shaderType );
+	const char* source[2] = { shaderPreprocessor.c_str(),
+							  shaderCode.c_str() };
+	glShaderSource( shader, 2, source, NULL );
+	glCompileShader( shader );
+	glGetShaderInfoLog( shader, 512, &logLength, infoLog );
+	if ( logLength > 0 )
+	{
+        log( std::string("Program ") + programName + std::string(": Vertex shader compilation log:\n") + infoLog);
+		log( shaderPreprocessor );
+		log( shaderCode );
+	}
+    return shader;
 }
 
 bool Shader::compileProgramFromCode ( const std::string& name,
 									  const std::string &vertexShaderCode,
 									  const std::string &vertexShaderPreprocessor,
+									  const std::string &geometryShaderCode,
+									  const std::string &geometryShaderPreprocessor,
 									  const std::string &fragmentShaderCode,
 									  const std::string &fragmentShaderPreprocessor,
 									  GLuint& result )
 {
-    glewInit();
-	GLuint program = glCreateProgram();
-
 	char infoLog[ 512 ];
 	GLsizei logLength = 0;
+
+    glewInit();
+	GLuint program = glCreateProgram();
 
 	{
 
 		// compile vertex shader
 		{
-			GLuint vs = glCreateShader( GL_VERTEX_SHADER );
-			const char* source[2] = { vertexShaderPreprocessor.c_str(),
-									  vertexShaderCode.c_str() };
-			glShaderSource( vs, 2, source, NULL );
-			glCompileShader( vs );
-			glGetShaderInfoLog( vs, 512, &logLength, infoLog );
-			if ( logLength > 0 )
-			{
-				log( std::string("Program ") + name + std::string(": Vertex shader compilation log:\n") + infoLog);
-				log( vertexShaderPreprocessor );
-				log( vertexShaderCode );
-			}
+			GLuint vs = createShader( name,
+									  GL_VERTEX_SHADER,
+									  vertexShaderCode,
+									  vertexShaderPreprocessor,
+									  infoLog,
+									  logLength);
 
 			glAttachShader( program, vs );
 			
@@ -153,19 +198,12 @@ bool Shader::compileProgramFromCode ( const std::string& name,
 
 		// compile fragment shader
 		{
-			GLuint fs = glCreateShader( GL_FRAGMENT_SHADER );
-
-			const char* source[2] = { fragmentShaderPreprocessor.c_str(),
-									  fragmentShaderCode.c_str() };
-			glShaderSource( fs, 2, source, NULL );
-			glCompileShader( fs );
-			glGetShaderInfoLog( fs, 512, &logLength, infoLog );
-			if ( logLength > 0 )
-			{
-			   log( std::string("Program ") + name + std::string(": Fragment shader compilation log:\n") + infoLog );
-				log( fragmentShaderPreprocessor );
-				log( fragmentShaderCode );
-			}
+			GLuint fs = createShader( name,
+									  GL_FRAGMENT_SHADER,
+									  fragmentShaderCode,
+									  fragmentShaderPreprocessor,
+									  infoLog,
+									  logLength);
 
 			glAttachShader( program, fs );
 			
@@ -174,6 +212,22 @@ bool Shader::compileProgramFromCode ( const std::string& name,
 			glDeleteShader( fs );
 		}
 
+		// optionally compile fragment shader
+		if (!geometryShaderCode.empty()) 
+		{
+			GLuint gs = createShader( name,
+									  GL_GEOMETRY_SHADER,
+									  geometryShaderCode,
+									  geometryShaderPreprocessor,
+									  infoLog,
+									  logLength);
+
+			glAttachShader( program, gs );
+			
+			// mark this copy for disposal. It won't be actually deleted till we 
+			// dispose the program it is attached to. 
+			glDeleteShader( gs );
+		}
 		glLinkProgram( program );
 	}
 

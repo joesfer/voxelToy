@@ -14,9 +14,21 @@ public:
 										const std::string &fragmentShaderPreprocessor,
 										GLuint& result );
 
+	static bool compileProgramFromFile( const std::string& name,
+										const std::string &vertexShaderFile,
+										const std::string &vertexShaderPreprocessor,
+										const std::string &geometryShaderFile,
+										const std::string &geometryShaderPreprocessor,
+										const std::string &fragmentShaderFile,
+										const std::string &fragmentShaderPreprocessor,
+										GLuint& result );
+
+
 	static bool compileProgramFromCode( const std::string& name,
 										const std::string &vertexShaderCode,
 										const std::string &vertexShaderPreprocessor,
+										const std::string &geometryShaderCode,
+										const std::string &geometryShaderPreprocessor,
 										const std::string &fragmentShaderCode,
 										const std::string &fragmentShaderPreprocessor,
 										GLuint& result );
@@ -25,7 +37,7 @@ public:
 
 struct PathtracerShaderSettings
 {
-	GLuint m_shader;
+	GLuint m_program;
 
 	// uniforms
 	GLuint m_uniformVoxelOccupancyTexture;
@@ -52,7 +64,7 @@ struct PathtracerShaderSettings
 			
 struct AccumulationShaderSettings
 {
-	GLuint m_shader;
+	GLuint m_program;
 	
 	// uniforms
 	GLuint m_uniformSampleTexture;
@@ -63,7 +75,7 @@ struct AccumulationShaderSettings
 
 struct TexturedShaderSettings 
 {
-	GLuint m_shader;
+	GLuint m_program;
 	
 	// uniforms
 	GLuint m_uniformTexture;
@@ -72,7 +84,7 @@ struct TexturedShaderSettings
 
 struct FocalDistanceShaderSettings 
 {
-	GLuint m_shader;
+	GLuint m_program;
 	
 	// uniforms
 	GLuint m_uniformVoxelOccupancyTexture;
@@ -87,5 +99,14 @@ struct FocalDistanceShaderSettings
 	GLuint m_uniformCameraInverseModelView;
 	GLuint m_uniformCameraFocalLength;
 	GLuint m_uniformSampledFragment;
+};
+
+struct VoxelizeShaderSettings
+{
+	GLuint m_program;
+
+	GLuint m_uniformVoxelDataResolution;
+	GLuint m_uniformModelTransform;
+	GLuint m_uniformVoxelOccupancyTexture;
 };
 

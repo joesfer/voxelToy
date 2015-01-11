@@ -2,6 +2,8 @@
 #include "ui_mainwindow.h"
 #include "ui/camerapropertiesui.h"
 
+#include <QFileDialog>
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -41,4 +43,17 @@ void MainWindow::on_cameraFStop_currentTextChanged(const QString &arg1)
 void MainWindow::on_actionReload_Shaders_triggered()
 {
     ui->glWidget->reloadShaders();
+}
+
+void MainWindow::on_actionLoad_Mesh_triggered()
+{
+    QFileDialog dialog(this);
+    dialog.setFileMode(QFileDialog::ExistingFile);
+    dialog.setNameFilter(tr("OBJ files (*.obj)"));
+    dialog.setViewMode(QFileDialog::Detail);
+    if(dialog.exec())
+    {
+        QString file = dialog.selectedFiles()[0];
+        ui->glWidget->loadMesh(file);
+    }
 }

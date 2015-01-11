@@ -83,6 +83,13 @@
     </property>
     <addaction name="actionReload_Shaders"/>
    </widget>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionLoad_Mesh"/>
+   </widget>
+   <addaction name="menuFile"/>
    <addaction name="menuDevelopment"/>
   </widget>
   <widget class="QToolBar" name="toolBar">
@@ -95,6 +102,7 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionLoad_Mesh"/>
    <addaction name="actionReload_Shaders"/>
   </widget>
   <action name="actionReload_Shaders">
@@ -107,6 +115,21 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+R</string>
+   </property>
+  </action>
+  <action name="actionLoad_Mesh">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/icons/add.png</normaloff>:/icons/icons/add.png</iconset>
+   </property>
+   <property name="text">
+    <string>Load Mesh</string>
+   </property>
+   <property name="toolTip">
+    <string>Load Mesh</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
    </property>
   </action>
  </widget>
