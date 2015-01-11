@@ -2,25 +2,18 @@
 #include <GL/glut.h>
 #include <GL/glu.h>
 
-#include "glwidget.h"
-#include "shader.h"
+// this is still needed for the mouse buttons, but the dependency with Qt 
+// should be removed from the renderer
+#include <QtGui> 
+
+#include "renderer.h"
+#include "mesh.h"
 #include "content.h"
 #include "meshLoader.h"
 
-#include <QtGui>
-#include <QtOpenGL>
-#include <QtOpenGLExtensions/qopenglextensions.h>
-
-#include <math.h>
-#include <stack>
-
-#define _STRINGIFY(x) #x
-#define STRINGIFY(x) _STRINGIFY(x)
-
 #define FOCAL_DISTANCE_TEXTURE_RESOLUTION 1 
 
-GLWidget::GLWidget(QWidget *parent)
-     : QGLWidget(QGLFormat(QGL::SampleBuffers), parent)
+Renderer::Renderer()
 {
     m_camera.centerAt(Imath::V3f(0,0,0));
     m_camera.setDistanceToTarget(100);
@@ -33,24 +26,12 @@ GLWidget::GLWidget(QWidget *parent)
 	m_mesh = NULL;
 }
 
-GLWidget::~GLWidget()
+Renderer::~Renderer()
 {
 }
 
-QSize GLWidget::minimumSizeHint() const
+void Renderer::initialize(const std::string& shaderPath)
 {
-    return QSize(50, 50);
-}
-
-QSize GLWidget::sizeHint() const
-{
-	return QSize(400, 400);
-}
-
-void GLWidget::initializeGL()
-{
-	initializeOpenGLFunctions();
-
 	glClearColor(0.1f, 0.1f, 0.1f, 0);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -63,26 +44,21 @@ void GLWidget::initializeGL()
 
 	createVoxelDataTexture();
     createFramebuffer();
-	reloadShaders();
+	reloadShaders(shaderPath);
 	updateCamera();
 	updateRenderSettings();
 }
 
-Imath::V3f GLWidget::lightDirection() const
+Imath::V3f Renderer::lightDirection() const
 {
 	Imath::V3f d(1, -1, 1);
 	return d.normalized();
 }
 
-bool GLWidget::reloadFocalDistanceShader()
+bool Renderer::reloadFocalDistanceShader(const std::string& shaderPath)
 {
-	std::string shaderPath(STRINGIFY(SHADER_DIR));
-
-	QString vsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("screenSpace.vs");
-	QString fsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("focalDistance.fs");
-
-	std::string vs(vsPath.toUtf8().constData());
-	std::string fs(fsPath.toUtf8().constData());
+	std::string vs = shaderPath + std::string("screenSpace.vs");
+	std::string fs = shaderPath + std::string("focalDistance.fs");
 
     if ( !Shader::compileProgramFromFile("FocalDistance",
                                         vs, "",
@@ -107,8 +83,8 @@ bool GLWidget::reloadFocalDistanceShader()
 	m_settingsFocalDistance.m_uniformCameraFocalLength      = glGetUniformLocation(m_settingsFocalDistance.m_program, "cameraFocalLength");             
 	m_settingsFocalDistance.m_uniformSampledFragment        = glGetUniformLocation(m_settingsFocalDistance.m_program, "sampledFragment");             
 
-	glViewport(0,0,width(), height());
-	glUniform4f(m_settingsFocalDistance.m_uniformViewport, 0, 0, (float)width(), (float)height());
+	glViewport(0,0,m_renderDimensions.x, m_renderDimensions.y);
+	glUniform4f(m_settingsFocalDistance.m_uniformViewport, 0, 0, (float)m_renderDimensions.x, (float)m_renderDimensions.y);
 
 	glUniform1i(m_settingsFocalDistance.m_uniformVoxelOccupancyTexture, TEXTURE_UNIT_OCCUPANCY);
 	
@@ -130,15 +106,10 @@ bool GLWidget::reloadFocalDistanceShader()
 	return true;
 }
 
-bool GLWidget::reloadTexturedShader()
+bool Renderer::reloadTexturedShader(const std::string& shaderPath)
 {
-	std::string shaderPath(STRINGIFY(SHADER_DIR));
-
-	QString vsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("screenSpace.vs");
-	QString fsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("textureMap.fs");
-
-	std::string vs(vsPath.toUtf8().constData());
-	std::string fs(fsPath.toUtf8().constData());
+	std::string vs = shaderPath + std::string("screenSpace.vs");
+	std::string fs = shaderPath + std::string("textureMap.fs");
 
     if ( !Shader::compileProgramFromFile("textured",
                                         vs, "",
@@ -153,20 +124,15 @@ bool GLWidget::reloadTexturedShader()
 	m_settingsTextured.m_uniformTexture  = glGetUniformLocation(m_settingsTextured.m_program, "texture");
 	m_settingsTextured.m_uniformViewport = glGetUniformLocation(m_settingsTextured.m_program, "viewport");
 
-    glUniform4f(m_settingsTextured.m_uniformViewport, 0, 0, (float)width(), (float)height());
+    glUniform4f(m_settingsTextured.m_uniformViewport, 0, 0, (float)m_renderDimensions.x, (float)m_renderDimensions.y);
 
 	return true;
 }
 
-bool GLWidget::reloadAverageShader()
+bool Renderer::reloadAverageShader(const std::string& shaderPath)
 {
-	std::string shaderPath(STRINGIFY(SHADER_DIR));
-
-	QString vsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("screenSpace.vs");
-	QString fsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("accumulation.fs");
-
-	std::string vs(vsPath.toUtf8().constData());
-	std::string fs(fsPath.toUtf8().constData());
+	std::string vs = shaderPath + std::string("screenSpace.vs");
+	std::string fs = shaderPath + std::string("accumulation.fs");
 
     if ( !Shader::compileProgramFromFile("accumulation",
                                         vs, "",
@@ -183,20 +149,15 @@ bool GLWidget::reloadAverageShader()
 	m_settingsAverage.m_uniformSampleCount    = glGetUniformLocation(m_settingsAverage.m_program, "sampleCount");
 	m_settingsAverage.m_uniformViewport       = glGetUniformLocation(m_settingsAverage.m_program, "viewport");
 
-    glUniform4f(m_settingsAverage.m_uniformViewport, 0, 0, (float)width(), (float)height());
+    glUniform4f(m_settingsAverage.m_uniformViewport, 0, 0, (float)m_renderDimensions.x, (float)m_renderDimensions.y);
 
 	return true;
 }
 
-bool GLWidget::reloadPathtracerShader()
+bool Renderer::reloadPathtracerShader(const std::string& shaderPath)
 {
-	std::string shaderPath(STRINGIFY(SHADER_DIR));
-
-	QString vsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("screenSpace.vs");
-	QString fsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("pathTracer.fs");
-
-	std::string vs(vsPath.toUtf8().constData());
-	std::string fs(fsPath.toUtf8().constData());
+	std::string vs = shaderPath + std::string("screenSpace.vs");
+	std::string fs = shaderPath + std::string("pathTracer.fs");
 
     if ( !Shader::compileProgramFromFile("PT",
                                         vs, "",
@@ -229,8 +190,8 @@ bool GLWidget::reloadPathtracerShader()
 	m_settingsPathtracer.m_uniformEnableDOF               = glGetUniformLocation(m_settingsPathtracer.m_program, "enableDOF");
 	m_settingsPathtracer.m_uniformPathtracerMaxPathLength = glGetUniformLocation(m_settingsPathtracer.m_program, "pathtracerMaxPathLength");
 
-	glViewport(0,0,width(), height());
-	glUniform4f(m_settingsPathtracer.m_uniformViewport, 0, 0, (float)width(), (float)height());
+	glViewport(0,0,m_renderDimensions.x, m_renderDimensions.y);
+	glUniform4f(m_settingsPathtracer.m_uniformViewport, 0, 0, (float)m_renderDimensions.x, (float)m_renderDimensions.y);
 
 	Imath::V3f lightDir = lightDirection();
 	glUniform3f(m_settingsPathtracer.m_uniformLightDir, lightDir.x, lightDir.y, -lightDir.z);
@@ -260,17 +221,11 @@ bool GLWidget::reloadPathtracerShader()
 	return true;
 }
 
-bool GLWidget::reloadVoxelizeShader()
+bool Renderer::reloadVoxelizeShader(const std::string& shaderPath)
 {
-	std::string shaderPath(STRINGIFY(SHADER_DIR));
-
-	QString vsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("voxelize.vs");
-	QString gsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("voxelize.gs");
-	QString fsPath = QString(STRINGIFY(SHADER_DIR)) + QDir::separator() + QString("trivial.fs");
-
-	std::string vs(vsPath.toUtf8().constData());
-	std::string gs(gsPath.toUtf8().constData());
-	std::string fs(fsPath.toUtf8().constData());
+	std::string vs = shaderPath + std::string("voxelize.vs");
+	std::string gs = shaderPath + std::string("voxelize.gs");
+	std::string fs = shaderPath + std::string("trivial.fs");
 
     if ( !Shader::compileProgramFromFile("Voxelize",
                                          vs, "",
@@ -298,13 +253,13 @@ bool GLWidget::reloadVoxelizeShader()
 	return true;
 }
 
-void GLWidget::reloadShaders()
+void Renderer::reloadShaders(const std::string& shaderPath)
 {
-	if (!reloadPathtracerShader() || 
-		!reloadAverageShader() || 
-		!reloadTexturedShader() ||
-		!reloadFocalDistanceShader() ||
-		!reloadVoxelizeShader())
+	if (!reloadPathtracerShader(shaderPath)    ||
+		!reloadAverageShader(shaderPath)       ||
+		!reloadTexturedShader(shaderPath)      ||
+		!reloadFocalDistanceShader(shaderPath) ||
+		!reloadVoxelizeShader(shaderPath))
 	{
 		std::cout << "Shader loading failed" << std::endl;
     }
@@ -312,7 +267,7 @@ void GLWidget::reloadShaders()
 	updateRenderSettings();
 }
 
-void GLWidget::updateCamera()
+void Renderer::updateCamera()
 {
 	using namespace Imath;
 	V3f eye     = m_camera.eye();
@@ -332,7 +287,7 @@ void GLWidget::updateCamera()
 	}
 
 	{ // gluPerspective
-		const float a = (float)width() / height();
+		const float a = (float)m_renderDimensions.x / m_renderDimensions.y;
 		const float n = m_camera.nearDistance();
 		const float f = m_camera.farDistance();
 		const float e = 1.0f / tan(m_camera.fovY()/2);
@@ -390,7 +345,7 @@ void GLWidget::updateCamera()
                        GL_TRUE,
 					   &invProj.x[0][0]);
 	bool enableDOF = m_camera.lensModel() == Camera::CLM_THIN_LENS; 
-	enableDOF &= !(m_lastMouseButtons & Qt::RightButton);
+	enableDOF &= (m_numberSamples > 0); // Disable DOF while tumbling around
 
 	// TODO the focal length can be extracted from the perspective matrix (FOV)
 	// so we should choose either method, but not both.
@@ -403,14 +358,17 @@ void GLWidget::updateCamera()
     glUseProgram(m_settingsFocalDistance.m_program);
     glUniform1f(m_settingsFocalDistance.m_uniformCameraFocalLength  , m_camera.focalLength());
 	glUniform2f(m_settingsFocalDistance.m_uniformSampledFragment,
-				m_screenFocalPoint[0] * width(), 
-				(1.0f - m_screenFocalPoint[1]) * height()); // m_screenFocal point origin is at top-left, whilst glsl is bottom-left
+				m_screenFocalPoint[0] * m_renderDimensions.x, 
+				(1.0f - m_screenFocalPoint[1]) * m_renderDimensions.y); // m_screenFocal point origin is at top-left, whilst glsl is bottom-left
 		
 }
 
-void GLWidget::resizeGL(int width, int height)
+void Renderer::resizeFrame(int width, int height)
 {
+	m_renderDimensions.x = width;
+	m_renderDimensions.y = height;
 	const float viewportAspectRatio = (float)width / height;
+
 	if (viewportAspectRatio >= 1.0f) 
 	{
 		m_camera.setFilmSize(Camera::FILM_SIZE_35MM, Camera::FILM_SIZE_35MM / viewportAspectRatio);
@@ -482,21 +440,9 @@ void GLWidget::resizeGL(int width, int height)
 						  height);
 
     m_numberSamples = 0;
-    update();
 }
 
-void GLWidget::drawFullscreenQuad()
-{
-	// draw quad
-	glBegin(GL_QUADS);
-		glVertex3f(  1.0f,  1.0f, m_camera.nearDistance());
-		glVertex3f( -1.0f,  1.0f, m_camera.nearDistance());
-		glVertex3f( -1.0f, -1.0f, m_camera.nearDistance());
-		glVertex3f(  1.0f, -1.0f, m_camera.nearDistance());
-	glEnd();
-}
-
-void GLWidget::paintGL()
+Renderer::RenderResult Renderer::render()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
@@ -517,7 +463,7 @@ void GLWidget::paintGL()
 		drawFullscreenQuad();
 	}
 
-	const float viewportAspectRatio = (float)width() / height();
+	const float viewportAspectRatio = (float)m_renderDimensions.x / m_renderDimensions.y;
 	if (viewportAspectRatio >= 1.0f) 
 	{
 		m_camera.setFilmSize(Camera::FILM_SIZE_35MM, Camera::FILM_SIZE_35MM / viewportAspectRatio);
@@ -570,40 +516,43 @@ void GLWidget::paintGL()
     if ( m_numberSamples++ < (int)MAX_FRAME_SAMPLES)
     {
         m_activeSampleTexture ^= 1;
-        update();
+		return RR_SAMPLES_PENDING; 
     }
+	return RR_FINISHED_RENDERING;
 }
 
-void GLWidget::mousePressEvent(QMouseEvent *event)
+void Renderer::drawFullscreenQuad()
 {
-    m_lastPos = event->pos();
-    if (event->buttons() & Qt::LeftButton)
-    {
-        m_screenFocalPoint.x = (float)event->pos().x() / width();
-        m_screenFocalPoint.y = (float)event->pos().y() / height();
+	// draw quad
+	glBegin(GL_QUADS);
+		glVertex3f(  1.0f,  1.0f, m_camera.nearDistance());
+		glVertex3f( -1.0f,  1.0f, m_camera.nearDistance());
+		glVertex3f( -1.0f, -1.0f, m_camera.nearDistance());
+		glVertex3f(  1.0f, -1.0f, m_camera.nearDistance());
+	glEnd();
+}
+
+void Renderer::setScreenFocalPoint(float x, float y)
+{
+        m_screenFocalPoint.x = x;
+        m_screenFocalPoint.y = y;
         updateCamera();
         m_numberSamples = 0;
-        update();
-    }
-
 }
 
-void GLWidget::mouseMoveEvent(QMouseEvent *event)
+void Renderer::onMouseMove(int dx, int dy, int buttons)
 {
-    int dx = event->x() - m_lastPos.x();
-    int dy = event->y() - m_lastPos.y();
-
     bool change = false;
-    if (event->buttons() & Qt::RightButton)
+    if (buttons & Qt::RightButton)
     {
         const float speed = 1.f;
-        const float theta = -(float)dy / this->height() * M_PI * speed + m_camera.rotationTheta();
-        const float phi = -(float)dx / this->width() * 2.0f * M_PI * speed + m_camera.rotationPhi();
+        const float theta = -(float)dy / this->m_renderDimensions.y * M_PI * speed + m_camera.rotationTheta();
+        const float phi = -(float)dx / this->m_renderDimensions.x * 2.0f * M_PI * speed + m_camera.rotationPhi();
 
         m_camera.setOrbitRotation(theta, phi);
 		change = true;
     }
-    else if( event->buttons() & Qt::MiddleButton)
+    else if( buttons & Qt::MiddleButton)
     {
         const float speed = 0.99f;
         m_camera.setDistanceToTarget( dy > 0 ? m_camera.distanceToTarget() * speed :
@@ -611,40 +560,14 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event)
 		change = true;
     }
 
-    m_lastPos = event->pos();
-	m_lastMouseButtons = event->buttons();
-
 	if ( change )
 	{
 		updateCamera();
 		m_numberSamples = 0;
-		update();
 	}
 }
 
-void GLWidget::mouseReleaseEvent(QMouseEvent *event)
-{
-    m_lastPos = event->pos();
-	m_lastMouseButtons = event->buttons();
-
-	updateCamera();
-	m_numberSamples = 0;
-	update();
-
-}
-
-void GLWidget::keyPressEvent(QKeyEvent* /*event*/)
-{
-    m_numberSamples = 0;
-	update();
-}
-
-inline float remap(float uniform, float min, float max)
-{
-    return min + (max-min)*uniform;
-}
-
-void GLWidget::createFramebuffer()
+void Renderer::createFramebuffer()
 {
     glEnable(GL_TEXTURE_2D);
 
@@ -730,8 +653,8 @@ void GLWidget::createFramebuffer()
 		glTexImage2D(GL_TEXTURE_2D,
 					 0,
 					 GL_RGBA,
-					 width(),
-					 height(),
+					 m_renderDimensions.x,
+					 m_renderDimensions.y,
 					 0,
 					 GL_RGBA,
 					 GL_FLOAT,
@@ -775,8 +698,8 @@ void GLWidget::createFramebuffer()
     glBindRenderbuffer(GL_RENDERBUFFER, m_mainRBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, 
 						  GL_DEPTH_COMPONENT,
-						  width(),
-						  height());
+						  m_renderDimensions.x,
+						  m_renderDimensions.y);
 
     //
     if (glIsFramebuffer(m_mainFBO)) glDeleteFramebuffers(1, &m_mainFBO);
@@ -803,7 +726,7 @@ struct V4f
 };
 
 
-void GLWidget::createVoxelDataTexture()
+void Renderer::createVoxelDataTexture()
 {
     using namespace Imath;
 	
@@ -872,14 +795,13 @@ void GLWidget::createVoxelDataTexture()
     free(occupancyTexels);
     free(colorTexels);
 }
-void GLWidget::resetRender()
+void Renderer::resetRender()
 {
     updateCamera();
     m_numberSamples = 0;
-    update();
 }
 
-void GLWidget::updateRenderSettings()
+void Renderer::updateRenderSettings()
 {
 	glUseProgram(m_settingsPathtracer.m_program);
 	glUniform1i(m_settingsPathtracer.m_uniformPathtracerMaxPathLength, m_renderSettings.m_pathtracerMaxPathLength);
@@ -888,33 +810,9 @@ void GLWidget::updateRenderSettings()
     resetRender();
 }
 
-void GLWidget::cameraFStopChanged(QString fstop)
+void Renderer::loadMesh(const std::string& file)
 {
-    m_camera.setFStop(fstop.toFloat());
-    resetRender();
-}
-
-void GLWidget::cameraFocalLengthChanged(QString length)
-{
-    m_camera.setFocalLength(length.toFloat());
-    resetRender();
-}
-
-void GLWidget::cameraLensModelChanged(bool dof)
-{
-	m_camera.setLensModel( dof ? Camera::CLM_THIN_LENS : Camera::CLM_PINHOLE );
-    resetRender();
-}
-
-void GLWidget::onPathtracerMaxPathLengthChanged(int value)
-{
-	m_renderSettings.m_pathtracerMaxPathLength = value;
-	updateRenderSettings();
-}
-
-void GLWidget::loadMesh(QString file)
-{
-	m_mesh = MeshLoader::loadFromOBJ(file.toStdString().c_str());
+	m_mesh = MeshLoader::loadFromOBJ(file.c_str());
 	if (m_mesh == NULL) return;
 
 	// set mesh transform so that the mesh fits within the unit cube. This will
@@ -961,4 +859,5 @@ void GLWidget::loadMesh(QString file)
 
 	resetRender();
 }
+
 

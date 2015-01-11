@@ -2,61 +2,60 @@
 
 #include "camera.h"
 #include "shader.h"
-#include "mesh.h"
 
 #include <GL/gl.h>
-#include <QGLWidget>
-#include <QOpenGLFunctions>
 
 #include <OpenEXR/ImathMatrix.h>
 #include <OpenEXR/ImathBox.h>
 
-class GLWidget : public QGLWidget, protected QOpenGLFunctions
+class Mesh;
+
+struct RenderSettings
 {
-	Q_OBJECT
+	// maximum path length allowed in the path tracer (1 = direct
+	// illumination only).
+	int m_pathtracerMaxPathLength;
+};
 
+
+class Renderer
+{
 public:
-     GLWidget(QWidget *parent = 0);
-     ~GLWidget();
+	enum RenderResult
+	{
+		RR_SAMPLES_PENDING,
+		RR_FINISHED_RENDERING,
+	};
 
-     QSize minimumSizeHint() const;
-     QSize sizeHint() const;
-
-public slots:
-	void reloadShaders();
-    void loadMesh(QString file);
-
-    void cameraFStopChanged(QString fstop);
-	void cameraFocalLengthChanged(QString length);
-	void cameraLensModelChanged(bool dof);
-	void onPathtracerMaxPathLengthChanged(int);
-
-protected:
-	void initializeGL();
-	void paintGL();
-	void resizeGL(int width, int height);
-	void mousePressEvent(QMouseEvent *event);
-    void mouseReleaseEvent(QMouseEvent *event);
-	void mouseMoveEvent(QMouseEvent *event);
-	void keyPressEvent(QKeyEvent *);
-	void updateCamera();
-	void createVoxelDataTexture();
-	bool reloadFocalDistanceShader();
-	bool reloadTexturedShader();
-	bool reloadAverageShader();
-	bool reloadPathtracerShader();
-	bool reloadVoxelizeShader();
-	void drawFullscreenQuad();
-	void createFramebuffer();
-
-private:
-    Imath::V3f lightDirection() const;
+	Renderer();
+	~Renderer();
+	void initialize(const std::string& shaderPath);
+	void resizeFrame(int width, int height);
+	RenderResult render();
+	void reloadShaders(const std::string& shaderPath);
+    void loadMesh(const std::string& file);
+	void setScreenFocalPoint(float x, float y);
     void resetRender();
+
+	void onMouseMove(int dx, int dy, int buttons);
+
+	Camera& camera() { return m_camera; }
+	RenderSettings& renderSettings() { return m_renderSettings; }
 	void updateRenderSettings();
 
-    QPoint           m_lastPos;
-	Qt::MouseButtons m_lastMouseButtons;
+private:
+	void updateCamera();
+	void createVoxelDataTexture();
+	bool reloadFocalDistanceShader(const std::string& shaderPath);
+	bool reloadTexturedShader(const std::string& shaderPath);
+	bool reloadAverageShader(const std::string& shaderPath);
+	bool reloadPathtracerShader(const std::string& shaderPath);
+	bool reloadVoxelizeShader(const std::string& shaderPath);
+	void drawFullscreenQuad();
+	void createFramebuffer();
+    Imath::V3f lightDirection() const;
 
+private:
 	Imath::Box3f m_volumeBounds;
 	Imath::V3i	 m_volumeResolution;
 
@@ -100,17 +99,13 @@ private:
 		TEXTURE_UNIT_FOCAL_DISTANCE
     };
 	
-	struct RenderSettings
-	{
-		// maximum path length allowed in the path tracer (1 = direct
-		// illumination only).
-		int m_pathtracerMaxPathLength;
-	};
-
 	RenderSettings m_renderSettings;
 
     static const unsigned int MAX_FRAME_SAMPLES = 256;
 
 	Imath::M44f m_meshTransform;
     Mesh* m_mesh;
+
+	Imath::V2i m_renderDimensions;
+
 };
