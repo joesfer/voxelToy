@@ -36,7 +36,6 @@ add_definitions(-DSHADER_DIR=${CMAKE_CURRENT_SOURCE_DIR}/src/shaders)
 # Source files =================================================================
 file(GLOB_RECURSE SOURCES src/*.cpp src/*.cc CACHED )
 file(GLOB_RECURSE HEADERS src/*.h src/*.inl CACHED )
-file(GLOB_RECURSE HEADERS src/*.ui CACHED )
 file(GLOB_RECURSE VoxelToy_FORMS src/ui/*.ui)
 file(GLOB_RECURSE VoxelToy_RESOURCES src/ui/*.qrc)
 

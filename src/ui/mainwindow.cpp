@@ -23,6 +23,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->renderProperties, SIGNAL(pathtracerMaxPathLengthChanged(int)),
             ui->glWidget, SLOT(onPathtracerMaxPathLengthChanged(int)));
+    connect(ui->renderProperties, SIGNAL(resolutionSettingsChanged(void)),
+            this, SLOT(onResolutionSettingsChanged(void)));
 }
 
 MainWindow::~MainWindow()
@@ -56,4 +58,12 @@ void MainWindow::on_actionLoad_Mesh_triggered()
         QString file = dialog.selectedFiles()[0];
         ui->glWidget->loadMesh(file);
     }
+}
+
+void MainWindow::onResolutionSettingsChanged()
+{
+    RenderPropertiesUI::ResolutionMode mode;
+    int axis1, axis2;
+   ui->renderProperties->getResolutionSettings(mode, axis1, axis2);
+   ui->glWidget->onResolutionSettingsChanged(mode, axis1, axis2);
 }

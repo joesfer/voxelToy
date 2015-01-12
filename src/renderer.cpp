@@ -22,6 +22,8 @@ Renderer::Renderer()
 	m_numberSamples = 0;
 	m_screenFocalPoint = Imath::V2f(0.5f, 0.5f);
 
+	m_renderSettings.m_imageResolution.x = 512;
+	m_renderSettings.m_imageResolution.y = 512;
 	m_renderSettings.m_pathtracerMaxPathLength = 1;
 	m_mesh = NULL;
 }
@@ -83,8 +85,8 @@ bool Renderer::reloadFocalDistanceShader(const std::string& shaderPath)
 	m_settingsFocalDistance.m_uniformCameraFocalLength      = glGetUniformLocation(m_settingsFocalDistance.m_program, "cameraFocalLength");             
 	m_settingsFocalDistance.m_uniformSampledFragment        = glGetUniformLocation(m_settingsFocalDistance.m_program, "sampledFragment");             
 
-	glViewport(0,0,m_renderDimensions.x, m_renderDimensions.y);
-	glUniform4f(m_settingsFocalDistance.m_uniformViewport, 0, 0, (float)m_renderDimensions.x, (float)m_renderDimensions.y);
+	glViewport(0,0,m_renderSettings.m_imageResolution.x, m_renderSettings.m_imageResolution.y);
+	glUniform4f(m_settingsFocalDistance.m_uniformViewport, 0, 0, (float)m_renderSettings.m_imageResolution.x, (float)m_renderSettings.m_imageResolution.y);
 
 	glUniform1i(m_settingsFocalDistance.m_uniformVoxelOccupancyTexture, TEXTURE_UNIT_OCCUPANCY);
 	
@@ -124,7 +126,11 @@ bool Renderer::reloadTexturedShader(const std::string& shaderPath)
 	m_settingsTextured.m_uniformTexture  = glGetUniformLocation(m_settingsTextured.m_program, "texture");
 	m_settingsTextured.m_uniformViewport = glGetUniformLocation(m_settingsTextured.m_program, "viewport");
 
-    glUniform4f(m_settingsTextured.m_uniformViewport, 0, 0, (float)m_renderDimensions.x, (float)m_renderDimensions.y);
+    glUniform4f(m_settingsTextured.m_uniformViewport, 
+                m_renderSettings.m_viewport[0],
+                m_renderSettings.m_viewport[1],
+                m_renderSettings.m_viewport[2],
+                m_renderSettings.m_viewport[3]);
 
 	return true;
 }
@@ -149,7 +155,7 @@ bool Renderer::reloadAverageShader(const std::string& shaderPath)
 	m_settingsAverage.m_uniformSampleCount    = glGetUniformLocation(m_settingsAverage.m_program, "sampleCount");
 	m_settingsAverage.m_uniformViewport       = glGetUniformLocation(m_settingsAverage.m_program, "viewport");
 
-    glUniform4f(m_settingsAverage.m_uniformViewport, 0, 0, (float)m_renderDimensions.x, (float)m_renderDimensions.y);
+    glUniform4f(m_settingsAverage.m_uniformViewport, 0, 0, (float)m_renderSettings.m_imageResolution.x, (float)m_renderSettings.m_imageResolution.y);
 
 	return true;
 }
@@ -190,8 +196,8 @@ bool Renderer::reloadPathtracerShader(const std::string& shaderPath)
 	m_settingsPathtracer.m_uniformEnableDOF               = glGetUniformLocation(m_settingsPathtracer.m_program, "enableDOF");
 	m_settingsPathtracer.m_uniformPathtracerMaxPathLength = glGetUniformLocation(m_settingsPathtracer.m_program, "pathtracerMaxPathLength");
 
-	glViewport(0,0,m_renderDimensions.x, m_renderDimensions.y);
-	glUniform4f(m_settingsPathtracer.m_uniformViewport, 0, 0, (float)m_renderDimensions.x, (float)m_renderDimensions.y);
+	glViewport(0,0,m_renderSettings.m_imageResolution.x, m_renderSettings.m_imageResolution.y);
+	glUniform4f(m_settingsPathtracer.m_uniformViewport, 0, 0, (float)m_renderSettings.m_imageResolution.x, (float)m_renderSettings.m_imageResolution.y);
 
 	Imath::V3f lightDir = lightDirection();
 	glUniform3f(m_settingsPathtracer.m_uniformLightDir, lightDir.x, lightDir.y, -lightDir.z);
@@ -287,7 +293,7 @@ void Renderer::updateCamera()
 	}
 
 	{ // gluPerspective
-		const float a = (float)m_renderDimensions.x / m_renderDimensions.y;
+		const float a = (float)m_renderSettings.m_imageResolution.x / m_renderSettings.m_imageResolution.y;
 		const float n = m_camera.nearDistance();
 		const float f = m_camera.farDistance();
 		const float e = 1.0f / tan(m_camera.fovY()/2);
@@ -358,16 +364,57 @@ void Renderer::updateCamera()
     glUseProgram(m_settingsFocalDistance.m_program);
     glUniform1f(m_settingsFocalDistance.m_uniformCameraFocalLength  , m_camera.focalLength());
 	glUniform2f(m_settingsFocalDistance.m_uniformSampledFragment,
-				m_screenFocalPoint[0] * m_renderDimensions.x, 
-				(1.0f - m_screenFocalPoint[1]) * m_renderDimensions.y); // m_screenFocal point origin is at top-left, whilst glsl is bottom-left
+				m_screenFocalPoint[0] * m_renderSettings.m_imageResolution.x, 
+				(1.0f - m_screenFocalPoint[1]) * m_renderSettings.m_imageResolution.y); // m_screenFocal point origin is at top-left, whilst glsl is bottom-left
 		
 }
 
-void Renderer::resizeFrame(int width, int height)
+void Renderer::resizeFrame(int frameBufferWidth, 
+						   int frameBufferHeight,
+						   int viewportX, int viewportY,
+						   int viewportW, int viewportH)
 {
-	m_renderDimensions.x = width;
-	m_renderDimensions.y = height;
-	const float viewportAspectRatio = (float)width / height;
+    m_numberSamples = 0;
+
+	m_renderSettings.m_imageResolution.x = frameBufferWidth;
+	m_renderSettings.m_imageResolution.y = frameBufferHeight;
+
+	m_renderSettings.m_viewport[0] = viewportX;
+	m_renderSettings.m_viewport[1] = viewportY;
+	m_renderSettings.m_viewport[2] = viewportW;
+	m_renderSettings.m_viewport[3] = viewportH;
+
+    glUseProgram(m_settingsPathtracer.m_program);
+	glUniform4f(m_settingsPathtracer.m_uniformViewport, 
+				0, 
+				0, 
+				m_renderSettings.m_imageResolution.x, 
+				m_renderSettings.m_imageResolution.y);
+
+    glUseProgram(m_settingsAverage.m_program);
+    glUniform4f(m_settingsAverage.m_uniformViewport,
+				0, 
+				0, 
+				m_renderSettings.m_imageResolution.x, 
+				m_renderSettings.m_imageResolution.y);
+
+    glUseProgram(m_settingsTextured.m_program);
+    glUniform4f(m_settingsTextured.m_uniformViewport,
+                m_renderSettings.m_viewport[0],
+                m_renderSettings.m_viewport[1],
+                m_renderSettings.m_viewport[2],
+                m_renderSettings.m_viewport[3]);
+
+    glUseProgram(m_settingsFocalDistance.m_program);
+    glUniform4f(m_settingsFocalDistance.m_uniformViewport,
+				0, 
+				0, 
+				m_renderSettings.m_imageResolution.x, 
+				m_renderSettings.m_imageResolution.y);
+
+    glUseProgram(0);
+	
+    const float viewportAspectRatio = (float)m_renderSettings.m_imageResolution.x / m_renderSettings.m_imageResolution.y;
 
 	if (viewportAspectRatio >= 1.0f) 
 	{
@@ -379,22 +426,7 @@ void Renderer::resizeFrame(int width, int height)
 	}
 	updateCamera();
 
-	glViewport(0,0,width, height);
 
-    glUseProgram(m_settingsPathtracer.m_program);
-	glUniform4f(m_settingsPathtracer.m_uniformViewport, 0, 0, (float)width, (float)height);
-
-    glUseProgram(m_settingsAverage.m_program);
-    glUniform4f(m_settingsAverage.m_uniformViewport, 0, 0, (float)width, (float)height);
-
-    glUseProgram(m_settingsTextured.m_program);
-    glUniform4f(m_settingsTextured.m_uniformViewport, 0, 0, (float)width, (float)height);
-
-    glUseProgram(m_settingsFocalDistance.m_program);
-    glUniform4f(m_settingsFocalDistance.m_uniformViewport, 0, 0, (float)width, (float)height);
-
-    glUseProgram(0);
-	
 	// create texture
 	for( int i = 0; i < 3; ++i )
 	{
@@ -418,8 +450,8 @@ void Renderer::resizeFrame(int width, int height)
 		glTexImage2D(GL_TEXTURE_2D,
 					 0,
 					 GL_RGBA,
-					 width,
-					 height,
+					 m_renderSettings.m_imageResolution.x,
+					 m_renderSettings.m_imageResolution.y,
 					 0,
 					 GL_RGBA,
 					 GL_FLOAT,
@@ -436,10 +468,9 @@ void Renderer::resizeFrame(int width, int height)
     glBindRenderbuffer(GL_RENDERBUFFER, m_mainRBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, 
 						  GL_DEPTH_COMPONENT,
-						  width,
-						  height);
+						  m_renderSettings.m_imageResolution.x,
+						  m_renderSettings.m_imageResolution.y);
 
-    m_numberSamples = 0;
 }
 
 Renderer::RenderResult Renderer::render()
@@ -463,7 +494,7 @@ Renderer::RenderResult Renderer::render()
 		drawFullscreenQuad();
 	}
 
-	const float viewportAspectRatio = (float)m_renderDimensions.x / m_renderDimensions.y;
+	const float viewportAspectRatio = (float)m_renderSettings.m_imageResolution.x / m_renderSettings.m_imageResolution.y;
 	if (viewportAspectRatio >= 1.0f) 
 	{
 		m_camera.setFilmSize(Camera::FILM_SIZE_35MM, Camera::FILM_SIZE_35MM / viewportAspectRatio);
@@ -509,7 +540,10 @@ Renderer::RenderResult Renderer::render()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glUseProgram(m_settingsTextured.m_program);
 	glUniform1i(m_settingsTextured.m_uniformTexture, TEXTURE_UNIT_AVERAGE0 + (m_activeSampleTexture^1));
-	glViewport(0,0,m_textureDimensions[0], m_textureDimensions[1]);
+    glViewport(m_renderSettings.m_viewport[0],
+               m_renderSettings.m_viewport[1],
+               m_renderSettings.m_viewport[2],
+               m_renderSettings.m_viewport[3]);
 	drawFullscreenQuad();
 	
 	// run continuously?
@@ -546,8 +580,8 @@ void Renderer::onMouseMove(int dx, int dy, int buttons)
     if (buttons & Qt::RightButton)
     {
         const float speed = 1.f;
-        const float theta = -(float)dy / this->m_renderDimensions.y * M_PI * speed + m_camera.rotationTheta();
-        const float phi = -(float)dx / this->m_renderDimensions.x * 2.0f * M_PI * speed + m_camera.rotationPhi();
+        const float theta = -(float)dy / this->m_renderSettings.m_imageResolution.y * M_PI * speed + m_camera.rotationTheta();
+        const float phi = -(float)dx / this->m_renderSettings.m_imageResolution.x * 2.0f * M_PI * speed + m_camera.rotationPhi();
 
         m_camera.setOrbitRotation(theta, phi);
 		change = true;
@@ -607,7 +641,7 @@ void Renderer::createFramebuffer()
 	{
 		const unsigned int noiseTextureSize = 1024;
 		float* noise = (float*)malloc(noiseTextureSize * noiseTextureSize * 4 * sizeof(float));
-        for( int i = 0; i < 4 * noiseTextureSize * noiseTextureSize; ++i ) noise[i] = (float)rand()/RAND_MAX;
+        for( unsigned int i = 0; i < 4 * noiseTextureSize * noiseTextureSize; ++i ) noise[i] = (float)rand()/RAND_MAX;
 		glActiveTexture(GL_TEXTURE0 + TEXTURE_UNIT_NOISE);
 		glBindTexture(GL_TEXTURE_2D, m_noiseTexture);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -653,8 +687,8 @@ void Renderer::createFramebuffer()
 		glTexImage2D(GL_TEXTURE_2D,
 					 0,
 					 GL_RGBA,
-					 m_renderDimensions.x,
-					 m_renderDimensions.y,
+					 m_renderSettings.m_imageResolution.x,
+					 m_renderSettings.m_imageResolution.y,
 					 0,
 					 GL_RGBA,
 					 GL_FLOAT,
@@ -698,8 +732,8 @@ void Renderer::createFramebuffer()
     glBindRenderbuffer(GL_RENDERBUFFER, m_mainRBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, 
 						  GL_DEPTH_COMPONENT,
-						  m_renderDimensions.x,
-						  m_renderDimensions.y);
+						  m_renderSettings.m_imageResolution.x,
+						  m_renderSettings.m_imageResolution.y);
 
     //
     if (glIsFramebuffer(m_mainFBO)) glDeleteFramebuffers(1, &m_mainFBO);

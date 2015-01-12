@@ -14,6 +14,8 @@
 GLWidget::GLWidget(QWidget *parent)
      : QGLWidget(QGLFormat(QGL::SampleBuffers), parent)
 {
+    m_resolutionMode = RenderPropertiesUI::RM_LONGEST_AXIS;
+	m_resolutionLongestAxis = 1024;
 }
 
 GLWidget::~GLWidget()
@@ -40,11 +42,93 @@ void GLWidget::initializeGL()
 	m_renderer.initialize(shaderPath);
 }
 
+void GLWidget::resizeRender(int renderW, int renderH, 
+							int windowW, int windowH)
+{
+    int resW, resH;
+    const float windowAR = (float)windowW / windowH;
+	int viewportX, viewportY, viewportW, viewportH;
+    const float renderAR = (float)renderW / renderH;
 
+    switch(m_resolutionMode)
+    {
+    case RenderPropertiesUI::RM_FIXED:
+		resW = renderW; 
+		resH = renderH;
+		if (windowAR >= renderAR)
+		{
+			/*  _____________________
+			 * |###|             |###|
+			 * |###|             |###|
+			 * |###|             |###|
+			 * |###|             |###|
+			 * |###|             |###|
+			 *  ---------------------
+			 */
+			viewportY = 0;
+			viewportH = windowH;
+			viewportW = windowH * renderAR;
+			viewportX = (windowW - viewportW) / 2;
+		}
+		else
+		{
+			/*
+			 *  ---------
+			 * |#########|
+			 * |#########|
+			 * |#########|
+			 * |---------|
+			 * |         |
+			 * |_________|
+			 * |#########|
+			 * |#########|
+			 * |#########|
+			 *  ---------
+			 */
+			viewportX = 0;
+            viewportW = windowW;
+			viewportH = windowW / renderAR;
+			viewportY = (windowH - viewportH) / 2;
+		}
+        break;
+    case RenderPropertiesUI::RM_LONGEST_AXIS:
+        if (windowW >= windowH)
+        {
+            resW = m_resolutionLongestAxis;
+            resH = resW / windowAR;
+        }
+        else
+        {
+            resH = m_resolutionLongestAxis;
+            resW = resH * windowAR;
+        }
+        viewportX = viewportY = 0;
+        viewportW = windowW;
+        viewportH = windowH;
+        break;
+    case RenderPropertiesUI::RM_MATCH_WINDOW:
+        resW = windowW;
+        resH = windowH;
+		viewportX = viewportY = 0;
+		viewportW = windowW;
+		viewportH = windowH;
+        break;
+
+    default: break;
+    }
+
+	m_renderer.resizeFrame(resW, resH,
+						   viewportX, viewportY,
+						   viewportW, viewportH);
+
+	update();
+}
 void GLWidget::resizeGL(int width, int height)
 {
-	m_renderer.resizeFrame(width, height);
-	update();
+	resizeRender(m_renderer.renderSettings().m_imageResolution.x,
+				 m_renderer.renderSettings().m_imageResolution.y,
+				 width, 
+				 height);
 }
 
 void GLWidget::paintGL()
@@ -134,4 +218,13 @@ void GLWidget::reloadShaders()
 	shaderPath += QDir::separator().toLatin1();
 
 	m_renderer.reloadShaders(shaderPath);
+}
+
+void GLWidget::onResolutionSettingsChanged(RenderPropertiesUI::ResolutionMode mode,
+                                           int axis1,
+                                           int axis2)
+{
+    m_resolutionMode = mode;
+    m_resolutionLongestAxis = axis1;
+	resizeRender(axis1, axis2, width(), height());
 }

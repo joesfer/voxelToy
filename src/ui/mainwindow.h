@@ -24,6 +24,8 @@ private slots:
 
     void on_actionLoad_Mesh_triggered();
 
+    void onResolutionSettingsChanged();
+
 private:
     Ui::MainWindow *ui;
 };

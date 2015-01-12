@@ -7,6 +7,6 @@ out vec4 outColor;
 
 void main()
 {
-	outColor = texelFetch(texture, ivec2(gl_FragCoord.xy), 0);
+	outColor = texture2D(texture, (gl_FragCoord.xy - viewport.xy) / viewport.zw);
 }
 

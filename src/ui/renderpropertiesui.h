@@ -15,11 +15,23 @@ public:
     explicit RenderPropertiesUI(QWidget *parent = 0);
     ~RenderPropertiesUI();
 
+    enum ResolutionMode
+    {
+        RM_FIXED,
+        RM_LONGEST_AXIS,
+        RM_MATCH_WINDOW
+    };
+
+    void getResolutionSettings(ResolutionMode& mode,
+                               int& axis1,
+                               int& axis2);
 signals:
    void pathtracerMaxPathLengthChanged(int);
+   void resolutionSettingsChanged();
 
 public slots:
    void onPathtracerMaxPathLengthChanged(int);
+   void onResolutionSettingsChanged();
 
 private:
     Ui::RenderPropertiesUI *ui;

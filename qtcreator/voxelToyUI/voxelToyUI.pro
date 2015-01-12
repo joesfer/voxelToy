@@ -15,28 +15,30 @@ INCLUDEPATH += ../../src
 
 SOURCES += ../../src/ui/mainwindow.cpp \
 			../../src/main.cpp \
-			../../src/glwidget.cpp \
 			../../src/camera.cpp \
 			../../src/shader.cpp \
 			../../src/noise.cpp \
 			../../src/content.cpp \
+    ../../src/ui/glwidget.cpp \
     ../../src/ui/camerapropertiesui.cpp \
     ../../src/ui/renderpropertiesui.cpp \
     ../../src/mesh.cpp \
     ../../src/meshLoader.cpp \
-    ../../src/thirdParty/tinyobjloader/tiny_obj_loader.cc
+    ../../src/thirdParty/tinyobjloader/tiny_obj_loader.cc \
+    ../../src/renderer.cpp
 
 HEADERS  += ../../src/ui/mainwindow.h \
-    ../../src/glwidget.h \
     ../../src/camera.h \
     ../../src/shader.h \
     ../../src/noise.h \
         ../../src/content.h \
+    ../../src/ui/glwidget.h \
     ../../src/ui/camerapropertiesui.h \
     ../../src/ui/renderpropertiesui.h \
     ../../src/mesh.h \
     ../../src/meshLoader.h \
-    ../../src/thirdParty/tinyobjloader/tiny_obj_loader.h
+    ../../src/thirdParty/tinyobjloader/tiny_obj_loader.h \
+    ../../src/renderer.h
 
 FORMS    += ../../src/ui/mainwindow.ui \
     ../../src/ui/camerapropertiesui.ui \
