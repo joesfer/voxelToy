@@ -8,7 +8,7 @@ set(CMAKE_AUTOMOC ON)
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 find_package(GLEW REQUIRED)
-find_package(Boost REQUIRED)
+#find_package(Boost REQUIRED)
 
 include_directories(${OPENGL_INCLUDE_DIR})
 include_directories(${GLUT_INCLUDE_DIR})
@@ -41,15 +41,6 @@ file(GLOB_RECURSE VoxelToy_RESOURCES src/ui/*.qrc)
 
 set(CMAKE_CXX_FLAGS "-fPIC")
 
-# Output executable ============================================================
-
-ADD_EXECUTABLE(VoxelToy ${SOURCES} 
-	${VoxelToy_FORMS_HEADERS} 
-	${VoxelToy_HEADERS_MOC}
-	${VoxelToy_RESOURCES_RCC}
-	)
-
-
 # QT Library ===================================================================
 # As QT moc files are generated in the binary dir, tell CMake
 # to always look for includes there:
@@ -63,8 +54,8 @@ if (QT4)
 	include(${QT_USE_FILE})
 	add_definitions(${QT_DEFINITIONS})
 	
-	QT4_WRAP_CPP(VoxelToy_HEADERS_MOC ${HEADERS})
 	QT4_WRAP_UI(VoxelToy_FORMS_HEADERS ${VoxelToy_FORMS})
+	QT4_WRAP_CPP(VoxelToy_HEADERS_MOC ${HEADERS})
 	QT4_ADD_RESOURCES(VoxelToy_RESOURCES_RCC ${VoxelToy_RESOURCES})
 	set(QT_USE_QTOPENGL TRUE)
 
@@ -96,10 +87,23 @@ else()
 	QT5_WRAP_UI(VoxelToy_FORMS_HEADERS ${VoxelToy_FORMS})
 	QT5_ADD_RESOURCES(VoxelToy_RESOURCES_RCC ${VoxelToy_RESOURCES})
 
+endif()
+
+# Output executable ============================================================
+
+ADD_EXECUTABLE(VoxelToy ${SOURCES} 
+	${VoxelToy_FORMS_HEADERS} 
+	${VoxelToy_HEADERS_MOC}
+	${VoxelToy_RESOURCES_RCC}
+	)
+
+if (QT4)
+else()
 	qt5_use_modules(VoxelToy Widgets)
 
 	set(QT_LIBRARIES Qt5::Widgets Qt5::OpenGL)
 endif()
+
 
 # Linked libraries =============================================================
 
