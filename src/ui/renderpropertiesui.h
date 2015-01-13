@@ -26,10 +26,12 @@ public:
                                int& axis1,
                                int& axis2);
 signals:
+   void pathtracerMaxSamplesChanged(int);
    void pathtracerMaxPathLengthChanged(int);
    void resolutionSettingsChanged();
 
 public slots:
+   void onPathtracerMaxSamplesChanged(int);
    void onPathtracerMaxPathLengthChanged(int);
    void onResolutionSettingsChanged();
 

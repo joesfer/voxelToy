@@ -14,7 +14,7 @@
 GLWidget::GLWidget(QWidget *parent)
      : QGLWidget(QGLFormat(QGL::SampleBuffers), parent)
 {
-    m_resolutionMode = RenderPropertiesUI::RM_LONGEST_AXIS;
+    m_resolutionMode = RenderPropertiesUI::RM_MATCH_WINDOW;
 	m_resolutionLongestAxis = 1024;
 }
 
@@ -199,6 +199,12 @@ void GLWidget::cameraLensModelChanged(bool dof)
 	m_renderer.camera().setLensModel( dof ? Camera::CLM_THIN_LENS : Camera::CLM_PINHOLE );
     m_renderer.resetRender();
 	update();
+}
+
+void GLWidget::onPathtracerMaxSamplesChanged(int value)
+{
+    m_renderer.renderSettings().m_pathtracerMaxSamples = value;
+    m_renderer.updateRenderSettings();
 }
 
 void GLWidget::onPathtracerMaxPathLengthChanged(int value)

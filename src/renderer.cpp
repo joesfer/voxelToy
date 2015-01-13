@@ -24,7 +24,8 @@ Renderer::Renderer()
 
 	m_renderSettings.m_imageResolution.x = 512;
 	m_renderSettings.m_imageResolution.y = 512;
-	m_renderSettings.m_pathtracerMaxPathLength = 1;
+    m_renderSettings.m_pathtracerMaxPathLength = 1;
+    m_renderSettings.m_pathtracerMaxSamples = 128;
 	m_mesh = NULL;
 }
 
@@ -516,7 +517,7 @@ Renderer::RenderResult Renderer::render()
                            0);
 
     glUseProgram(m_settingsPathtracer.m_program);
-    glUniform1i(m_settingsPathtracer.m_uniformSampleCount, std::min(m_numberSamples, (int)MAX_FRAME_SAMPLES - 1));
+    glUniform1i(m_settingsPathtracer.m_uniformSampleCount, std::min(m_numberSamples, m_renderSettings.m_pathtracerMaxSamples - 1));
 
 	glViewport(0,0,m_textureDimensions[0], m_textureDimensions[1]);
     drawFullscreenQuad();
@@ -547,7 +548,7 @@ Renderer::RenderResult Renderer::render()
 	drawFullscreenQuad();
 	
 	// run continuously?
-    if ( m_numberSamples++ < (int)MAX_FRAME_SAMPLES)
+    if ( m_numberSamples++ < m_renderSettings.m_pathtracerMaxSamples)
     {
         m_activeSampleTexture ^= 1;
 		return RR_SAMPLES_PENDING; 

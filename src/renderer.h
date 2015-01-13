@@ -15,7 +15,10 @@ struct RenderSettings
 	// maximum path length allowed in the path tracer (1 = direct
 	// illumination only).
 	int m_pathtracerMaxPathLength;
-	
+
+    // Max number of accumulated samples before the render finishes
+    int m_pathtracerMaxSamples;
+
 	// rendered image resolution in pixels
 	Imath::V2i m_imageResolution;
 
@@ -112,8 +115,6 @@ private:
     };
 	
 	RenderSettings m_renderSettings;
-
-    static const unsigned int MAX_FRAME_SAMPLES = 256;
 
 	Imath::M44f m_meshTransform;
     Mesh* m_mesh;

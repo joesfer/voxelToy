@@ -12,6 +12,12 @@ RenderPropertiesUI::~RenderPropertiesUI()
 {
     delete ui;
 }
+
+void RenderPropertiesUI::onPathtracerMaxSamplesChanged(int value)
+{
+    emit pathtracerMaxSamplesChanged(value);
+}
+
 void RenderPropertiesUI::onPathtracerMaxPathLengthChanged(int value)
 {
     emit pathtracerMaxPathLengthChanged(value);
