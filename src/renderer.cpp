@@ -10,6 +10,7 @@
 #include "mesh.h"
 #include "content.h"
 #include "meshLoader.h"
+#include "voxelizer.h"
 
 #define FOCAL_DISTANCE_TEXTURE_RESOLUTION 1 
 
@@ -845,24 +846,8 @@ void Renderer::updateRenderSettings()
     resetRender();
 }
 
-void Renderer::loadMesh(const std::string& file)
+void Renderer::voxelizeGPU(const Mesh* mesh)
 {
-	m_mesh = MeshLoader::loadFromOBJ(file.c_str());
-	if (m_mesh == NULL) return;
-
-	// set mesh transform so that the mesh fits within the unit cube. This will
-	// be changed later when we let the user manipulate the mesh transform and
-	// the mesh/volume intersection.
-	using namespace Imath;
-    V3f voxelMargin = V3f(1.0f) / m_volumeResolution; // 1 voxel
-	int majorAxis = m_mesh->bounds().majorAxis();
-    float s = (1.0f - 2.0 * voxelMargin[majorAxis] ) / m_mesh->bounds().size()[majorAxis];
-    V3f t = -m_mesh->bounds().min + voxelMargin / s;
-    m_meshTransform.x[0][0] = s ; m_meshTransform.x[0][1] = 0 ; m_meshTransform.x[0][2] = 0 ; m_meshTransform.x[0][3] = t.x  * s ;
-    m_meshTransform.x[1][0] = 0 ; m_meshTransform.x[1][1] = s ; m_meshTransform.x[1][2] = 0 ; m_meshTransform.x[1][3] = t.y  * s ;
-    m_meshTransform.x[2][0] = 0 ; m_meshTransform.x[2][1] = 0 ; m_meshTransform.x[2][2] = s ; m_meshTransform.x[2][3] = t.z  * s ;
-    m_meshTransform.x[3][0] = 0 ; m_meshTransform.x[3][1] = 0 ; m_meshTransform.x[3][2] = 0 ; m_meshTransform.x[3][3] = 1.0f     ;
-
 	glUseProgram(m_settingsVoxelize.m_program);
 
 	glUniformMatrix4fv(m_settingsVoxelize.m_uniformModelTransform,
@@ -890,7 +875,88 @@ void Renderer::loadMesh(const std::string& file)
 					   GL_RGBA8             // format
 			);
 
-	m_mesh->draw();
+	mesh->draw();
+}
+
+void Renderer::voxelizeCPU(const Imath::V3f* vertices, 
+						   const unsigned int* indices,
+						   unsigned int numTriangles)
+{
+    const size_t numVoxels = (size_t)(m_volumeResolution.x * m_volumeResolution.y * m_volumeResolution.z);
+    GLubyte* occupancyTexels = (GLubyte*)malloc(numVoxels * sizeof(GLubyte));
+	memset(occupancyTexels, 0, numVoxels * sizeof(GLubyte));
+
+	Voxelizer::voxelizeMesh(vertices, indices, numTriangles, m_volumeResolution, occupancyTexels);
+
+    glBindTexture(GL_TEXTURE_3D, m_occupancyTexture);
+    glTexImage3D(GL_TEXTURE_3D,
+				 0,
+				 GL_R8,
+                 m_volumeResolution.x,
+                 m_volumeResolution.y,
+                 m_volumeResolution.z,
+				 0,
+				 GL_RED,
+				 GL_UNSIGNED_BYTE,
+                 occupancyTexels);
+    free(occupancyTexels);
+}
+
+void Renderer::loadMesh(const std::string& file)
+{
+#if VOXELIZE_GPU
+	m_mesh = MeshLoader::loadFromOBJ(file.c_str());
+
+	if (m_mesh == NULL) return;
+
+	// set mesh transform so that the mesh fits within the unit cube. This will
+	// be changed later when we let the user manipulate the mesh transform and
+	// the mesh/volume intersection.
+	using namespace Imath;
+    V3f voxelMargin = V3f(1.0f) / m_volumeResolution; // 1 voxel
+	int majorAxis = m_mesh->bounds().majorAxis();
+    float s = (1.0f - 2.0 * voxelMargin[majorAxis] ) / m_mesh->bounds().size()[majorAxis];
+    V3f t = -m_mesh->bounds().min + voxelMargin / s;
+    m_meshTransform.x[0][0] = s ; m_meshTransform.x[0][1] = 0 ; m_meshTransform.x[0][2] = 0 ; m_meshTransform.x[0][3] = t.x  * s ;
+    m_meshTransform.x[1][0] = 0 ; m_meshTransform.x[1][1] = s ; m_meshTransform.x[1][2] = 0 ; m_meshTransform.x[1][3] = t.y  * s ;
+    m_meshTransform.x[2][0] = 0 ; m_meshTransform.x[2][1] = 0 ; m_meshTransform.x[2][2] = s ; m_meshTransform.x[2][3] = t.z  * s ;
+    m_meshTransform.x[3][0] = 0 ; m_meshTransform.x[3][1] = 0 ; m_meshTransform.x[3][2] = 0 ; m_meshTransform.x[3][3] = 1.0f     ;
+
+	voxelizeGPU(m_mesh);
+#else 
+	std::vector<float> vertices;
+	std::vector<unsigned int> indices;
+	MeshLoader::loadFromOBJ(file.c_str(), vertices, indices);
+    Imath::Box3f bounds = computeBounds(&vertices[0], vertices.size() / 3);
+	
+	// set mesh transform so that the mesh fits within the unit cube. This will
+	// be changed later when we let the user manipulate the mesh transform and
+	// the mesh/volume intersection.
+	using namespace Imath;
+    V3f voxelMargin = V3f(1.0f) / m_volumeResolution; // 1 voxel
+	int majorAxis = bounds.majorAxis();
+    float s = (1.0f - 2.0 * voxelMargin[majorAxis] ) / bounds.size()[majorAxis];
+    V3f t = -bounds.min + voxelMargin / s;
+    m_meshTransform.x[0][0] = s ; m_meshTransform.x[0][1] = 0 ; m_meshTransform.x[0][2] = 0 ; m_meshTransform.x[0][3] = t.x  * s ;
+    m_meshTransform.x[1][0] = 0 ; m_meshTransform.x[1][1] = s ; m_meshTransform.x[1][2] = 0 ; m_meshTransform.x[1][3] = t.y  * s ;
+    m_meshTransform.x[2][0] = 0 ; m_meshTransform.x[2][1] = 0 ; m_meshTransform.x[2][2] = s ; m_meshTransform.x[2][3] = t.z  * s ;
+    m_meshTransform.x[3][0] = 0 ; m_meshTransform.x[3][1] = 0 ; m_meshTransform.x[3][2] = 0 ; m_meshTransform.x[3][3] = 1.0f     ;
+
+    // FIXME: I must be having a mismatch in the way I upload the matrices to
+    // GLSL -- this transpose should not be necessary if the above matrix is
+    // valid for the GPU voxelization.
+    m_meshTransform.transpose();
+
+	Imath::V3f* verts = reinterpret_cast<Imath::V3f*>(&vertices[0]);
+	for(size_t i = 0; i < vertices.size() / 3; ++i)
+	{
+		m_meshTransform.multVecMatrix(verts[i], verts[i]);
+        // now transform the vertices from world space into voxel space, this would
+        // be done by the vertex shader
+        verts[i] *= m_volumeResolution;
+    }
+	voxelizeCPU(verts, &indices[0], indices.size() / 3);
+#endif
 
 	resetRender();
 }

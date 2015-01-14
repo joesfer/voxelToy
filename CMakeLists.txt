@@ -8,7 +8,7 @@ set(CMAKE_AUTOMOC ON)
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 find_package(GLEW REQUIRED)
-#find_package(Boost REQUIRED)
+find_package(Boost REQUIRED)
 
 include_directories(${OPENGL_INCLUDE_DIR})
 include_directories(${GLUT_INCLUDE_DIR})
@@ -113,6 +113,8 @@ target_link_libraries(VoxelToy
 	${OPENGL_LIBRARIES}
 	${OPENEXR_LIBRARIES}
 	${QT_LIBRARIES}
+	-lboost_system
+	-lboost_thread
 	-lpthread)
 
 

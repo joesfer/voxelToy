@@ -147,8 +147,9 @@ void main()
 							   wsRayOrigin, wsRayDir,
 							   wsHitBasis);
 		
-		vec3 albedo = texelFetch(voxelColorTexture,
-							     ivec3(vsHitPos.x, vsHitPos.y, vsHitPos.z), 0).xyz;
+		vec3 albedo = vec3(1,1,1);
+		//vec3 albedo = texelFetch(voxelColorTexture,
+		//					     ivec3(vsHitPos.x, vsHitPos.y, vsHitPos.z), 0).xyz;
 
 		// the salient direction for the incoming light, bounced back though the 
 		// current ray.

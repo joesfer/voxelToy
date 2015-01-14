@@ -70,6 +70,11 @@ private:
 	void createFramebuffer();
     Imath::V3f lightDirection() const;
 
+	void voxelizeCPU(const Imath::V3f* vertices, 
+				     const unsigned int* indices,
+				     unsigned int numTriangles);
+	void voxelizeGPU(const Mesh* mesh);
+
 private:
 	Imath::Box3f m_volumeBounds;
 	Imath::V3i	 m_volumeResolution;

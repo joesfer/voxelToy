@@ -8,12 +8,11 @@
 // https://github.com/syoyo/tinyobjloader
 #include "thirdParty/tinyobjloader/tiny_obj_loader.h"
 
-/*static*/ Mesh* MeshLoader::loadFromOBJ(const char* filePath)
+/*static*/ void MeshLoader::loadFromOBJ(const char* filePath,
+										std::vector<float>& vertices,
+										std::vector<unsigned int>& indices)
 {
 	using namespace std;
-	vector<float> vertices;
-	vector<unsigned int> indices;
-
 	vector<tinyobj::shape_t> shapes;
 	vector<tinyobj::material_t> materials;
 
@@ -21,7 +20,7 @@
 
 	if (!err.empty()) {
 		std::cerr << err << std::endl;
-		return NULL;	
+		return;	
 	}
 
 	{
@@ -63,6 +62,15 @@
 			indexOffset += numIndices;
 		}
 	}
+}
+
+/*static*/ Mesh* MeshLoader::loadFromOBJ(const char* filePath)
+{
+	using namespace std;
+	vector<float> vertices;
+	vector<unsigned int> indices;
+	loadFromOBJ(filePath, vertices, indices);
 	return new Mesh(&vertices[0], vertices.size() / 3, &indices[0], indices.size());
 }
+
 
