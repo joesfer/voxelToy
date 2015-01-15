@@ -1,5 +1,5 @@
 #include <GL/glew.h>
-#include "mesh.h"
+#include "mesh/mesh.h"
 
 #define ATTRIBUTE_LAYOUT_INDEX_POSITION 0
 #define ATTRIBUTE_LAYOUT_INDEX_NORMAL   1

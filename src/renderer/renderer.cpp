@@ -11,11 +11,11 @@
 // should be removed from the renderer
 #include <QtGui> 
 
-#include "renderer.h"
-#include "mesh.h"
+#include "renderer/renderer.h"
+#include "mesh/mesh.h"
 #include "content.h"
-#include "meshLoader.h"
-#include "voxelizer.h"
+#include "mesh/meshLoader.h"
+#include "svo/voxelizer.h"
 
 #define FOCAL_DISTANCE_TEXTURE_RESOLUTION 1 
 

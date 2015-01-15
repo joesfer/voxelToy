@@ -42,7 +42,7 @@ set(BOOST_LIBRARIES
 	${BOOST_THREAD_LIBRARY})
 
 # 
-add_definitions(-DSHADER_DIR=${CMAKE_CURRENT_SOURCE_DIR}/src/shaders)
+add_definitions(-DSHADER_DIR=${CMAKE_CURRENT_SOURCE_DIR}/src/shaders/glsl)
 # This is apparently a bug with boost and older compilers not defining TIME_UTC
 # https://bbs.archlinux.org/viewtopic.php?pid=1126374
 add_definitions(-DTIME_UTC=1)

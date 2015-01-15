@@ -1,4 +1,4 @@
-#include "voxelizer.h"
+#include "svo/voxelizer.h"
 #include <OpenEXR/ImathMatrix.h>
 #include <OpenEXR/ImathFun.h>
 

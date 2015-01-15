@@ -1,5 +1,5 @@
-#include "meshLoader.h"
-#include "mesh.h"
+#include "mesh/meshLoader.h"
+#include "mesh/mesh.h"
 #include <vector>
 #include <iostream>
 #include <memory.h>

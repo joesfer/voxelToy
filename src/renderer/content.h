@@ -1,6 +1,6 @@
 #pragma once
 
-#include "noise.h"
+#include "renderer/noise.h"
 
 #if QT5
 #include <QOpenGLFunctions>

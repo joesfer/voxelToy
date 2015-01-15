@@ -8,7 +8,7 @@
 
 #include <OpenEXR/ImathVec.h>
 
-#include "../renderer.h"
+#include "../renderer/renderer.h"
 #include "renderpropertiesui.h"
 
 class GLWidget : public QGLWidget

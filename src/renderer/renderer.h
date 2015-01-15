@@ -1,8 +1,8 @@
 #pragma once
 
-#include "camera.h"
-#include "shader.h"
-#include "gpuTimer.h"
+#include "camera/camera.h"
+#include "shaders/shader.h"
+#include "timer/gpuTimer.h"
 
 #include <GL/gl.h>
 #include <QGLWidget>

@@ -1,5 +1,5 @@
 #include <GL/glew.h>
-#include "gpuTimer.h"
+#include "timer/gpuTimer.h"
 #include <stdlib.h>
 #include <memory.h>
 #include <assert.h>
