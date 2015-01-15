@@ -3,6 +3,7 @@
 #include <OpenEXR/ImathFun.h>
 
 #include "thirdParty/boost/threadpool.hpp"
+#include <boost/thread.hpp>
 
 using namespace boost::threadpool;
 
@@ -284,7 +285,7 @@ void voxelizeTriangleTask(const Imath::V3f* vertices,
 										const Imath::V3i& voxelDimensions,
 										unsigned char* voxelStorage)
 {
-	unsigned int numThreads = 8;
+	unsigned int numThreads = boost::thread::hardware_concurrency();
 	pool tp(numThreads);
 	unsigned int chunkSize = numTriangles / numThreads;
 
