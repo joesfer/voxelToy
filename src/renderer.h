@@ -2,6 +2,7 @@
 
 #include "camera.h"
 #include "shader.h"
+#include "gpuTimer.h"
 
 #include <GL/gl.h>
 
@@ -124,4 +125,5 @@ private:
 	Imath::M44f m_meshTransform;
     Mesh* m_mesh;
 
+	AveragedGpuTimer m_frameTimer;
 };

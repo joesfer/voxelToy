@@ -51,6 +51,8 @@ void Renderer::initialize(const std::string& shaderPath)
 	reloadShaders(shaderPath);
 	updateCamera();
 	updateRenderSettings();
+
+	m_frameTimer.init();
 }
 
 Imath::V3f Renderer::lightDirection() const
@@ -477,6 +479,8 @@ void Renderer::resizeFrame(int frameBufferWidth,
 
 Renderer::RenderResult Renderer::render()
 {
+	m_frameTimer.sampleBegin();
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -547,6 +551,16 @@ Renderer::RenderResult Renderer::render()
                m_renderSettings.m_viewport[2],
                m_renderSettings.m_viewport[3]);
 	drawFullscreenQuad();
+
+	m_frameTimer.sampleEnd();
+	{
+		const float averageFrameSeconds = m_frameTimer.averageSampleTime();
+		if ( averageFrameSeconds > 0.f)
+		{
+			const float fps = 1.0f / averageFrameSeconds;
+			std::cout << "fps " <<  fps << std::endl;
+		}
+	}
 	
 	// run continuously?
     if ( m_numberSamples++ < m_renderSettings.m_pathtracerMaxSamples)
@@ -588,7 +602,7 @@ void Renderer::onMouseMove(int dx, int dy, int buttons)
         m_camera.setOrbitRotation(theta, phi);
 		change = true;
     }
-    else if( buttons & Qt::MiddleButton)
+    else if( buttons & Qt::MidButton)
     {
         const float speed = 0.99f;
         m_camera.setDistanceToTarget( dy > 0 ? m_camera.distanceToTarget() * speed :
@@ -753,14 +767,6 @@ void Renderer::createFramebuffer()
 	// note the main fbo is not complete yet
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
-
-struct V4f
-{
-	float x,y,z,w;
-	V4f() {}
-	V4f(float _x, float _y, float _z, float _w) : x(_x), y(_y), z(_z), w(_w) {}
-};
-
 
 void Renderer::createVoxelDataTexture()
 {
