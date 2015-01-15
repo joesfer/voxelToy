@@ -2,14 +2,19 @@
 
 #include <GL/gl.h>
 #include <QGLWidget>
+#ifdef QT5
 #include <QOpenGLFunctions>
+#endif
 
 #include <OpenEXR/ImathVec.h>
 
 #include "../renderer.h"
 #include "renderpropertiesui.h"
 
-class GLWidget : public QGLWidget, protected QOpenGLFunctions
+class GLWidget : public QGLWidget
+#ifdef QT5
+				 , protected QOpenGLFunctions
+#endif
 {
 	Q_OBJECT
 

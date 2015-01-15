@@ -5,6 +5,10 @@
 #include "gpuTimer.h"
 
 #include <GL/gl.h>
+#include <QGLWidget>
+#ifdef QT5
+#include <QOpenGLFunctions>
+#endif
 
 #include <OpenEXR/ImathMatrix.h>
 #include <OpenEXR/ImathBox.h>

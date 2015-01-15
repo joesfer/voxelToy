@@ -1,4 +1,9 @@
 #define GL_GLEXT_PROTOTYPES
+#ifdef QT5
+#include <QtOpenGLExtensions/qopenglextensions.h>
+#else
+#include <GL/glew.h>
+#endif
 #include <GL/glut.h>
 #include <GL/glu.h>
 

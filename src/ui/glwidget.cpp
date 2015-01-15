@@ -1,10 +1,15 @@
 #define GL_GLEXT_PROTOTYPES
 
-#include "glwidget.h"
-
+#ifdef QT5
+#include <QtOpenGLExtensions/qopenglextensions.h>
+#else
+#include <GL/glew.h>
+#endif
 #include <QtGui>
 #include <QtOpenGL>
-#include <QtOpenGLExtensions/qopenglextensions.h>
+
+#include "ui/glwidget.h"
+
 
 #include <math.h>
 
@@ -34,7 +39,11 @@ QSize GLWidget::sizeHint() const
 
 void GLWidget::initializeGL()
 {
+#ifdef QT5
 	initializeOpenGLFunctions();
+#else
+	glewInit();
+#endif
 
 	std::string shaderPath(STRINGIFY(SHADER_DIR));
 	shaderPath += QDir::separator().toLatin1();
