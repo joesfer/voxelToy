@@ -1,9 +1,13 @@
 #include "svo/voxelizer.h"
+#include "svo/morton.h"
+
 #include <OpenEXR/ImathMatrix.h>
 #include <OpenEXR/ImathFun.h>
 
 #include "thirdParty/boost/threadpool.hpp"
 #include <boost/thread.hpp>
+#include <boost/atomic.hpp>
+#include <assert.h>
 
 using namespace boost::threadpool;
 
@@ -97,26 +101,70 @@ void swizzleTri(Imath::V3f& v0,
 	}
 }
 
-inline void writeVoxels(Imath::V3i coord, 
-						unsigned char val,
-						const Imath::V3i voxelDimensions,
-						unsigned char* voxelStorage)
+struct DenseVoxelGrid
 {
-	//modify as necessary for attributes/storage type
-	voxelStorage[ coord.x + 
-				  coord.y * voxelDimensions.x + 
-                  coord.z * voxelDimensions.x * voxelDimensions.y ] = val;
-}
+   DenseVoxelGrid(const Imath::V3i voxelDimensions,
+                      unsigned char* voxelStorage) :
+       m_voxelDimensions(voxelDimensions),
+       m_voxelStorage(voxelStorage) {}
 
-void voxelizeTriPostSwizzle(Imath::V3f v0, 
+   bool operator()(const Imath::V3i p, unsigned char val)
+   {
+        m_voxelStorage[ p.x +
+                        p.y * m_voxelDimensions.x +
+                        p.z * m_voxelDimensions.x * m_voxelDimensions.y ] = val;
+		return true;
+   }
+
+    const Imath::V3i m_voxelDimensions;
+    unsigned char* m_voxelStorage;
+};
+
+struct MortonEncodedOctree
+{
+	MortonEncodedOctree(uint64_t* mortonCodeStorage,
+						size_t mortonStorageCapacity,
+						boost::atomic_uint32_t& storageOffset)
+		: m_mortonCodeStorage(mortonCodeStorage),
+		m_mortonStorageCapacity(mortonStorageCapacity),
+		m_storageOffset(storageOffset),
+		m_notEnoughStorage(false) { }
+						
+	bool operator()(const Imath::V3i p, unsigned char /*val*/)
+	{
+		uint32_t offset = m_storageOffset++;
+		if ( offset < m_mortonStorageCapacity )
+		{
+			m_mortonCodeStorage[offset] = Morton::mortonEncode(p.x, 
+															   p.y, 
+															   p.z, 
+															   0, // voxel depth (unknown at this point)
+															   0 // child mask (unknown at this point)
+															   );
+			return true;
+		}
+		else
+		{
+			m_notEnoughStorage = true;
+			return false;
+		}
+	}
+
+	uint64_t* m_mortonCodeStorage;
+	size_t m_mortonStorageCapacity;
+	boost::atomic_uint32_t& m_storageOffset;
+	bool m_notEnoughStorage;
+};
+
+template<typename VoxelRepresentation>
+bool voxelizeTriPostSwizzle(Imath::V3f v0, 
 							Imath::V3f v1, 
 							Imath::V3f v2, 
 							Imath::V3f n, 
 							const Imath::M44f& unswizzle, 
 							Imath::V3i minVoxIndex, 
 							Imath::V3i maxVoxIndex,
-							const Imath::V3i voxelDimensions,
-							unsigned char* voxelStorage)
+                           VoxelRepresentation& writeVoxels)
 {
 	using namespace Imath;
 
@@ -227,21 +275,28 @@ void voxelizeTriPostSwizzle(Imath::V3f v0,
 					{
 						V3f unswizzled; 
 						unswizzle.multDirMatrix(V3f(p), unswizzled);
-						writeVoxels(V3i(unswizzled), 1, voxelDimensions, voxelStorage);	//figure 17/18 line 20
+
+                        if (!writeVoxels(V3i(unswizzled), 1)) //figure 17/18 line 20
+						{
+							return false;
+						}
 					}
 				} //z-loop
 			} //xy-overlap test
 		} //y-loop
 	} //x-loop
+
+	return true;
 }
 
 
-void voxelizeTriangleTask(const Imath::V3f* vertices,
+template<typename VoxelRepresentation>
+bool voxelizeTriangleTask(const Imath::V3f* vertices,
 						  const unsigned int* indices,
 						  unsigned int fromTriangle,
-						  unsigned int toTriangle,
-						  const Imath::V3i voxelDimensions,
-						  unsigned char* voxelStorage)
+                          unsigned int toTriangle,
+                          const Imath::V3i voxelDimensions,
+                         VoxelRepresentation& voxelRepresentation)
 {
 	using namespace Imath;
 
@@ -270,22 +325,60 @@ void voxelizeTriangleTask(const Imath::V3f* vertices,
 							  clamp( ceil(AABBmax.y), 0, voxelDimensions.y),
 							  clamp( ceil(AABBmax.z), 0, voxelDimensions.z));
 
-		voxelizeTriPostSwizzle(v0, v1, v2, n, 
-							   unswizzle, 
-							   minVoxIndex, maxVoxIndex,
-							   voxelDimensions,
-							   voxelStorage);
+		if (!voxelizeTriPostSwizzle(v0, v1, v2, n, 
+								    unswizzle, 
+								    minVoxIndex, maxVoxIndex,
+								    voxelRepresentation))
+		{
+			return false;
+		}
 	}
+	return true;
 }
 
-
-/*static*/ void Voxelizer::voxelizeMesh(const Imath::V3f* vertices,
-										const unsigned int* indices,
-										unsigned int numTriangles,
-										const Imath::V3i& voxelDimensions,
-										unsigned char* voxelStorage)
+// This function is simply an "alias" to voxelizeTriangleTask<DenseVoxelGrid>
+// because boost::bind doesn't seem to be able to figure out the spetialization
+// otherwise.
+bool voxelizeTriangleDenseTask(const Imath::V3f* vertices,
+							   const unsigned int* indices,
+							   unsigned int fromTriangle,
+							   unsigned int toTriangle,
+							   const Imath::V3i voxelDimensions,
+							   DenseVoxelGrid& voxelRepresentation)
 {
-	unsigned int numThreads = boost::thread::hardware_concurrency();
+	return voxelizeTriangleTask(vertices,
+							    indices,
+						 	    fromTriangle,
+						 	    toTriangle,
+						 	    voxelDimensions,
+						 	    voxelRepresentation);
+}
+
+// This function is simply an "alias" to voxelizeTriangleTask<MortonEncodedOctree>
+// because boost::bind doesn't seem to be able to figure out the spetialization
+// otherwise.
+bool voxelizeTriangleMortonTask(const Imath::V3f* vertices,
+							    const unsigned int* indices,
+							    unsigned int fromTriangle,
+							    unsigned int toTriangle,
+							    const Imath::V3i voxelDimensions,
+							    MortonEncodedOctree& voxelRepresentation)
+{
+	return voxelizeTriangleTask(vertices,
+							    indices,
+							    fromTriangle,
+							    toTriangle,
+							    voxelDimensions,
+							    voxelRepresentation);
+}
+
+/*static*/ void Voxelizer::voxelizeMeshDenseGrid(const Imath::V3f* vertices,
+												 const unsigned int* indices,
+												 unsigned int numTriangles,
+												 const Imath::V3i voxelDimensions,
+												 unsigned char* voxelStorage)
+{
+    unsigned int numThreads = boost::thread::hardware_concurrency();
 	pool tp(numThreads);
 	unsigned int chunkSize = numTriangles / numThreads;
 
@@ -293,13 +386,50 @@ void voxelizeTriangleTask(const Imath::V3f* vertices,
 	{
 		unsigned int fromTriangle = i * chunkSize;
 		unsigned int toTriangle = std::min(numTriangles - 1, (i+1) * chunkSize);
-		tp.schedule(boost::bind(voxelizeTriangleTask, 
+        tp.schedule(boost::bind(voxelizeTriangleDenseTask,
 								vertices,
 								indices,
 								fromTriangle, 
-								toTriangle,
-								voxelDimensions,
-								voxelStorage));
+                                toTriangle,
+                                voxelDimensions,
+                                DenseVoxelGrid(voxelDimensions, voxelStorage)));
 	}
+}
+
+/*static*/ bool Voxelizer::voxelizeMeshMorton(const Imath::V3f* vertices,
+										      const unsigned int* indices,
+										      unsigned int numTriangles,
+										      const Imath::V3i voxelDimensions,
+										      uint64_t* mortonCodes,
+										      size_t mortonCodesCapacity,
+										      size_t& numMortonCodes)
+{
+    unsigned int numThreads = boost::thread::hardware_concurrency();
+	pool tp(numThreads);
+	unsigned int chunkSize = numTriangles / numThreads;
+	boost::atomic_uint32_t storageOffset(0);
+
+	MortonEncodedOctree writer(mortonCodes, 
+							   mortonCodesCapacity,
+							   storageOffset);
+
+	for(unsigned int i = 0; i < numTriangles; ++i)
+	{
+		unsigned int fromTriangle = i * chunkSize;
+		unsigned int toTriangle = std::min(numTriangles - 1, (i+1) * chunkSize);
+        tp.schedule(boost::bind(voxelizeTriangleMortonTask,
+								vertices,
+								indices,
+								fromTriangle, 
+                                toTriangle,
+                                voxelDimensions,
+								writer));
+	}
+	numMortonCodes = storageOffset;
+
+	// TODO: what do we do if we've run out of storage? should we supply an
+	// std::vector instead and a mutex to allow for dynamic resizing? should we
+	// resize and then retry the voxelization?
+	return !writer.m_notEnoughStorage;
 }
 

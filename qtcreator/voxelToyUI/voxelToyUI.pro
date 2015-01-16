@@ -27,7 +27,9 @@ SOURCES += ../../src/ui/mainwindow.cpp \
     ../../src/thirdParty/tinyobjloader/tiny_obj_loader.cc \
     ../../src/renderer/renderer.cpp \
     ../../src/svo/voxelizer.cpp \
-    ../../src/timer/gpuTimer.cpp
+    ../../src/timer/gpuTimer.cpp \
+    ../../src/svo/morton.cpp \
+    ../../src/svo/svo.cpp
 
 HEADERS  += ../../src/ui/mainwindow.h \
     ../../src/camera/camera.h \
@@ -55,7 +57,9 @@ HEADERS  += ../../src/ui/mainwindow.h \
     ../../src/thirdParty/boost/threadpool/detail/future.hpp \
     ../../src/thirdParty/boost/threadpool/detail/scope_guard.hpp \
     ../../src/svo/voxelizer.h \
-    ../../src/timer/gpuTimer.h
+    ../../src/timer/gpuTimer.h \
+    ../../src/svo/morton.h \
+    ../../src/svo/svo.h
 
 FORMS    += ../../src/ui/mainwindow.ui \
     ../../src/ui/camerapropertiesui.ui \

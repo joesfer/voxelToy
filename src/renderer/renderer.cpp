@@ -17,6 +17,10 @@
 #include "mesh/meshLoader.h"
 #include "svo/voxelizer.h"
 
+#include <memory.h>
+#include <assert.h>
+#include <algorithm>
+
 #define FOCAL_DISTANCE_TEXTURE_RESOLUTION 1 
 
 Renderer::Renderer()
@@ -893,11 +897,13 @@ void Renderer::voxelizeCPU(const Imath::V3f* vertices,
 						   const unsigned int* indices,
 						   unsigned int numTriangles)
 {
+	// Generate dense voxelization (TODO: this is just to have something to
+	// render, will be removed once the SVO works)
     const size_t numVoxels = (size_t)(m_volumeResolution.x * m_volumeResolution.y * m_volumeResolution.z);
     GLubyte* occupancyTexels = (GLubyte*)malloc(numVoxels * sizeof(GLubyte));
 	memset(occupancyTexels, 0, numVoxels * sizeof(GLubyte));
 
-	Voxelizer::voxelizeMesh(vertices, indices, numTriangles, m_volumeResolution, occupancyTexels);
+	Voxelizer::voxelizeMeshDenseGrid(vertices, indices, numTriangles, m_volumeResolution, occupancyTexels);
 
     glBindTexture(GL_TEXTURE_3D, m_occupancyTexture);
     glTexImage3D(GL_TEXTURE_3D,
@@ -911,6 +917,41 @@ void Renderer::voxelizeCPU(const Imath::V3f* vertices,
 				 GL_UNSIGNED_BYTE,
                  occupancyTexels);
     free(occupancyTexels);
+
+
+	// Generate SVO leaves 
+	
+	std::vector<uint64_t> mortonCodes;
+	bool success = false;
+    for( float occupancyHeuristic = 0.01f;
+		!success && occupancyHeuristic <= 1.0f; 
+        occupancyHeuristic = std::min(1.0f, occupancyHeuristic * 2) )
+	{
+		const size_t numMortonCodes = numVoxels * occupancyHeuristic;
+		mortonCodes.resize(numMortonCodes);
+		size_t numProducedMortonCodes = 0;
+		if (Voxelizer::voxelizeMeshMorton(vertices, 
+										  indices, 
+										  numTriangles, 
+										  m_volumeResolution, 
+										  &mortonCodes[0],
+										  mortonCodes.size(),
+										  numProducedMortonCodes))
+		{
+			success = true;
+			mortonCodes.resize(numProducedMortonCodes);
+		}
+		else
+		{
+			std::cout << "Insufficient storage for SVO. Retrying..." << std::endl;
+		}
+	}
+	if (!success) 
+	{
+		// this should never happen because we end up with an occupancy of 1.0
+		// which corresponds to a dense voxel grid!
+		assert(false);
+	}
 }
 
 void Renderer::loadMesh(const std::string& file)
