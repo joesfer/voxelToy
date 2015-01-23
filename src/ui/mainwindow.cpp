@@ -69,3 +69,16 @@ void MainWindow::onResolutionSettingsChanged()
    ui->renderProperties->getResolutionSettings(mode, axis1, axis2);
    ui->glWidget->onResolutionSettingsChanged(mode, axis1, axis2);
 }
+
+void MainWindow::on_actionLoad_VOX_file_triggered()
+{
+    QFileDialog dialog(this);
+    dialog.setFileMode(QFileDialog::ExistingFile);
+    dialog.setNameFilter(tr("VOX files (*.vox)"));
+    dialog.setViewMode(QFileDialog::Detail);
+    if(dialog.exec())
+    {
+        QString file = dialog.selectedFiles()[0];
+        ui->glWidget->loadVoxFile(file);
+    }
+}

@@ -102,6 +102,7 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionLoad_VOX_file"/>
    <addaction name="actionLoad_Mesh"/>
    <addaction name="actionReload_Shaders"/>
   </widget>
@@ -127,6 +128,21 @@
    </property>
    <property name="toolTip">
     <string>Load Mesh</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+M</string>
+   </property>
+  </action>
+  <action name="actionLoad_VOX_file">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/icons/floppy.png</normaloff>:/icons/icons/floppy.png</iconset>
+   </property>
+   <property name="text">
+    <string>Load VOX file</string>
+   </property>
+   <property name="toolTip">
+    <string>Load .vox File</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>

@@ -10,6 +10,7 @@
 #include "mesh.h"
 #include "content.h"
 #include "meshLoader.h"
+#include "voxLoader.h"
 
 #define FOCAL_DISTANCE_TEXTURE_RESOLUTION 1 
 
@@ -45,7 +46,7 @@ void Renderer::initialize(const std::string& shaderPath)
     if (glIsTexture(m_voxelColorTexture)) glDeleteTextures(1, &m_voxelColorTexture);
     glGenTextures(1, &m_voxelColorTexture);
 
-	createVoxelDataTexture();
+	createVoxelDataTexture(Imath::V3i(16));
     createFramebuffer();
 	reloadShaders(shaderPath);
 	updateCamera();
@@ -761,28 +762,27 @@ struct V4f
 };
 
 
-void Renderer::createVoxelDataTexture()
+void Renderer::createVoxelDataTexture(const Imath::V3i& resolution,
+									  const GLubyte* occupancyTexels,
+									  const GLubyte* colorTexels)
 {
     using namespace Imath;
 	
 	// Texture resolution 
-    m_volumeResolution = V3i(256);
+    m_volumeResolution = resolution;
 
     const size_t numVoxels = (size_t)(m_volumeResolution.x * m_volumeResolution.y * m_volumeResolution.z);
-
-	// TODO I could pack the occupancy into the alpha channel of the voxel color
-	// texture, but the rationale is that we only access the voxel color when we
-	// finally have a hit, whereas the occupancy texture is used to perform the
-	// raymarch so it should be small to fit as many texels in a cache line as
-	// possible. This needs to be backed up by actual performance tests.
-    GLubyte* occupancyTexels = (GLubyte*)malloc(numVoxels * sizeof(GLubyte));
-    GLubyte* colorTexels = (GLubyte*)malloc(numVoxels * 4 * sizeof(GLubyte));
 
     float sizeMultiplier = 100;
     m_volumeBounds = Box3f( V3f(-0.5f, -0.5f, -0.5f) * sizeMultiplier, V3f(0.5f, 0.5f, 0.5f) * sizeMultiplier );
 
-    memset(occupancyTexels, 0, numVoxels * sizeof(GLubyte));
-    memset(colorTexels, 0, numVoxels * 4 * sizeof(GLubyte));
+	GLubyte* occupancyStorage = occupancyTexels != NULL ? NULL : new GLubyte[numVoxels];
+	GLubyte* colorStorage = colorTexels != NULL ? NULL : new GLubyte[4*numVoxels];
+	if (occupancyStorage != NULL) memset(occupancyStorage, 0, numVoxels * sizeof(GLubyte));
+	if (colorStorage != NULL) memset(colorStorage, 0, 4 * numVoxels * sizeof(GLubyte));
+
+	const GLubyte* occupancy = occupancyTexels != NULL ? occupancyTexels : occupancyStorage;
+	const GLubyte* color = colorTexels != NULL ? colorTexels : colorStorage;
 
 	// Upload texture data to card
 
@@ -804,7 +804,7 @@ void Renderer::createVoxelDataTexture()
 				 0,
 				 GL_RED,
 				 GL_UNSIGNED_BYTE,
-                 occupancyTexels);
+                 occupancy);
 
 	glActiveTexture( GL_TEXTURE0 + TEXTURE_UNIT_COLOR);
     glBindTexture(GL_TEXTURE_3D, m_voxelColorTexture);
@@ -824,11 +824,12 @@ void Renderer::createVoxelDataTexture()
 				 0,
 				 GL_RGBA,
 				 GL_UNSIGNED_BYTE,
-                 colorTexels);
+                 color);
+
+	delete[] occupancyStorage;
+	delete[] colorStorage;
 
 
-    free(occupancyTexels);
-    free(colorTexels);
 }
 void Renderer::resetRender()
 {
@@ -847,6 +848,8 @@ void Renderer::updateRenderSettings()
 
 void Renderer::loadMesh(const std::string& file)
 {
+	createVoxelDataTexture(Imath::V3i(256));
+
 	m_mesh = MeshLoader::loadFromOBJ(file.c_str());
 	if (m_mesh == NULL) return;
 
@@ -895,4 +898,25 @@ void Renderer::loadMesh(const std::string& file)
 	resetRender();
 }
 
+void Renderer::loadVoxFile(const std::string& file)
+{
+    GLubyte* occupancyTexels = NULL;
+    GLubyte* colorTexels = NULL;
+	MagicaVoxelLoader loader;
+
+	if (!loader.load(file, 
+					 occupancyTexels, 
+					 colorTexels, 
+					 m_volumeResolution))
+	{
+		return;
+	}
+							
+	createVoxelDataTexture(m_volumeResolution, occupancyTexels, colorTexels);
+
+	free(occupancyTexels);
+	free(colorTexels);
+
+	resetRender();
+}
 

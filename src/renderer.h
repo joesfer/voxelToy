@@ -49,6 +49,7 @@ public:
 	RenderResult render();
 	void reloadShaders(const std::string& shaderPath);
     void loadMesh(const std::string& file);
+    void loadVoxFile(const std::string& file);
 	void setScreenFocalPoint(float x, float y);
     void resetRender();
 
@@ -60,7 +61,9 @@ public:
 
 private:
 	void updateCamera();
-	void createVoxelDataTexture();
+	void createVoxelDataTexture (const Imath::V3i& resolution,
+								 const GLubyte* occupancyTexels = NULL,
+								 const GLubyte* colorTexels = NULL);
 	bool reloadFocalDistanceShader(const std::string& shaderPath);
 	bool reloadTexturedShader(const std::string& shaderPath);
 	bool reloadAverageShader(const std::string& shaderPath);

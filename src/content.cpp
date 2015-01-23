@@ -1,4 +1,6 @@
 #include "content.h"
+#include <cstdio>
+#include <memory.h>
 
 namespace VoxelTools
 {

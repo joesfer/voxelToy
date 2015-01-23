@@ -215,7 +215,12 @@ void GLWidget::onPathtracerMaxPathLengthChanged(int value)
 
 void GLWidget::loadMesh(QString file)
 {
-	m_renderer.loadMesh(file.toStdString());
+    m_renderer.loadMesh(file.toStdString());
+}
+
+void GLWidget::loadVoxFile(QString file)
+{
+    m_renderer.loadVoxFile(file.toStdString());
 }
 
 void GLWidget::reloadShaders()

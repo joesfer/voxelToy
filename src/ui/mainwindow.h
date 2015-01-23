@@ -26,6 +26,8 @@ private slots:
 
     void onResolutionSettingsChanged();
 
+    void on_actionLoad_VOX_file_triggered();
+
 private:
     Ui::MainWindow *ui;
 };
