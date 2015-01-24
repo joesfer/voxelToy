@@ -49,7 +49,8 @@ void main()
 	vec3 rayPoint = wsRayOrigin + rayLength * wsRayDir;
 	vec3 vsHitPos, vsHitNormal;
 
-	if ( !traverse(rayPoint, wsRayDir, vsHitPos, vsHitNormal) )
+	bool hitGround;
+	if ( !traverse(rayPoint, wsRayDir, vsHitPos, vsHitNormal, hitGround) )
 	{
 		wsDistance = 99999999.0;	
 		return;

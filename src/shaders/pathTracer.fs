@@ -20,6 +20,7 @@ uniform vec2        cameraFilmSize;
 
 uniform vec4        backgroundColorSky = vec4(153.0 / 255, 187.0 / 255, 201.0 / 255, 1) * 2;
 uniform vec4        backgroundColorGround = vec4(77.0 / 255, 64.0 / 255, 50.0 / 255, 1);
+uniform vec3        groundColor = vec3(0.5, 0.5, 0.5);
 
 uniform int         sampleCount;
 uniform int         enableDOF;
@@ -70,8 +71,9 @@ vec3 directLighting(in vec3 albedo,
 	// point.
 	vec3 vsShadowHitPos;
 	vec3 vsShadowHitNormal;
+	bool hitGround;
 	if( traverse(wsHitBasis.position + ISECT_EPSILON * wsToLight_pdf.xyz, 
-				 wsToLight_pdf.xyz, vsShadowHitPos, vsShadowHitNormal) )
+				 wsToLight_pdf.xyz, vsShadowHitPos, vsShadowHitNormal, hitGround) )
 	{
 		// light is not visible. No light contribution.
 		return vec3(0);
@@ -107,6 +109,7 @@ void main()
 	float aabbIsectDist = rayAABBIntersection(wsRayOrigin, wsRayDir,
 											  volumeBoundsMin, volumeBoundsMax); 
 
+	bool hitGround;
 	if (aabbIsectDist < 0)
 	{
 		// we're not even hitting the volume's bounding box. Early out.
@@ -125,7 +128,7 @@ void main()
 
 	// Cast primary ray
 	vec3 throughput = vec3(1.0);
-	if ( !traverse(wsRayEntryPoint, wsRayDir, vsHitPos, vsHitNormal) )
+	if ( !traverse(wsRayEntryPoint, wsRayDir, vsHitPos, vsHitNormal, hitGround) )
 	{
 		outColor = vec4(getBackgroundColor(wsRayDir),1);
 		return;
@@ -147,7 +150,9 @@ void main()
 							   wsRayOrigin, wsRayDir,
 							   wsHitBasis);
 		
-		vec3 albedo = texelFetch(voxelColorTexture,
+		vec3 albedo = hitGround ? 
+					groundColor :
+					texelFetch(voxelColorTexture,
 							     ivec3(vsHitPos.x, vsHitPos.y, vsHitPos.z), 0).xyz;
 
 		// the salient direction for the incoming light, bounced back though the 
@@ -172,7 +177,7 @@ void main()
 		wsRayDir = wsWi;
 
 		// find new vertex of path 
-		if ( !traverse(wsRayOrigin + wsRayDir * ISECT_EPSILON, wsRayDir, vsHitPos, vsHitNormal) )
+		if ( !traverse(wsRayOrigin + wsRayDir * ISECT_EPSILON, wsRayDir, vsHitPos, vsHitNormal, hitGround) )
 		{
 			// the ray missed the scene. Handle the environment light here.
 			vec4 environtmentRadiance_Pdf = evaluateEnvironmentRadiance(wsRayDir);

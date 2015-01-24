@@ -54,15 +54,26 @@ bool traverse(in vec3 wsRayOrigin,
 			  in vec3 wsRayDir, 
 			  in int maxSteps,
 			  out vec3 vsHitPos, 
-			  out vec3 vsHitNormal)
+			  out vec3 vsHitNormal,
+			  out bool hitGround)
 {
-	return raymarch(wsRayOrigin, wsRayDir, maxSteps, vsHitPos, vsHitNormal);
+	if (raymarch(wsRayOrigin, wsRayDir, maxSteps, vsHitPos, vsHitNormal))
+	{
+		hitGround = false;
+		return true;
+	}
+	
+	// we didn't hit the voxel model, but check whether we hit the optional
+	// ground?
+	hitGround = (vsHitPos.y < 0);
+	return hitGround;
 }
 
 bool traverse(in vec3 wsRayOrigin, 
 			  in vec3 wsRayDir,
 			  out vec3 vsHitPos, 
-			  out vec3 vsHitNormal)
+			  out vec3 vsHitNormal,
+			  out bool hitGround)
 {
 	// In theory I should not need to enforce any clamping because we test on
 	// the raymarching function whether we've gone out of the volume bounds and
@@ -77,7 +88,7 @@ bool traverse(in vec3 wsRayOrigin,
 	// DDA would take one extra step for every advanced voxel as it jumps through 
 	// adjacent faces and not vertices).  
 	int MAX_STEPS = int(2 * ceil(length(vec3(voxelResolution))));
-	return raymarch(wsRayOrigin, wsRayDir, MAX_STEPS, vsHitPos, vsHitNormal);
+	return traverse(wsRayOrigin, wsRayDir, MAX_STEPS, vsHitPos, vsHitNormal, hitGround);
 }
 
 
