@@ -773,8 +773,12 @@ void Renderer::createVoxelDataTexture(const Imath::V3i& resolution,
 
     const size_t numVoxels = (size_t)(m_volumeResolution.x * m_volumeResolution.y * m_volumeResolution.z);
 
-    float sizeMultiplier = 100;
-    m_volumeBounds = Box3f( V3f(-0.5f, -0.5f, -0.5f) * sizeMultiplier, V3f(0.5f, 0.5f, 0.5f) * sizeMultiplier );
+    float sizeMultiplier = 1000;
+	float voxelSize = sizeMultiplier / std::max(m_volumeResolution.x, std::max(m_volumeResolution.y, m_volumeResolution.z));
+	V3f boundsSize(voxelSize * m_volumeResolution.x, 
+				   voxelSize * m_volumeResolution.y, 
+				   voxelSize * m_volumeResolution.z);
+    m_volumeBounds = Box3f( -boundsSize * 0.5f, boundsSize * 0.5f);
 
 	GLubyte* occupancyStorage = occupancyTexels != NULL ? NULL : new GLubyte[numVoxels];
 	GLubyte* colorStorage = colorTexels != NULL ? NULL : new GLubyte[4*numVoxels];
@@ -829,6 +833,45 @@ void Renderer::createVoxelDataTexture(const Imath::V3i& resolution,
 	delete[] occupancyStorage;
 	delete[] colorStorage;
 
+	// Set new resolution and volume bounds in all shaders
+
+	glUseProgram(m_settingsPathtracer.m_program);
+	glUniform3i(m_settingsPathtracer.m_uniformVoxelDataResolution, 
+				m_volumeResolution.x, 
+				m_volumeResolution.y, 
+				m_volumeResolution.z);
+
+	glUniform3f(m_settingsPathtracer.m_uniformVolumeBoundsMin,
+				m_volumeBounds.min.x,
+				m_volumeBounds.min.y,
+				m_volumeBounds.min.z);
+
+	glUniform3f(m_settingsPathtracer.m_uniformVolumeBoundsMax,
+				m_volumeBounds.max.x,
+				m_volumeBounds.max.y,
+				m_volumeBounds.max.z);
+
+	glUseProgram(m_settingsVoxelize.m_program);
+	glUniform3i(m_settingsVoxelize.m_uniformVoxelDataResolution, 
+				m_volumeResolution.x, 
+				m_volumeResolution.y, 
+				m_volumeResolution.z);
+
+	glUseProgram(m_settingsFocalDistance.m_program);
+	glUniform3i(m_settingsFocalDistance.m_uniformVoxelDataResolution, 
+				m_volumeResolution.x, 
+				m_volumeResolution.y, 
+				m_volumeResolution.z);
+
+	glUniform3f(m_settingsFocalDistance.m_uniformVolumeBoundsMin,
+				m_volumeBounds.min.x,
+				m_volumeBounds.min.y,
+				m_volumeBounds.min.z);
+
+	glUniform3f(m_settingsFocalDistance.m_uniformVolumeBoundsMax,
+				m_volumeBounds.max.x,
+				m_volumeBounds.max.y,
+				m_volumeBounds.max.z);
 
 }
 void Renderer::resetRender()
@@ -850,6 +893,8 @@ void Renderer::loadMesh(const std::string& file)
 {
 	createVoxelDataTexture(Imath::V3i(256));
 
+	m_camera.setDistanceToTarget(m_volumeBounds.size().length() * 0.5f);
+
 	m_mesh = MeshLoader::loadFromOBJ(file.c_str());
 	if (m_mesh == NULL) return;
 
@@ -867,6 +912,11 @@ void Renderer::loadMesh(const std::string& file)
     m_meshTransform.x[3][0] = 0 ; m_meshTransform.x[3][1] = 0 ; m_meshTransform.x[3][2] = 0 ; m_meshTransform.x[3][3] = 1.0f     ;
 
 	glUseProgram(m_settingsVoxelize.m_program);
+
+	glUniform3i(m_settingsVoxelize.m_uniformVoxelDataResolution, 
+				m_volumeResolution.x, 
+				m_volumeResolution.y, 
+				m_volumeResolution.z);
 
 	glUniformMatrix4fv(m_settingsVoxelize.m_uniformModelTransform,
 					   1,
@@ -913,6 +963,7 @@ void Renderer::loadVoxFile(const std::string& file)
 	}
 							
 	createVoxelDataTexture(m_volumeResolution, occupancyTexels, colorTexels);
+	m_camera.setDistanceToTarget(m_volumeBounds.size().length() * 0.5f);
 
 	free(occupancyTexels);
 	free(colorTexels);
