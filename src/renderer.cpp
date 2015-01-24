@@ -13,8 +13,8 @@
 
 Renderer::Renderer()
 {
-    m_camera.centerAt(Imath::V3f(0,0,0));
-    m_camera.setDistanceToTarget(100);
+    m_camera.controller().centerAt(Imath::V3f(0,0,0));
+    m_camera.controller().setDistanceToTarget(100);
     m_camera.setFStop(16);
 	m_activeSampleTexture = 0;
 	m_numberSamples = 0;
@@ -875,7 +875,7 @@ void Renderer::loadMesh(const std::string& file)
 {
 	createVoxelDataTexture(Imath::V3i(256));
 
-	m_camera.setDistanceToTarget(m_volumeBounds.size().length() * 0.5f);
+	m_camera.controller().setDistanceToTarget(m_volumeBounds.size().length() * 0.5f);
 
 	m_mesh = MeshLoader::loadFromOBJ(file.c_str());
 	if (m_mesh == NULL) return;
@@ -945,7 +945,7 @@ void Renderer::loadVoxFile(const std::string& file)
 	}
 							
 	createVoxelDataTexture(m_volumeResolution, occupancyTexels, colorTexels);
-	m_camera.setDistanceToTarget(m_volumeBounds.size().length() * 0.5f);
+	m_camera.controller().setDistanceToTarget(m_volumeBounds.size().length() * 0.5f);
 
 	free(occupancyTexels);
 	free(colorTexels);

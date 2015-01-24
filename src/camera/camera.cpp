@@ -1,5 +1,5 @@
-#include "src/camera/camera.h"
-#include "src/camera/orbitCameraController.h"
+#include "camera/camera.h"
+#include "camera/orbitCameraController.h"
 
 Camera::Camera()
 {
@@ -21,6 +21,4 @@ void Camera::setFocalDistance(float distance)      { m_parameters.setFocalDistan
 void Camera::setFilmSize(float filmW, float filmH) { m_parameters.setFilmSize(filmW, filmH);     }
 void Camera::setLensRadius(float radius)           { m_parameters.setLensRadius(radius);         }
 void Camera::setFStop(float fstop)                 { m_parameters.setFStop(fstop);               }
-void Camera::centerAt(const Imath::V3f& target)    { m_parameters.centerAt(target);              }
-void Camera::setDistanceToTarget(float distance)   { m_parameters.setDistanceToTarget(distance); }
 

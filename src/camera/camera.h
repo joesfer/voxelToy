@@ -21,11 +21,6 @@ public:
 	void setLensRadius(float radius);
 	void setFStop(float fstop);
 
-    // set target at supplied location, and move eye position proportionally to
-    // the current orientation and distance to camera.
-    void centerAt(const Imath::V3f& target);
-    void setDistanceToTarget(float distance);
-
 private:
 	CameraParameters  m_parameters;
 	CameraController* m_controller;
