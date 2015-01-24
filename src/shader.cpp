@@ -8,6 +8,20 @@ void log( const std::string& msg )
 {
 	std::cout << msg << std::endl;
 }
+void logWithLineNumbers( const std::string& msg )
+{
+	size_t lineNumber = 0;
+	std::string line;
+	std::string::size_type from = 0;
+	do
+	{
+		std::string::size_type to = msg.find('\n', from);
+		std::cout << (lineNumber++) << ": "; 
+		std::cout << msg.substr(from, to - from + 1) ;
+		if ( to == std::string::npos ) break;
+		from = to + 1;
+	} while(true);
+}
 
 bool loadFile( const std::string& file, std::string& contents )
 {
@@ -157,8 +171,7 @@ GLuint createShader(const std::string& programName,
 	if ( logLength > 0 )
 	{
         log( std::string("Program ") + programName + std::string(": Vertex shader compilation log:\n") + infoLog);
-		log( shaderPreprocessor );
-		log( shaderCode );
+		logWithLineNumbers( shaderPreprocessor + shaderCode );
 	}
     return shader;
 }
