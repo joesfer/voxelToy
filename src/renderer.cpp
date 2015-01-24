@@ -2,15 +2,12 @@
 #include <GL/glut.h>
 #include <GL/glu.h>
 
-// this is still needed for the mouse buttons, but the dependency with Qt 
-// should be removed from the renderer
-#include <QtGui> 
-
 #include "renderer.h"
 #include "mesh.h"
 #include "content.h"
 #include "meshLoader.h"
 #include "voxLoader.h"
+#include "camera/cameraController.h"
 
 #define FOCAL_DISTANCE_TEXTURE_RESOLUTION 1 
 
@@ -278,10 +275,10 @@ void Renderer::reloadShaders(const std::string& shaderPath)
 void Renderer::updateCamera()
 {
 	using namespace Imath;
-	V3f eye     = m_camera.eye();
-	V3f right   = m_camera.rightUnitVector();
-	V3f up      = m_camera.upUnitVector();
-	V3f forward = m_camera.forwardUnitVector();
+	V3f eye     = m_camera.parameters().eye();
+	V3f right   = m_camera.parameters().rightUnitVector();
+	V3f up      = m_camera.parameters().upUnitVector();
+	V3f forward = m_camera.parameters().forwardUnitVector();
 
 	M44f mvm; // modelViewMatrix
 	M44f pm; // projectionMatrix
@@ -296,9 +293,9 @@ void Renderer::updateCamera()
 
 	{ // gluPerspective
 		const float a = (float)m_renderSettings.m_imageResolution.x / m_renderSettings.m_imageResolution.y;
-		const float n = m_camera.nearDistance();
-		const float f = m_camera.farDistance();
-		const float e = 1.0f / tan(m_camera.fovY()/2);
+		const float n = m_camera.parameters().nearDistance();
+		const float f = m_camera.parameters().farDistance();
+		const float e = 1.0f / tan(m_camera.parameters().fovY()/2);
 
 		pm.x[0][0] = e/a ; pm.x[0][1] = 0 ; pm.x[0][2] = 0           ; pm.x[0][3] = 0              ;
 		pm.x[1][0] = 0   ; pm.x[1][1] = e ; pm.x[1][2] = 0           ; pm.x[1][3] = 0              ;
@@ -313,8 +310,8 @@ void Renderer::updateCamera()
 
     glUseProgram(m_settingsFocalDistance.m_program);
 
-    glUniform1f(m_settingsFocalDistance.m_uniformCameraNear, m_camera.nearDistance());
-	glUniform1f(m_settingsFocalDistance.m_uniformCameraFar, m_camera.farDistance());
+    glUniform1f(m_settingsFocalDistance.m_uniformCameraNear, m_camera.parameters().nearDistance());
+	glUniform1f(m_settingsFocalDistance.m_uniformCameraFar, m_camera.parameters().farDistance());
 
     glUniformMatrix4fv(m_settingsFocalDistance.m_uniformCameraInverseModelView,
                        1,
@@ -335,8 +332,8 @@ void Renderer::updateCamera()
 	
     glUseProgram(m_settingsPathtracer.m_program);
 
-    glUniform1f(m_settingsPathtracer.m_uniformCameraNear, m_camera.nearDistance());
-	glUniform1f(m_settingsPathtracer.m_uniformCameraFar, m_camera.farDistance());
+    glUniform1f(m_settingsPathtracer.m_uniformCameraNear, m_camera.parameters().nearDistance());
+	glUniform1f(m_settingsPathtracer.m_uniformCameraFar, m_camera.parameters().farDistance());
 
     glUniformMatrix4fv(m_settingsPathtracer.m_uniformCameraInverseModelView,
                        1,
@@ -352,19 +349,20 @@ void Renderer::updateCamera()
 					   1,
                        GL_TRUE,
 					   &invProj.x[0][0]);
-	bool enableDOF = m_camera.lensModel() == Camera::CLM_THIN_LENS; 
+
+	bool enableDOF = m_camera.parameters().lensModel() == CameraParameters::CLM_THIN_LENS; 
 	enableDOF &= (m_numberSamples > 0); // Disable DOF while tumbling around
 
 	// TODO the focal length can be extracted from the perspective matrix (FOV)
 	// so we should choose either method, but not both.
     glUseProgram(m_settingsPathtracer.m_program);
-    glUniform1f(m_settingsPathtracer.m_uniformCameraFocalLength  , m_camera.focalLength());
-    glUniform1f(m_settingsPathtracer.m_uniformCameraLensRadius   , m_camera.lensRadius());
+    glUniform1f(m_settingsPathtracer.m_uniformCameraFocalLength  , m_camera.parameters().focalLength());
+    glUniform1f(m_settingsPathtracer.m_uniformCameraLensRadius   , m_camera.parameters().lensRadius());
     glUniform1i(m_settingsPathtracer.m_uniformEnableDOF          , enableDOF ? 1 : 0 );
-    glUniform2f(m_settingsPathtracer.m_uniformCameraFilmSize     , m_camera.filmSize().x, 
-															m_camera.filmSize().y);
+    glUniform2f(m_settingsPathtracer.m_uniformCameraFilmSize     , m_camera.parameters().filmSize().x, 
+															       m_camera.parameters().filmSize().y);
     glUseProgram(m_settingsFocalDistance.m_program);
-    glUniform1f(m_settingsFocalDistance.m_uniformCameraFocalLength  , m_camera.focalLength());
+    glUniform1f(m_settingsFocalDistance.m_uniformCameraFocalLength  , m_camera.parameters().focalLength());
 	glUniform2f(m_settingsFocalDistance.m_uniformSampledFragment,
 				m_screenFocalPoint[0] * m_renderSettings.m_imageResolution.x, 
 				(1.0f - m_screenFocalPoint[1]) * m_renderSettings.m_imageResolution.y); // m_screenFocal point origin is at top-left, whilst glsl is bottom-left
@@ -420,11 +418,11 @@ void Renderer::resizeFrame(int frameBufferWidth,
 
 	if (viewportAspectRatio >= 1.0f) 
 	{
-		m_camera.setFilmSize(Camera::FILM_SIZE_35MM, Camera::FILM_SIZE_35MM / viewportAspectRatio);
+		m_camera.setFilmSize(CameraParameters::FILM_SIZE_35MM, CameraParameters::FILM_SIZE_35MM / viewportAspectRatio);
 	}
 	else 
 	{
-		m_camera.setFilmSize(Camera::FILM_SIZE_35MM * viewportAspectRatio, Camera::FILM_SIZE_35MM);
+		m_camera.setFilmSize(CameraParameters::FILM_SIZE_35MM * viewportAspectRatio, CameraParameters::FILM_SIZE_35MM);
 	}
 	updateCamera();
 
@@ -499,11 +497,11 @@ Renderer::RenderResult Renderer::render()
 	const float viewportAspectRatio = (float)m_renderSettings.m_imageResolution.x / m_renderSettings.m_imageResolution.y;
 	if (viewportAspectRatio >= 1.0f) 
 	{
-		m_camera.setFilmSize(Camera::FILM_SIZE_35MM, Camera::FILM_SIZE_35MM / viewportAspectRatio);
+		m_camera.setFilmSize(CameraParameters::FILM_SIZE_35MM, CameraParameters::FILM_SIZE_35MM / viewportAspectRatio);
 	}
 	else 
 	{
-		m_camera.setFilmSize(Camera::FILM_SIZE_35MM * viewportAspectRatio, Camera::FILM_SIZE_35MM);
+		m_camera.setFilmSize(CameraParameters::FILM_SIZE_35MM * viewportAspectRatio, CameraParameters::FILM_SIZE_35MM);
 	}
 	updateCamera();
 	
@@ -561,10 +559,10 @@ void Renderer::drawFullscreenQuad()
 {
 	// draw quad
 	glBegin(GL_QUADS);
-		glVertex3f(  1.0f,  1.0f, m_camera.nearDistance());
-		glVertex3f( -1.0f,  1.0f, m_camera.nearDistance());
-		glVertex3f( -1.0f, -1.0f, m_camera.nearDistance());
-		glVertex3f(  1.0f, -1.0f, m_camera.nearDistance());
+		glVertex3f(  1.0f,  1.0f, m_camera.parameters().nearDistance());
+		glVertex3f( -1.0f,  1.0f, m_camera.parameters().nearDistance());
+		glVertex3f( -1.0f, -1.0f, m_camera.parameters().nearDistance());
+		glVertex3f(  1.0f, -1.0f, m_camera.parameters().nearDistance());
 	glEnd();
 }
 
@@ -578,25 +576,9 @@ void Renderer::setScreenFocalPoint(float x, float y)
 
 void Renderer::onMouseMove(int dx, int dy, int buttons)
 {
-    bool change = false;
-    if (buttons & Qt::RightButton)
-    {
-        const float speed = 1.f;
-        const float theta = -(float)dy / this->m_renderSettings.m_imageResolution.y * M_PI * speed + m_camera.rotationTheta();
-        const float phi = -(float)dx / this->m_renderSettings.m_imageResolution.x * 2.0f * M_PI * speed + m_camera.rotationPhi();
-
-        m_camera.setOrbitRotation(theta, phi);
-		change = true;
-    }
-    else if( buttons & Qt::MiddleButton)
-    {
-        const float speed = 0.99f;
-        m_camera.setDistanceToTarget( dy > 0 ? m_camera.distanceToTarget() * speed :
-                                               m_camera.distanceToTarget() / speed );
-		change = true;
-    }
-
-	if ( change )
+	const float ndx = (float)dx / this->m_renderSettings.m_imageResolution.x;
+	const float ndy = (float)dy / this->m_renderSettings.m_imageResolution.y;
+	if ( m_camera.controller().onMouseMove(ndx, ndy, buttons) )
 	{
 		updateCamera();
 		m_numberSamples = 0;

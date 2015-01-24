@@ -15,11 +15,16 @@
 //     eye 
 //
 
-
-class Camera
+class CameraParameters
 {
 public:
-	Camera();
+	CameraParameters();
+
+	enum CameraLensModel
+	{
+		CLM_PINHOLE,
+		CLM_THIN_LENS
+	};
 	
     // get eye position
 	Imath::V3f eye() const;
@@ -27,13 +32,8 @@ public:
     // get target position
 	Imath::V3f target() const;
 
-    // set target at supplied location, and move eye position proportionally to
-    // the current orientation and distance to camera.
-    void centerAt(const Imath::V3f& target);
-
     // get and set eye-target distance
     float distanceToTarget() const;
-    void setDistanceToTarget(float distance);
 
 	// retrieve camera orthonormal basis
 	Imath::V3f forwardUnitVector() const;
@@ -46,6 +46,38 @@ public:
 	float rotationPhi() const;
 	// TODO roll
 
+	// get and set vertical fov, in radians
+	float fovY() const; 
+
+	float nearDistance() const;
+
+	float farDistance() const;
+
+	float focalLength() const;
+
+	float focalDistance() const;
+
+	Imath::V2f filmSize() const;
+
+	float lensRadius() const;
+
+	CameraLensModel lensModel() const;
+
+    static float FILM_SIZE_35MM;
+
+private:
+	friend class CameraController;
+	friend class Camera;
+
+	// FIXME
+	friend class OrbitCameraController;
+
+    // set target at supplied location, and move eye position proportionally to
+    // the current orientation and distance to camera.
+    void centerAt(const Imath::V3f& target);
+    void setDistanceToTarget(float distance);
+
+	
 	// Set eye position from spherical coordinates centered around the target
 	// position. Parameters:
 	// - theta: polar angle. Angle with respect to the vertical axis 0 <= theta <= PI. 
@@ -58,38 +90,15 @@ public:
 	// Set the camera direction explicitly from eye and target points.
 	void setEyeTarget(const Imath::V3f& eye, const Imath::V3f& target);
 
-	// get and set vertical fov, in radians
-	float fovY() const; 
 	void setFovY(float fov);
-
-	float nearDistance() const;
 	void setNearDistance(float d);
-
-	float farDistance() const;
 	void setFarDistance(float d);
-
-	float focalLength() const;
 	void setFocalLength(float length);
-
-	float focalDistance() const;
 	void setFocalDistance(float distance);
-
-	Imath::V2f filmSize() const;
 	void setFilmSize(float filmW, float filmH);
-
-	float lensRadius() const;
 	void setLensRadius(float radius);
 	void setFStop(float fstop);
-
-	enum CameraLensModel
-	{
-		CLM_PINHOLE,
-		CLM_THIN_LENS
-	};
-	CameraLensModel lensModel() const;
 	void setLensModel(CameraLensModel model);
-
-    static float FILM_SIZE_35MM;
 
 private:
 	Imath::V3f	    m_target;

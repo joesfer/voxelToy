@@ -196,7 +196,7 @@ void GLWidget::cameraFocalLengthChanged(QString length)
 
 void GLWidget::cameraLensModelChanged(bool dof)
 {
-	m_renderer.camera().setLensModel( dof ? Camera::CLM_THIN_LENS : Camera::CLM_PINHOLE );
+	m_renderer.camera().enableDOF( dof );
     m_renderer.resetRender();
 	update();
 }
