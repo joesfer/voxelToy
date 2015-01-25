@@ -219,12 +219,28 @@ void GLWidget::onPathtracerMaxSamplesChanged(int value)
 {
     m_renderer.renderSettings().m_pathtracerMaxSamples = value;
     m_renderer.updateRenderSettings();
+	update();
 }
 
 void GLWidget::onPathtracerMaxPathLengthChanged(int value)
 {
 	m_renderer.renderSettings().m_pathtracerMaxPathLength = value;
 	m_renderer.updateRenderSettings();
+	update();
+}
+
+void GLWidget::onWireframeOpacityChanged(int value)
+{
+	m_renderer.renderSettings().m_wireframeOpacity = (float)value / 100;
+	m_renderer.updateRenderSettings();
+	update();
+}
+
+void GLWidget::onWireframeThicknessChanged(int value)
+{
+	m_renderer.renderSettings().m_wireframeThickness = (float)value / 1000;
+	m_renderer.updateRenderSettings();
+	update();
 }
 
 void GLWidget::loadMesh(QString file)

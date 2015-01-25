@@ -32,6 +32,9 @@ public slots:
     void onPathtracerMaxSamplesChanged(int);
     void onPathtracerMaxPathLengthChanged(int);
     void onResolutionSettingsChanged(RenderPropertiesUI::ResolutionMode mode, int axis1, int axis2);
+    void onWireframeOpacityChanged(int);
+    void onWireframeThicknessChanged(int);
+
 protected:
 	void initializeGL();
 	void paintGL();

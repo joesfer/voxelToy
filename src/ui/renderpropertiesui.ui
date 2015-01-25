@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>374</width>
-    <height>293</height>
+    <height>362</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -178,6 +178,55 @@
     </widget>
    </item>
    <item>
+    <widget class="QGroupBox" name="groupBox_3">
+     <property name="title">
+      <string>Wireframe overlay</string>
+     </property>
+     <layout class="QFormLayout" name="formLayout_2">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_6">
+        <property name="text">
+         <string>Opacity</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QSlider" name="wireframeOpacitySlider">
+        <property name="maximum">
+         <number>100</number>
+        </property>
+        <property name="value">
+         <number>0</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_7">
+        <property name="text">
+         <string>Thickness</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QSlider" name="wireframeThicknessSlider">
+        <property name="maximum">
+         <number>100</number>
+        </property>
+        <property name="value">
+         <number>10</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
       <string>Path Tracing</string>
@@ -234,6 +283,18 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>resolutionFixedRadioButton</tabstop>
+  <tabstop>resolutionFixedWidthSpinBox</tabstop>
+  <tabstop>resolutionFixedHeightSpinBox</tabstop>
+  <tabstop>resolutionLongestAxisRadioButton</tabstop>
+  <tabstop>resolutionLongestAxisSpinBox</tabstop>
+  <tabstop>resolutionMatchWindowRadioButton</tabstop>
+  <tabstop>wireframeOpacitySlider</tabstop>
+  <tabstop>wireframeThicknessSlider</tabstop>
+  <tabstop>pathtracerMaxPathLengthSpinBox</tabstop>
+  <tabstop>pathtracerMaxStepsSlider</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>
@@ -484,7 +545,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>355</x>
-     <y>200</y>
+     <y>306</y>
     </hint>
     <hint type="destinationlabel">
      <x>240</x>
@@ -499,12 +560,44 @@
    <slot>onPathtracerMaxSamplesChanged(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>239</x>
-     <y>224</y>
+     <x>355</x>
+     <y>341</y>
     </hint>
     <hint type="destinationlabel">
      <x>242</x>
      <y>289</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>wireframeOpacitySlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>RenderPropertiesUI</receiver>
+   <slot>onWireframeOpacityChanged(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>119</x>
+     <y>183</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>96</x>
+     <y>247</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>wireframeThicknessSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>RenderPropertiesUI</receiver>
+   <slot>onWireframeThicknessChanged(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>186</x>
+     <y>212</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>194</x>
+     <y>248</y>
     </hint>
    </hints>
   </connection>
@@ -513,8 +606,12 @@
   <signal>pathtracerMaxPathLengthChanged(int)</signal>
   <signal>resolutionSettingsChanged()</signal>
   <signal>pathtracerMaxSamplesChanged(int)</signal>
+  <signal>wireframeThicknessChanged(int)</signal>
+  <signal>wireframeOpacityChanged(int)</signal>
   <slot>onPathtracerMaxPathLengthChanged(int)</slot>
   <slot>onResolutionSettingsChanged()</slot>
   <slot>onPathtracerMaxSamplesChanged(int)</slot>
+  <slot>onWireframeOpacityChanged(int)</slot>
+  <slot>onWireframeThicknessChanged(int)</slot>
  </slots>
 </ui>

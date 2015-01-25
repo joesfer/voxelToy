@@ -60,6 +60,8 @@ struct PathtracerShaderSettings
 	GLuint m_uniformSampleCount;
 	GLuint m_uniformEnableDOF;
 	GLuint m_uniformPathtracerMaxPathLength;
+	GLuint m_uniformWireframeOpacity;
+	GLuint m_uniformWireframeThickness;
 };
 			
 struct AccumulationShaderSettings

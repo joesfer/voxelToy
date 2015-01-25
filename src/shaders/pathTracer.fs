@@ -26,6 +26,9 @@ uniform int         sampleCount;
 uniform int         enableDOF;
 uniform int			pathtracerMaxPathLength;
 
+uniform float		wireframeOpacity = 0;
+uniform float		wireframeThickness = 0.01;
+
 out vec4 outColor;
 
 #include <aabb.h>
@@ -155,6 +158,20 @@ void main()
 					groundColor :
 					texelFetch(voxelColorTexture,
 							     ivec3(vsHitPos.x, vsHitPos.y, vsHitPos.z), 0).xyz;
+
+		// Wireframe overlay
+		if (wireframeOpacity > 0)
+		{
+			vec3 vsVoxelCenter = (wsHitBasis.position - volumeBoundsMin) / (volumeBoundsMax - volumeBoundsMin) * voxelResolution;
+			vec3 uvw = vsHitPos - vsVoxelCenter;
+			//vec2 uv = vec2(dot(vsHitNormal.yzx, uvw), dot( vsHitNormal.zxy, uvw) ) * oneOverCos45;
+			vec2 uv = abs(vec2(dot(vsHitNormal.yzx, uvw), dot( vsHitNormal.zxy, uvw)));
+			float wireframe = step(wireframeThickness, uv.x) * step(uv.x, 1-wireframeThickness) *
+							  step(wireframeThickness, uv.y) * step(uv.y, 1-wireframeThickness);
+
+			wireframe = (1-wireframeOpacity) + wireframeOpacity * wireframe;	
+			albedo *= vec3(wireframe);
+		}
 
 		// the salient direction for the incoming light, bounced back though the 
 		// current ray.

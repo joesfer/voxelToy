@@ -29,6 +29,10 @@ MainWindow::MainWindow(QWidget *parent) :
             ui->glWidget, SLOT(onPathtracerMaxPathLengthChanged(int)));
     connect(ui->renderProperties, SIGNAL(resolutionSettingsChanged(void)),
             this, SLOT(onResolutionSettingsChanged(void)));
+    connect(ui->renderProperties, SIGNAL(wireframeOpacityChanged(int)),
+            ui->glWidget, SLOT(onWireframeOpacityChanged(int)));
+    connect(ui->renderProperties, SIGNAL(wireframeThicknessChanged(int)),
+            ui->glWidget, SLOT(onWireframeThicknessChanged(int)));
 }
 
 MainWindow::~MainWindow()

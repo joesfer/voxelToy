@@ -194,6 +194,8 @@ bool Renderer::reloadPathtracerShader(const std::string& shaderPath)
 	m_settingsPathtracer.m_uniformSampleCount             = glGetUniformLocation(m_settingsPathtracer.m_program, "sampleCount");
 	m_settingsPathtracer.m_uniformEnableDOF               = glGetUniformLocation(m_settingsPathtracer.m_program, "enableDOF");
 	m_settingsPathtracer.m_uniformPathtracerMaxPathLength = glGetUniformLocation(m_settingsPathtracer.m_program, "pathtracerMaxPathLength");
+	m_settingsPathtracer.m_uniformWireframeOpacity        = glGetUniformLocation(m_settingsPathtracer.m_program, "wireframeOpacity");
+	m_settingsPathtracer.m_uniformWireframeThickness      = glGetUniformLocation(m_settingsPathtracer.m_program, "wireframeThickness");
 
 	glViewport(0,0,m_renderSettings.m_imageResolution.x, m_renderSettings.m_imageResolution.y);
 	glUniform4f(m_settingsPathtracer.m_uniformViewport, 0, 0, (float)m_renderSettings.m_imageResolution.x, (float)m_renderSettings.m_imageResolution.y);
@@ -877,7 +879,9 @@ void Renderer::resetRender()
 void Renderer::updateRenderSettings()
 {
 	glUseProgram(m_settingsPathtracer.m_program);
-	glUniform1i(m_settingsPathtracer.m_uniformPathtracerMaxPathLength, m_renderSettings.m_pathtracerMaxPathLength);
+	glUniform1i(m_settingsPathtracer.m_uniformPathtracerMaxPathLength , m_renderSettings.m_pathtracerMaxPathLength);
+	glUniform1f(m_settingsPathtracer.m_uniformWireframeOpacity        , m_renderSettings.m_wireframeOpacity);
+	glUniform1f(m_settingsPathtracer.m_uniformWireframeThickness      , m_renderSettings.m_wireframeThickness);
 
 	glUseProgram(0);
     resetRender();

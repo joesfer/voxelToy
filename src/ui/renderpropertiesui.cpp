@@ -27,6 +27,15 @@ void RenderPropertiesUI::onResolutionSettingsChanged()
 {
     emit resolutionSettingsChanged();
 }
+void RenderPropertiesUI::onWireframeOpacityChanged(int value)
+{
+	emit wireframeOpacityChanged(value);
+}
+
+void RenderPropertiesUI::onWireframeThicknessChanged(int value)
+{
+	emit wireframeThicknessChanged(value);
+}
 
 void RenderPropertiesUI::getResolutionSettings(ResolutionMode &mode, int &axis1, int &axis2)
 {

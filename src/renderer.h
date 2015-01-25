@@ -27,6 +27,9 @@ struct RenderSettings
 	// will occur.
 	int	m_viewport[4];
 
+	float m_wireframeOpacity;
+	float m_wireframeThickness;
+
 };
 
 

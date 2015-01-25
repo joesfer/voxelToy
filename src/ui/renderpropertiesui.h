@@ -26,14 +26,18 @@ public:
                                int& axis1,
                                int& axis2);
 signals:
-   void pathtracerMaxSamplesChanged(int);
-   void pathtracerMaxPathLengthChanged(int);
-   void resolutionSettingsChanged();
+	void pathtracerMaxSamplesChanged(int);
+	void pathtracerMaxPathLengthChanged(int);
+	void resolutionSettingsChanged();
+	void wireframeOpacityChanged(int);
+	void wireframeThicknessChanged(int);
 
 public slots:
-   void onPathtracerMaxSamplesChanged(int);
-   void onPathtracerMaxPathLengthChanged(int);
-   void onResolutionSettingsChanged();
+	void onPathtracerMaxSamplesChanged(int);
+	void onPathtracerMaxPathLengthChanged(int);
+	void onResolutionSettingsChanged();
+	void onWireframeOpacityChanged(int value);
+	void onWireframeThicknessChanged(int value);
 
 private:
     Ui::RenderPropertiesUI *ui;
