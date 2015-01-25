@@ -1,6 +1,6 @@
 #pragma once
 
-#include "camera.h"
+#include "camera/camera.h"
 #include "shader.h"
 
 #include <GL/gl.h>
@@ -49,10 +49,12 @@ public:
 	RenderResult render();
 	void reloadShaders(const std::string& shaderPath);
     void loadMesh(const std::string& file);
+    void loadVoxFile(const std::string& file);
 	void setScreenFocalPoint(float x, float y);
     void resetRender();
 
-	void onMouseMove(int dx, int dy, int buttons);
+	bool onMouseMove(int dx, int dy, int buttons);
+	bool onKeyPress(int key);
 
 	Camera& camera() { return m_camera; }
 	RenderSettings& renderSettings() { return m_renderSettings; }
@@ -60,7 +62,9 @@ public:
 
 private:
 	void updateCamera();
-	void createVoxelDataTexture();
+	void createVoxelDataTexture (const Imath::V3i& resolution,
+								 const GLubyte* occupancyTexels = NULL,
+								 const GLubyte* colorTexels = NULL);
 	bool reloadFocalDistanceShader(const std::string& shaderPath);
 	bool reloadTexturedShader(const std::string& shaderPath);
 	bool reloadAverageShader(const std::string& shaderPath);

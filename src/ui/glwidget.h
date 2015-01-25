@@ -23,14 +23,15 @@ public:
 public slots:
 	void reloadShaders();
     void loadMesh(QString file);
+    void loadVoxFile(QString file);
 
     void cameraFStopChanged(QString fstop);
 	void cameraFocalLengthChanged(QString length);
 	void cameraLensModelChanged(bool dof);
+    void cameraControllerChanged(QString mode);
     void onPathtracerMaxSamplesChanged(int);
     void onPathtracerMaxPathLengthChanged(int);
     void onResolutionSettingsChanged(RenderPropertiesUI::ResolutionMode mode, int axis1, int axis2);
-
 protected:
 	void initializeGL();
 	void paintGL();

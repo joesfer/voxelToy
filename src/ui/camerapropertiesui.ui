@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>278</width>
-    <height>106</height>
+    <height>145</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -129,6 +129,27 @@
      </property>
     </widget>
    </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>Controller</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QComboBox" name="comboBox">
+     <item>
+      <property name="text">
+       <string>orbit</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>fly-through</string>
+      </property>
+     </item>
+    </widget>
+   </item>
   </layout>
  </widget>
  <resources/>
@@ -197,13 +218,31 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>comboBox</sender>
+   <signal>currentIndexChanged(QString)</signal>
+   <receiver>CameraPropertiesUI</receiver>
+   <slot>onCameraControllerChanged(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>180</x>
+     <y>118</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>26</x>
+     <y>141</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <signal>lensModelChanged(bool)</signal>
   <signal>lensRadiusChanged(QString)</signal>
   <signal>focalLengthChanged(QString)</signal>
+  <signal>cameraControllerChanged(QString)</signal>
   <slot>onLensModelChanged(bool)</slot>
   <slot>onLensRadiusChanged(QString)</slot>
   <slot>onFocalLengthChanged(QString)</slot>
+  <slot>onCameraControllerChanged(QString)</slot>
  </slots>
 </ui>

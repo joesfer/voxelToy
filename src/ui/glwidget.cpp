@@ -174,9 +174,12 @@ void GLWidget::mouseReleaseEvent(QMouseEvent *event)
 	update();
 }
 
-void GLWidget::keyPressEvent(QKeyEvent* /*event*/)
+void GLWidget::keyPressEvent(QKeyEvent* event)
 {
-	update();
+	if (m_renderer.onKeyPress(event->key()))
+	{
+		update();
+	}
 }
 
 
@@ -196,9 +199,20 @@ void GLWidget::cameraFocalLengthChanged(QString length)
 
 void GLWidget::cameraLensModelChanged(bool dof)
 {
-	m_renderer.camera().setLensModel( dof ? Camera::CLM_THIN_LENS : Camera::CLM_PINHOLE );
+	m_renderer.camera().enableDOF( dof );
     m_renderer.resetRender();
 	update();
+}
+void GLWidget::cameraControllerChanged(QString mode)
+{
+	if ( mode == "orbit" )
+	{
+		m_renderer.camera().setCameraController(Camera::CCM_ORBIT);
+	}
+	else
+	{
+		m_renderer.camera().setCameraController(Camera::CCM_FLY);
+	}
 }
 
 void GLWidget::onPathtracerMaxSamplesChanged(int value)
@@ -215,7 +229,12 @@ void GLWidget::onPathtracerMaxPathLengthChanged(int value)
 
 void GLWidget::loadMesh(QString file)
 {
-	m_renderer.loadMesh(file.toStdString());
+    m_renderer.loadMesh(file.toStdString());
+}
+
+void GLWidget::loadVoxFile(QString file)
+{
+    m_renderer.loadVoxFile(file.toStdString());
 }
 
 void GLWidget::reloadShaders()

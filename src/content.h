@@ -36,4 +36,8 @@ void addPlane( const Imath::V3f& normal, const Imath::V3f& p,
 			   const Imath::Box3f volumeBounds,
 			   GLubyte* occupancyTexels, RGB* colorTexels );
 
+bool loadVoxFile( const std::string& filePath,
+				  GLubyte*& occupancyTexels, GLubyte*& colorTexels,
+				  Imath::V3i& voxelResolution);
+
 } // namespace voxelTools

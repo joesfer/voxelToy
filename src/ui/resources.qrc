@@ -2,5 +2,6 @@
     <qresource prefix="/icons">
         <file>icons/refresh.png</file>
         <file>icons/add.png</file>
+        <file>icons/floppy.png</file>
     </qresource>
 </RCC>

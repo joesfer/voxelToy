@@ -19,11 +19,13 @@ signals:
     void lensModelChanged(bool);
     void lensRadiusChanged(QString);
     void focalLengthChanged(QString);
+    void cameraControllerChanged(QString);
 
 public slots:
     void onLensModelChanged(bool );
     void onLensRadiusChanged(QString);
     void onFocalLengthChanged(QString);
+    void onCameraControllerChanged(QString);
 
 private:
     Ui::CameraPropertiesUI *ui;

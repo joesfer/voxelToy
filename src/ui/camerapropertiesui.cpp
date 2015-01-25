@@ -26,3 +26,8 @@ void CameraPropertiesUI::onFocalLengthChanged(QString value)
 {
     emit focalLengthChanged(value);
 }
+
+void CameraPropertiesUI::onCameraControllerChanged(QString value)
+{
+    emit cameraControllerChanged(value);
+}

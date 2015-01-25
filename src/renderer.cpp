@@ -2,21 +2,19 @@
 #include <GL/glut.h>
 #include <GL/glu.h>
 
-// this is still needed for the mouse buttons, but the dependency with Qt 
-// should be removed from the renderer
-#include <QtGui> 
-
 #include "renderer.h"
 #include "mesh.h"
 #include "content.h"
 #include "meshLoader.h"
+#include "voxLoader.h"
+#include "camera/cameraController.h"
 
 #define FOCAL_DISTANCE_TEXTURE_RESOLUTION 1 
 
 Renderer::Renderer()
 {
-    m_camera.centerAt(Imath::V3f(0,0,0));
-    m_camera.setDistanceToTarget(100);
+    m_camera.controller().lookAt(Imath::V3f(0,0,0));
+    m_camera.controller().setDistanceFromTarget(100);
     m_camera.setFStop(16);
 	m_activeSampleTexture = 0;
 	m_numberSamples = 0;
@@ -45,7 +43,7 @@ void Renderer::initialize(const std::string& shaderPath)
     if (glIsTexture(m_voxelColorTexture)) glDeleteTextures(1, &m_voxelColorTexture);
     glGenTextures(1, &m_voxelColorTexture);
 
-	createVoxelDataTexture();
+	createVoxelDataTexture(Imath::V3i(16));
     createFramebuffer();
 	reloadShaders(shaderPath);
 	updateCamera();
@@ -277,10 +275,10 @@ void Renderer::reloadShaders(const std::string& shaderPath)
 void Renderer::updateCamera()
 {
 	using namespace Imath;
-	V3f eye     = m_camera.eye();
-	V3f right   = m_camera.rightUnitVector();
-	V3f up      = m_camera.upUnitVector();
-	V3f forward = m_camera.forwardUnitVector();
+	V3f eye     = m_camera.parameters().eye();
+	V3f right   = m_camera.parameters().rightUnitVector();
+	V3f up      = m_camera.parameters().upUnitVector();
+	V3f forward = m_camera.parameters().forwardUnitVector();
 
 	M44f mvm; // modelViewMatrix
 	M44f pm; // projectionMatrix
@@ -295,9 +293,9 @@ void Renderer::updateCamera()
 
 	{ // gluPerspective
 		const float a = (float)m_renderSettings.m_imageResolution.x / m_renderSettings.m_imageResolution.y;
-		const float n = m_camera.nearDistance();
-		const float f = m_camera.farDistance();
-		const float e = 1.0f / tan(m_camera.fovY()/2);
+		const float n = m_camera.parameters().nearDistance();
+		const float f = m_camera.parameters().farDistance();
+		const float e = 1.0f / tan(m_camera.parameters().fovY()/2);
 
 		pm.x[0][0] = e/a ; pm.x[0][1] = 0 ; pm.x[0][2] = 0           ; pm.x[0][3] = 0              ;
 		pm.x[1][0] = 0   ; pm.x[1][1] = e ; pm.x[1][2] = 0           ; pm.x[1][3] = 0              ;
@@ -312,8 +310,8 @@ void Renderer::updateCamera()
 
     glUseProgram(m_settingsFocalDistance.m_program);
 
-    glUniform1f(m_settingsFocalDistance.m_uniformCameraNear, m_camera.nearDistance());
-	glUniform1f(m_settingsFocalDistance.m_uniformCameraFar, m_camera.farDistance());
+    glUniform1f(m_settingsFocalDistance.m_uniformCameraNear, m_camera.parameters().nearDistance());
+	glUniform1f(m_settingsFocalDistance.m_uniformCameraFar, m_camera.parameters().farDistance());
 
     glUniformMatrix4fv(m_settingsFocalDistance.m_uniformCameraInverseModelView,
                        1,
@@ -334,8 +332,8 @@ void Renderer::updateCamera()
 	
     glUseProgram(m_settingsPathtracer.m_program);
 
-    glUniform1f(m_settingsPathtracer.m_uniformCameraNear, m_camera.nearDistance());
-	glUniform1f(m_settingsPathtracer.m_uniformCameraFar, m_camera.farDistance());
+    glUniform1f(m_settingsPathtracer.m_uniformCameraNear, m_camera.parameters().nearDistance());
+	glUniform1f(m_settingsPathtracer.m_uniformCameraFar, m_camera.parameters().farDistance());
 
     glUniformMatrix4fv(m_settingsPathtracer.m_uniformCameraInverseModelView,
                        1,
@@ -351,19 +349,20 @@ void Renderer::updateCamera()
 					   1,
                        GL_TRUE,
 					   &invProj.x[0][0]);
-	bool enableDOF = m_camera.lensModel() == Camera::CLM_THIN_LENS; 
+
+	bool enableDOF = m_camera.parameters().lensModel() == CameraParameters::CLM_THIN_LENS; 
 	enableDOF &= (m_numberSamples > 0); // Disable DOF while tumbling around
 
 	// TODO the focal length can be extracted from the perspective matrix (FOV)
 	// so we should choose either method, but not both.
     glUseProgram(m_settingsPathtracer.m_program);
-    glUniform1f(m_settingsPathtracer.m_uniformCameraFocalLength  , m_camera.focalLength());
-    glUniform1f(m_settingsPathtracer.m_uniformCameraLensRadius   , m_camera.lensRadius());
+    glUniform1f(m_settingsPathtracer.m_uniformCameraFocalLength  , m_camera.parameters().focalLength());
+    glUniform1f(m_settingsPathtracer.m_uniformCameraLensRadius   , m_camera.parameters().lensRadius());
     glUniform1i(m_settingsPathtracer.m_uniformEnableDOF          , enableDOF ? 1 : 0 );
-    glUniform2f(m_settingsPathtracer.m_uniformCameraFilmSize     , m_camera.filmSize().x, 
-															m_camera.filmSize().y);
+    glUniform2f(m_settingsPathtracer.m_uniformCameraFilmSize     , m_camera.parameters().filmSize().x, 
+															       m_camera.parameters().filmSize().y);
     glUseProgram(m_settingsFocalDistance.m_program);
-    glUniform1f(m_settingsFocalDistance.m_uniformCameraFocalLength  , m_camera.focalLength());
+    glUniform1f(m_settingsFocalDistance.m_uniformCameraFocalLength  , m_camera.parameters().focalLength());
 	glUniform2f(m_settingsFocalDistance.m_uniformSampledFragment,
 				m_screenFocalPoint[0] * m_renderSettings.m_imageResolution.x, 
 				(1.0f - m_screenFocalPoint[1]) * m_renderSettings.m_imageResolution.y); // m_screenFocal point origin is at top-left, whilst glsl is bottom-left
@@ -419,11 +418,11 @@ void Renderer::resizeFrame(int frameBufferWidth,
 
 	if (viewportAspectRatio >= 1.0f) 
 	{
-		m_camera.setFilmSize(Camera::FILM_SIZE_35MM, Camera::FILM_SIZE_35MM / viewportAspectRatio);
+		m_camera.setFilmSize(CameraParameters::FILM_SIZE_35MM, CameraParameters::FILM_SIZE_35MM / viewportAspectRatio);
 	}
 	else 
 	{
-		m_camera.setFilmSize(Camera::FILM_SIZE_35MM * viewportAspectRatio, Camera::FILM_SIZE_35MM);
+		m_camera.setFilmSize(CameraParameters::FILM_SIZE_35MM * viewportAspectRatio, CameraParameters::FILM_SIZE_35MM);
 	}
 	updateCamera();
 
@@ -498,11 +497,11 @@ Renderer::RenderResult Renderer::render()
 	const float viewportAspectRatio = (float)m_renderSettings.m_imageResolution.x / m_renderSettings.m_imageResolution.y;
 	if (viewportAspectRatio >= 1.0f) 
 	{
-		m_camera.setFilmSize(Camera::FILM_SIZE_35MM, Camera::FILM_SIZE_35MM / viewportAspectRatio);
+		m_camera.setFilmSize(CameraParameters::FILM_SIZE_35MM, CameraParameters::FILM_SIZE_35MM / viewportAspectRatio);
 	}
 	else 
 	{
-		m_camera.setFilmSize(Camera::FILM_SIZE_35MM * viewportAspectRatio, Camera::FILM_SIZE_35MM);
+		m_camera.setFilmSize(CameraParameters::FILM_SIZE_35MM * viewportAspectRatio, CameraParameters::FILM_SIZE_35MM);
 	}
 	updateCamera();
 	
@@ -560,10 +559,10 @@ void Renderer::drawFullscreenQuad()
 {
 	// draw quad
 	glBegin(GL_QUADS);
-		glVertex3f(  1.0f,  1.0f, m_camera.nearDistance());
-		glVertex3f( -1.0f,  1.0f, m_camera.nearDistance());
-		glVertex3f( -1.0f, -1.0f, m_camera.nearDistance());
-		glVertex3f(  1.0f, -1.0f, m_camera.nearDistance());
+		glVertex3f(  1.0f,  1.0f, m_camera.parameters().nearDistance());
+		glVertex3f( -1.0f,  1.0f, m_camera.parameters().nearDistance());
+		glVertex3f( -1.0f, -1.0f, m_camera.parameters().nearDistance());
+		glVertex3f(  1.0f, -1.0f, m_camera.parameters().nearDistance());
 	glEnd();
 }
 
@@ -575,31 +574,27 @@ void Renderer::setScreenFocalPoint(float x, float y)
         m_numberSamples = 0;
 }
 
-void Renderer::onMouseMove(int dx, int dy, int buttons)
+bool Renderer::onMouseMove(int dx, int dy, int buttons)
 {
-    bool change = false;
-    if (buttons & Qt::RightButton)
-    {
-        const float speed = 1.f;
-        const float theta = -(float)dy / this->m_renderSettings.m_imageResolution.y * M_PI * speed + m_camera.rotationTheta();
-        const float phi = -(float)dx / this->m_renderSettings.m_imageResolution.x * 2.0f * M_PI * speed + m_camera.rotationPhi();
-
-        m_camera.setOrbitRotation(theta, phi);
-		change = true;
-    }
-    else if( buttons & Qt::MiddleButton)
-    {
-        const float speed = 0.99f;
-        m_camera.setDistanceToTarget( dy > 0 ? m_camera.distanceToTarget() * speed :
-                                               m_camera.distanceToTarget() / speed );
-		change = true;
-    }
-
-	if ( change )
+	const float ndx = (float)dx / this->m_renderSettings.m_imageResolution.x;
+	const float ndy = (float)dy / this->m_renderSettings.m_imageResolution.y;
+	if ( m_camera.controller().onMouseMove(ndx, ndy, buttons) )
 	{
 		updateCamera();
 		m_numberSamples = 0;
+		return true;
 	}
+	return false;
+}
+bool Renderer::onKeyPress(int key)
+{
+	if (m_camera.controller().onKeyPress(key))
+	{
+		updateCamera();
+		m_numberSamples = 0;
+		return true;
+	}
+	return false;
 }
 
 void Renderer::createFramebuffer()
@@ -761,28 +756,31 @@ struct V4f
 };
 
 
-void Renderer::createVoxelDataTexture()
+void Renderer::createVoxelDataTexture(const Imath::V3i& resolution,
+									  const GLubyte* occupancyTexels,
+									  const GLubyte* colorTexels)
 {
     using namespace Imath;
 	
 	// Texture resolution 
-    m_volumeResolution = V3i(256);
+    m_volumeResolution = resolution;
 
     const size_t numVoxels = (size_t)(m_volumeResolution.x * m_volumeResolution.y * m_volumeResolution.z);
 
-	// TODO I could pack the occupancy into the alpha channel of the voxel color
-	// texture, but the rationale is that we only access the voxel color when we
-	// finally have a hit, whereas the occupancy texture is used to perform the
-	// raymarch so it should be small to fit as many texels in a cache line as
-	// possible. This needs to be backed up by actual performance tests.
-    GLubyte* occupancyTexels = (GLubyte*)malloc(numVoxels * sizeof(GLubyte));
-    GLubyte* colorTexels = (GLubyte*)malloc(numVoxels * 4 * sizeof(GLubyte));
+    float sizeMultiplier = 1000;
+	float voxelSize = sizeMultiplier / std::max(m_volumeResolution.x, std::max(m_volumeResolution.y, m_volumeResolution.z));
+	V3f boundsSize(voxelSize * m_volumeResolution.x, 
+				   voxelSize * m_volumeResolution.y, 
+				   voxelSize * m_volumeResolution.z);
+    m_volumeBounds = Box3f( -boundsSize * 0.5f, boundsSize * 0.5f);
 
-    float sizeMultiplier = 100;
-    m_volumeBounds = Box3f( V3f(-0.5f, -0.5f, -0.5f) * sizeMultiplier, V3f(0.5f, 0.5f, 0.5f) * sizeMultiplier );
+	GLubyte* occupancyStorage = occupancyTexels != NULL ? NULL : new GLubyte[numVoxels];
+	GLubyte* colorStorage = colorTexels != NULL ? NULL : new GLubyte[4*numVoxels];
+	if (occupancyStorage != NULL) memset(occupancyStorage, 0, numVoxels * sizeof(GLubyte));
+	if (colorStorage != NULL) memset(colorStorage, 0, 4 * numVoxels * sizeof(GLubyte));
 
-    memset(occupancyTexels, 0, numVoxels * sizeof(GLubyte));
-    memset(colorTexels, 0, numVoxels * 4 * sizeof(GLubyte));
+	const GLubyte* occupancy = occupancyTexels != NULL ? occupancyTexels : occupancyStorage;
+	const GLubyte* color = colorTexels != NULL ? colorTexels : colorStorage;
 
 	// Upload texture data to card
 
@@ -804,7 +802,7 @@ void Renderer::createVoxelDataTexture()
 				 0,
 				 GL_RED,
 				 GL_UNSIGNED_BYTE,
-                 occupancyTexels);
+                 occupancy);
 
 	glActiveTexture( GL_TEXTURE0 + TEXTURE_UNIT_COLOR);
     glBindTexture(GL_TEXTURE_3D, m_voxelColorTexture);
@@ -824,11 +822,51 @@ void Renderer::createVoxelDataTexture()
 				 0,
 				 GL_RGBA,
 				 GL_UNSIGNED_BYTE,
-                 colorTexels);
+                 color);
 
+	delete[] occupancyStorage;
+	delete[] colorStorage;
 
-    free(occupancyTexels);
-    free(colorTexels);
+	// Set new resolution and volume bounds in all shaders
+
+	glUseProgram(m_settingsPathtracer.m_program);
+	glUniform3i(m_settingsPathtracer.m_uniformVoxelDataResolution, 
+				m_volumeResolution.x, 
+				m_volumeResolution.y, 
+				m_volumeResolution.z);
+
+	glUniform3f(m_settingsPathtracer.m_uniformVolumeBoundsMin,
+				m_volumeBounds.min.x,
+				m_volumeBounds.min.y,
+				m_volumeBounds.min.z);
+
+	glUniform3f(m_settingsPathtracer.m_uniformVolumeBoundsMax,
+				m_volumeBounds.max.x,
+				m_volumeBounds.max.y,
+				m_volumeBounds.max.z);
+
+	glUseProgram(m_settingsVoxelize.m_program);
+	glUniform3i(m_settingsVoxelize.m_uniformVoxelDataResolution, 
+				m_volumeResolution.x, 
+				m_volumeResolution.y, 
+				m_volumeResolution.z);
+
+	glUseProgram(m_settingsFocalDistance.m_program);
+	glUniform3i(m_settingsFocalDistance.m_uniformVoxelDataResolution, 
+				m_volumeResolution.x, 
+				m_volumeResolution.y, 
+				m_volumeResolution.z);
+
+	glUniform3f(m_settingsFocalDistance.m_uniformVolumeBoundsMin,
+				m_volumeBounds.min.x,
+				m_volumeBounds.min.y,
+				m_volumeBounds.min.z);
+
+	glUniform3f(m_settingsFocalDistance.m_uniformVolumeBoundsMax,
+				m_volumeBounds.max.x,
+				m_volumeBounds.max.y,
+				m_volumeBounds.max.z);
+
 }
 void Renderer::resetRender()
 {
@@ -847,6 +885,10 @@ void Renderer::updateRenderSettings()
 
 void Renderer::loadMesh(const std::string& file)
 {
+	createVoxelDataTexture(Imath::V3i(256));
+
+	m_camera.controller().setDistanceFromTarget(m_volumeBounds.size().length() * 0.5f);
+
 	m_mesh = MeshLoader::loadFromOBJ(file.c_str());
 	if (m_mesh == NULL) return;
 
@@ -864,6 +906,11 @@ void Renderer::loadMesh(const std::string& file)
     m_meshTransform.x[3][0] = 0 ; m_meshTransform.x[3][1] = 0 ; m_meshTransform.x[3][2] = 0 ; m_meshTransform.x[3][3] = 1.0f     ;
 
 	glUseProgram(m_settingsVoxelize.m_program);
+
+	glUniform3i(m_settingsVoxelize.m_uniformVoxelDataResolution, 
+				m_volumeResolution.x, 
+				m_volumeResolution.y, 
+				m_volumeResolution.z);
 
 	glUniformMatrix4fv(m_settingsVoxelize.m_uniformModelTransform,
 					   1,
@@ -895,4 +942,26 @@ void Renderer::loadMesh(const std::string& file)
 	resetRender();
 }
 
+void Renderer::loadVoxFile(const std::string& file)
+{
+    GLubyte* occupancyTexels = NULL;
+    GLubyte* colorTexels = NULL;
+	MagicaVoxelLoader loader;
+
+	if (!loader.load(file, 
+					 occupancyTexels, 
+					 colorTexels, 
+					 m_volumeResolution))
+	{
+		return;
+	}
+							
+	createVoxelDataTexture(m_volumeResolution, occupancyTexels, colorTexels);
+	m_camera.controller().setDistanceFromTarget(m_volumeBounds.size().length() * 0.5f);
+
+	free(occupancyTexels);
+	free(colorTexels);
+
+	resetRender();
+}
 
