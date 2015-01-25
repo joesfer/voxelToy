@@ -16,10 +16,6 @@ public:
     ~MainWindow();
 
 private slots:
-    void on_reloadShaders_clicked();
-
-    void on_cameraFStop_currentTextChanged(const QString &arg1);
-
     void on_actionReload_Shaders_triggered();
 
     void on_actionLoad_Mesh_triggered();

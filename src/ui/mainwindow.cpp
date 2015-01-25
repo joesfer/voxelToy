@@ -40,16 +40,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::on_reloadShaders_clicked()
-{
-
-}
-
-void MainWindow::on_cameraFStop_currentTextChanged(const QString &arg1)
-{
-
-}
-
 void MainWindow::on_actionReload_Shaders_triggered()
 {
     ui->glWidget->reloadShaders();

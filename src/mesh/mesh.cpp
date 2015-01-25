@@ -1,5 +1,5 @@
 #include <GL/glew.h>
-#include "mesh.h"
+#include "mesh/mesh.h"
 
 #define ATTRIBUTE_LAYOUT_INDEX_POSITION 0
 #define ATTRIBUTE_LAYOUT_INDEX_NORMAL   1
@@ -42,16 +42,7 @@ Mesh::Mesh( const float* vertices, size_t numVertices,
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-	// compute bounds
-	m_bounds.makeEmpty();
-	Imath::V3f vertex;
-	for(size_t v=0; v < numVertices; ++v)
-	{
-		vertex.x = vertices[3 * v + 0];
-		vertex.y = vertices[3 * v + 1];
-		vertex.z = vertices[3 * v + 2];
-		m_bounds.extendBy(vertex);
-	}
+	m_bounds = computeBounds(vertices, numVertices);
 }
 
 Mesh::~Mesh()
@@ -66,3 +57,20 @@ void Mesh::draw() const
 	glBindVertexArray(m_vao);
 	glDrawElements(GL_TRIANGLES, m_numIndices, GL_UNSIGNED_INT, 0);
 }
+
+Imath::Box3f computeBounds(const float* vertices, size_t numVertices)
+{
+	using namespace Imath;
+	Box3f bounds;
+	bounds.makeEmpty();
+	V3f vertex;
+	for(size_t v=0; v < numVertices; ++v)
+	{
+		vertex.x = vertices[3 * v + 0];
+		vertex.y = vertices[3 * v + 1];
+		vertex.z = vertices[3 * v + 2];
+		bounds.extendBy(vertex);
+	}
+	return bounds;
+}
+

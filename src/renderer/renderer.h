@@ -1,9 +1,14 @@
 #pragma once
 
 #include "camera/camera.h"
-#include "shader.h"
+#include "shaders/shader.h"
+#include "timer/gpuTimer.h"
 
 #include <GL/gl.h>
+#include <QGLWidget>
+#ifdef QT5
+#include <QOpenGLFunctions>
+#endif
 
 #include <OpenEXR/ImathMatrix.h>
 #include <OpenEXR/ImathBox.h>
@@ -77,6 +82,11 @@ private:
 	void createFramebuffer();
     Imath::V3f lightDirection() const;
 
+	void voxelizeCPU(const Imath::V3f* vertices, 
+				     const unsigned int* indices,
+				     unsigned int numTriangles);
+	void voxelizeGPU(const Mesh* mesh);
+
 private:
 	Imath::Box3f m_volumeBounds;
 	Imath::V3i	 m_volumeResolution;
@@ -126,4 +136,5 @@ private:
 	Imath::M44f m_meshTransform;
     Mesh* m_mesh;
 
+	AveragedGpuTimer m_frameTimer;
 };

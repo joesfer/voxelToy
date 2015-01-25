@@ -31,3 +31,4 @@ private:
 	Imath::Box3f m_bounds;
 };
 
+Imath::Box3f computeBounds(const float* vertices, size_t numVertices);

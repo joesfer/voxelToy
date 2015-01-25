@@ -1,7 +1,7 @@
 #pragma once
 
-#include "src/camera/cameraParameters.h"
-#include "src/camera/cameraParameters.h"
+#include "camera/cameraParameters.h"
+#include "camera/cameraParameters.h"
 
 class CameraController;
 

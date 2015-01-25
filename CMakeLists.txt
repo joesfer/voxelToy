@@ -7,16 +7,18 @@ set(CMAKE_AUTOMOC ON)
 
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
-find_package(GLEW REQUIRED)
-#find_package(Boost REQUIRED)
+find_package(GLEW)
+find_package(Boost)
 
 include_directories(${OPENGL_INCLUDE_DIR})
 include_directories(${GLUT_INCLUDE_DIR})
 include_directories(${GLEW_INCLUDE_DIR})
 include_directories(${OPENEXR_INCLUDE_DIR})
+include_directories(${Boost_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR} src)
 
 # OpenEXR libraries ============================================================
+
 find_library(IMF_LIBRARY    IlmImf    ${OPENEXR_LIB_DIR})
 find_library(IMATH_LIBRARY  Imath     ${OPENEXR_LIB_DIR})
 find_library(HALF_LIBRARY   Half      ${OPENEXR_LIB_DIR})
@@ -30,8 +32,20 @@ set(OPENEXR_LIBRARIES
 	${IEX_LIBRARY}
 	${THREAD_LIBRARY})
 
+# Boost libraries ==============================================================
+
+find_library(BOOST_SYSTEM_LIBRARY boost_system ${Boost_LIB_DIR})
+find_library(BOOST_THREAD_LIBRARY boost_thread ${Boost_LIB_DIR})
+
+set(BOOST_LIBRARIES 
+	${BOOST_SYSTEM_LIBRARY}
+	${BOOST_THREAD_LIBRARY})
+
 # 
-add_definitions(-DSHADER_DIR=${CMAKE_CURRENT_SOURCE_DIR}/src/shaders)
+add_definitions(-DSHADER_DIR=${CMAKE_CURRENT_SOURCE_DIR}/src/shaders/glsl)
+# This is apparently a bug with boost and older compilers not defining TIME_UTC
+# https://bbs.archlinux.org/viewtopic.php?pid=1126374
+add_definitions(-DTIME_UTC=1)
 
 # Source files =================================================================
 file(GLOB_RECURSE SOURCES src/*.cpp src/*.cc CACHED )
@@ -62,6 +76,7 @@ if (QT4)
 
 else()
 	# Compile with QT 5
+	add_definitions(-DQT5)
 
 	# Widgets finds its own dependencies (QtGui and QtCore).
 	find_package(Qt5Widgets REQUIRED)
@@ -104,7 +119,6 @@ else()
 	set(QT_LIBRARIES Qt5::Widgets Qt5::OpenGL)
 endif()
 
-
 # Linked libraries =============================================================
 
 target_link_libraries(VoxelToy 
@@ -113,6 +127,7 @@ target_link_libraries(VoxelToy
 	${OPENGL_LIBRARIES}
 	${OPENEXR_LIBRARIES}
 	${QT_LIBRARIES}
+	${BOOST_LIBRARIES}
 	-lpthread)
 
 
