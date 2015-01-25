@@ -82,14 +82,16 @@ private:
     void setDistanceFromTarget(float distance);
 
 	
-	// Set eye position from spherical coordinates centered around the target
-	// position. Parameters:
+	// Set eye position from spherical coordinates centered on the target point.
+	// Parameters:
 	// - theta: polar angle. Angle with respect to the vertical axis 0 <= theta <= PI. 
 	// At theta = 0 degrees, the camera looks down directly along the Y axis.
 	// - phi: angle with respect to the Z axis. 0 <= phi < 2*PI.
 	// At phi = 0 degrees, the projection of the (eye-target) vector falls onto
 	// the Z axis.
-	void setOrbitRotation(float theta, float phi);
+	void orbitAroundTarget(float theta, float phi);
+	// Set target position from spherical coordinates centered on the eye point.
+	void orbitAroundEye(float theta, float phi);
 
 	// Set the camera direction explicitly from eye and target points.
 	void setEyeTarget(const Imath::V3f& eye, const Imath::V3f& target);

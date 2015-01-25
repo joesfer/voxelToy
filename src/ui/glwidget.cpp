@@ -205,15 +205,12 @@ void GLWidget::cameraLensModelChanged(bool dof)
 }
 void GLWidget::cameraControllerChanged(QString mode)
 {
-	std::cout << "CHANGING CONTROLLER " << mode.toStdString() << std::endl;
 	if ( mode == "orbit" )
 	{
-		std::cout << "orbit!" << std::endl;
 		m_renderer.camera().setCameraController(Camera::CCM_ORBIT);
 	}
 	else
 	{
-		std::cout << "fly!" << std::endl;
 		m_renderer.camera().setCameraController(Camera::CCM_FLY);
 	}
 }

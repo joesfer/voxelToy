@@ -23,7 +23,7 @@ bool OrbitCameraController::onMouseMove(float dx, float dy, int buttons)
         const float theta = (float)dy * M_PI * speed + m_parameters->rotationTheta();
         const float phi = -(float)dx * 2.0f * M_PI * speed + m_parameters->rotationPhi();
 
-        m_parameters->setOrbitRotation(theta, phi);
+        m_parameters->orbitAroundTarget(theta, phi);
 		change = true;
     }
     else if( buttons & Qt::MiddleButton)

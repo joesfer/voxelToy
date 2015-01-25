@@ -83,14 +83,22 @@ float CameraParameters::rotationPhi() const
 	return atan2(fwd.z, fwd.x);
 }
 
-void CameraParameters::setOrbitRotation(float theta, float phi)
+Imath::V3f sphericalToCartesian(float theta, float phi)
+{
+	const float sinTheta = sin(theta);
+	return Imath::V3f(sinTheta * cos(phi), cos(theta), sinTheta * sin(phi));
+}
+
+void CameraParameters::orbitAroundTarget(float theta, float phi)
 {
 	const float r = distanceToTarget();
-	const float sinTheta = sin(theta);
-	Imath::V3f fwd(r * sinTheta * cos(phi),
-				   r * cos(theta),
-				   r * sinTheta * sin(phi));
-	m_eye = m_target - fwd;
+	m_eye = m_target - r * sphericalToCartesian(theta, phi);
+}
+
+void CameraParameters::orbitAroundEye(float theta, float phi)
+{
+	const float r = distanceToTarget();
+	m_target = m_eye + r * sphericalToCartesian(theta, phi);
 }
 
 void CameraParameters::setEyeTarget(const Imath::V3f& eye, const Imath::V3f& target)
