@@ -14,5 +14,5 @@ VoxelToy is a simple Qt/OpenGL-based voxel renderer. This is a pet project curre
 ![alt tag](https://github.com/joesfer/voxelToy/blob/master/resources/screenshot08.png)
 Head model (c) I-R Entertainment. Downloaded from http://graphics.cs.williams.edu/data/meshes.xml
 
-![alt tag](https://github.com/joesfer/voxelToy/blob/camera/resources/screenshot09.png)
+![alt tag](https://github.com/joesfer/voxelToy/blob/master/resources/screenshot09.png)
 Artwork by Mike Judge (@mikelovesrobots)
