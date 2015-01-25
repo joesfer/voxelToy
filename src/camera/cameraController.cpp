@@ -1,15 +1,15 @@
 #include "camera/cameraController.h"
 #include "camera/cameraParameters.h"
 
-void CameraController::centerAt(const Imath::V3f& target)    
+void CameraController::lookAt(const Imath::V3f& target)    
 { 
 	if (m_parameters == NULL) return;
-	m_parameters->centerAt(target);              
+	m_parameters->lookAt(target);              
 }
 
-void CameraController::setDistanceToTarget(float distance)
+void CameraController::setDistanceFromTarget(float distance)
 { 
 	if (m_parameters == NULL) return;
-	m_parameters->setDistanceToTarget(distance);
+	m_parameters->setDistanceFromTarget(distance);
 }
 

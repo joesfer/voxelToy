@@ -13,8 +13,8 @@
 
 Renderer::Renderer()
 {
-    m_camera.controller().centerAt(Imath::V3f(0,0,0));
-    m_camera.controller().setDistanceToTarget(100);
+    m_camera.controller().lookAt(Imath::V3f(0,0,0));
+    m_camera.controller().setDistanceFromTarget(100);
     m_camera.setFStop(16);
 	m_activeSampleTexture = 0;
 	m_numberSamples = 0;
@@ -574,7 +574,7 @@ void Renderer::setScreenFocalPoint(float x, float y)
         m_numberSamples = 0;
 }
 
-void Renderer::onMouseMove(int dx, int dy, int buttons)
+bool Renderer::onMouseMove(int dx, int dy, int buttons)
 {
 	const float ndx = (float)dx / this->m_renderSettings.m_imageResolution.x;
 	const float ndy = (float)dy / this->m_renderSettings.m_imageResolution.y;
@@ -582,7 +582,19 @@ void Renderer::onMouseMove(int dx, int dy, int buttons)
 	{
 		updateCamera();
 		m_numberSamples = 0;
+		return true;
 	}
+	return false;
+}
+bool Renderer::onKeyPress(int key)
+{
+	if (m_camera.controller().onKeyPress(key))
+	{
+		updateCamera();
+		m_numberSamples = 0;
+		return true;
+	}
+	return false;
 }
 
 void Renderer::createFramebuffer()
@@ -875,7 +887,7 @@ void Renderer::loadMesh(const std::string& file)
 {
 	createVoxelDataTexture(Imath::V3i(256));
 
-	m_camera.controller().setDistanceToTarget(m_volumeBounds.size().length() * 0.5f);
+	m_camera.controller().setDistanceFromTarget(m_volumeBounds.size().length() * 0.5f);
 
 	m_mesh = MeshLoader::loadFromOBJ(file.c_str());
 	if (m_mesh == NULL) return;
@@ -945,7 +957,7 @@ void Renderer::loadVoxFile(const std::string& file)
 	}
 							
 	createVoxelDataTexture(m_volumeResolution, occupancyTexels, colorTexels);
-	m_camera.controller().setDistanceToTarget(m_volumeBounds.size().length() * 0.5f);
+	m_camera.controller().setDistanceFromTarget(m_volumeBounds.size().length() * 0.5f);
 
 	free(occupancyTexels);
 	free(colorTexels);

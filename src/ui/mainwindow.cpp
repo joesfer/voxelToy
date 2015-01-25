@@ -18,6 +18,8 @@ MainWindow::MainWindow(QWidget *parent) :
             ui->glWidget, SLOT(cameraFStopChanged(QString)));
     connect(ui->cameraProperties, SIGNAL(focalLengthChanged(QString)),
             ui->glWidget, SLOT(cameraFocalLengthChanged(QString)));
+    connect(ui->cameraProperties, SIGNAL(cameraControllerChanged(QString)),
+            ui->glWidget, SLOT(cameraControllerChanged(QString)));
 
     // Render properties widget
 

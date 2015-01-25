@@ -21,7 +21,15 @@ public:
 	void setLensRadius(float radius);
 	void setFStop(float fstop);
 
+	enum CameraControllerMode
+	{
+		CCM_ORBIT,
+		CCM_FLY
+	};
+	void setCameraController(CameraControllerMode);
+
 private:
 	CameraParameters  m_parameters;
 	CameraController* m_controller;
+	CameraControllerMode m_controllerMode;
 };

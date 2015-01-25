@@ -20,7 +20,7 @@ bool OrbitCameraController::onMouseMove(float dx, float dy, int buttons)
     if (buttons & Qt::RightButton)
     {
         const float speed = 1.f;
-        const float theta = -(float)dy * M_PI * speed + m_parameters->rotationTheta();
+        const float theta = (float)dy * M_PI * speed + m_parameters->rotationTheta();
         const float phi = -(float)dx * 2.0f * M_PI * speed + m_parameters->rotationPhi();
 
         m_parameters->setOrbitRotation(theta, phi);
@@ -28,11 +28,16 @@ bool OrbitCameraController::onMouseMove(float dx, float dy, int buttons)
     }
     else if( buttons & Qt::MiddleButton)
     {
-        const float speed = 1.1f;
-        m_parameters->setDistanceToTarget( dy > 0 ? m_parameters->distanceToTarget() * speed :
+        const float speed = 1.05f;
+        m_parameters->setDistanceFromTarget( dy > 0 ? m_parameters->distanceToTarget() * speed :
 												    m_parameters->distanceToTarget() / speed );
 		change = true;
     }
 	return change;
+}
+
+bool OrbitCameraController::onKeyPress(int key)
+{
+	return false;
 }
 

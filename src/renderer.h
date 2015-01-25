@@ -53,7 +53,8 @@ public:
 	void setScreenFocalPoint(float x, float y);
     void resetRender();
 
-	void onMouseMove(int dx, int dy, int buttons);
+	bool onMouseMove(int dx, int dy, int buttons);
+	bool onKeyPress(int key);
 
 	Camera& camera() { return m_camera; }
 	RenderSettings& renderSettings() { return m_renderSettings; }

@@ -174,9 +174,12 @@ void GLWidget::mouseReleaseEvent(QMouseEvent *event)
 	update();
 }
 
-void GLWidget::keyPressEvent(QKeyEvent* /*event*/)
+void GLWidget::keyPressEvent(QKeyEvent* event)
 {
-	update();
+	if (m_renderer.onKeyPress(event->key()))
+	{
+		update();
+	}
 }
 
 
@@ -199,6 +202,20 @@ void GLWidget::cameraLensModelChanged(bool dof)
 	m_renderer.camera().enableDOF( dof );
     m_renderer.resetRender();
 	update();
+}
+void GLWidget::cameraControllerChanged(QString mode)
+{
+	std::cout << "CHANGING CONTROLLER " << mode.toStdString() << std::endl;
+	if ( mode == "orbit" )
+	{
+		std::cout << "orbit!" << std::endl;
+		m_renderer.camera().setCameraController(Camera::CCM_ORBIT);
+	}
+	else
+	{
+		std::cout << "fly!" << std::endl;
+		m_renderer.camera().setCameraController(Camera::CCM_FLY);
+	}
 }
 
 void GLWidget::onPathtracerMaxSamplesChanged(int value)

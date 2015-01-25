@@ -36,6 +36,9 @@
       <property name="mouseTracking">
        <bool>true</bool>
       </property>
+      <property name="focusPolicy">
+       <enum>Qt::ClickFocus</enum>
+      </property>
      </widget>
     </item>
    </layout>

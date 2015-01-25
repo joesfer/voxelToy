@@ -28,10 +28,10 @@ public slots:
     void cameraFStopChanged(QString fstop);
 	void cameraFocalLengthChanged(QString length);
 	void cameraLensModelChanged(bool dof);
+    void cameraControllerChanged(QString mode);
     void onPathtracerMaxSamplesChanged(int);
     void onPathtracerMaxPathLengthChanged(int);
     void onResolutionSettingsChanged(RenderPropertiesUI::ResolutionMode mode, int axis1, int axis2);
-
 protected:
 	void initializeGL();
 	void paintGL();

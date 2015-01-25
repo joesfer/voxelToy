@@ -6,9 +6,7 @@ float CameraParameters::FILM_SIZE_35MM = 36.0f;
 
 CameraParameters::CameraParameters() :
     m_target(Imath::V3f(0,0,0)),
-    m_targetDistance(1.0f),
-    m_phi(-M_PI/2),
-    m_theta(M_PI/2),
+    m_eye(Imath::V3f(0,0,-1)),
 	m_near(0.1f),
 	m_far(10000),
 	m_focalDistance(100),
@@ -18,67 +16,87 @@ CameraParameters::CameraParameters() :
 	this->setFocalLength(50);
 }
 
-Imath::V3f CameraParameters::eye() const
+const Imath::V3f& CameraParameters::eye() const
 {
-    return m_target - forwardUnitVector() * m_targetDistance;
+    return m_eye;
 }
 
-Imath::V3f CameraParameters::target() const
+const Imath::V3f& CameraParameters::target() const
 {
 	return m_target;
 }
-void CameraParameters::centerAt(const Imath::V3f &target)
+void CameraParameters::lookAt(const Imath::V3f &target)
 {
     m_target = target;
 }
 
 float CameraParameters::distanceToTarget() const
 {
-    return m_targetDistance;
+    return (m_target - m_eye).length();
 }
 
-void CameraParameters::setDistanceToTarget(float distance)
+void CameraParameters::setDistanceFromTarget(float distance)
 {
-    m_targetDistance = std::max(0.f, distance);
+	m_eye = m_target - forwardUnitVector() * distance;
 }
 
 Imath::V3f CameraParameters::rightUnitVector() const
 {
-	return Imath::V3f(cos(m_phi + M_PI/2),
-					  0,
-					  sin(m_phi + M_PI/2));
+	const float phi = rotationPhi();
+	const float theta0 = rotationTheta();
+	const float theta1 = rotationTheta() - 0.1f;
+	const float sinTheta0 = sin(theta0);
+	const float sinTheta1 = sin(theta1);
+
+	const Imath::V3f v0(sinTheta0 * cos(phi), cos(theta0), sinTheta0 * sin(phi));
+	const Imath::V3f v1(sinTheta1 * cos(phi), cos(theta1), sinTheta1 * sin(phi));
+
+    return v1.cross(v0).normalized();
 } 
 
 Imath::V3f CameraParameters::upUnitVector() const
 {
-    return forwardUnitVector().cross(rightUnitVector());
+	const float phi0 = rotationPhi();
+	const float phi1 = rotationPhi() + 0.1f;
+	const float theta = rotationTheta();
+	const float sinTheta = sin(theta);
+
+	const Imath::V3f v0(sinTheta * cos(phi0), cos(theta), sinTheta * sin(phi0));
+	const Imath::V3f v1(sinTheta * cos(phi1), cos(theta), sinTheta * sin(phi1));
+
+    return v1.cross(v0).normalized();
 }
 
 Imath::V3f CameraParameters::forwardUnitVector() const
 {
-	using namespace Imath;
-	const float sinTheta = sin(m_theta);
-	V3f targetToEye( sinTheta * cos(m_phi),
-					 cos(m_theta),
-					 sinTheta * sin(m_phi) );
-	V3f forward = -targetToEye;
-    return forward.normalized();
+	return (m_target - m_eye).normalized();
 }
 
 float CameraParameters::rotationTheta() const
 {
-	return m_theta;
+	return acos(forwardUnitVector().y);
 }
 
 float CameraParameters::rotationPhi() const
 {
-	return m_phi;
+	const Imath::V3f fwd = forwardUnitVector();
+	return atan2(fwd.z, fwd.x);
 }
 
 void CameraParameters::setOrbitRotation(float theta, float phi)
 {
-	m_phi = phi;
-	m_theta = theta;
+	const float r = distanceToTarget();
+	const float sinTheta = sin(theta);
+	Imath::V3f fwd(r * sinTheta * cos(phi),
+				   r * cos(theta),
+				   r * sinTheta * sin(phi));
+	m_eye = m_target - fwd;
+}
+
+void CameraParameters::setEyeTarget(const Imath::V3f& eye, const Imath::V3f& target)
+{
+	m_eye = eye;
+	m_target = target;
 }
 
 float CameraParameters::fovY() const
@@ -89,7 +107,6 @@ float CameraParameters::fovY() const
 void CameraParameters::setFovY(float fov)
 {
 	m_fovY = fov;
-	m_focalLength = filmSize().y / (2.0f * tan(0.5f * m_fovY));
 }
 
 float CameraParameters::nearDistance() const
@@ -111,12 +128,12 @@ void CameraParameters::setFarDistance(float d)
 
 float CameraParameters::focalLength() const
 {
-	return m_focalLength;
+	return filmSize().y / (2.0f * tan(0.5f * m_fovY));
 }
-void CameraParameters::setFocalLength(float length)
+void CameraParameters::setFocalLength(float focalLength)
 {
-	m_focalLength = std::max(0.0f, length);
-	m_fovY = atan2(this->filmSize().y * 0.5f, m_focalLength) * 2.0f;
+	m_fovY = atan2(this->filmSize().y * 0.5f, focalLength) * 2.0f;
+	std::cout << "FOV " << m_fovY << std::endl;
 }
 
 float CameraParameters::focalDistance() const
@@ -136,7 +153,7 @@ void CameraParameters::setFilmSize(float filmW, float filmH)
 {
 	m_filmSize = Imath::V2f(std::max(0.0f, filmW),
 							std::max(0.0f, filmH));
-	m_fovY = atan2(this->filmSize().y * 0.5f, m_focalLength) * 2.0f;
+	m_fovY = atan2(this->filmSize().y * 0.5f, focalLength()) * 2.0f;
 }
 
 float CameraParameters::lensRadius() const
@@ -149,7 +166,7 @@ void CameraParameters::setLensRadius(float radius)
 }
 void CameraParameters::setFStop(float fstop)
 {
-	m_lensRadius = (m_focalLength / std::max(1e-4f, fstop)) * 0.5f;
+	m_lensRadius = (focalLength() / std::max(1e-4f, fstop)) * 0.5f;
 }
 
 CameraParameters::CameraLensModel CameraParameters::lensModel() const

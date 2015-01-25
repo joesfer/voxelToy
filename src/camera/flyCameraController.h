@@ -2,14 +2,15 @@
 
 #include "src/camera/cameraController.h"
 
-class OrbitCameraController : public CameraController
+class FlyCameraController : public CameraController
 {
 public:
-	OrbitCameraController(CameraParameters* parameters);
+	FlyCameraController(CameraParameters* parameters);
 	virtual bool onMouseMove(float dx, float dy, int buttons);
 	virtual bool onKeyPress(int key);
 private:
 };
+
 
 
 
