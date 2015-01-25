@@ -1,9 +1,19 @@
-float hash( float n ) { return fract(sin(n)*43758.5453123); }
+// Thomas Wang hash http://www.burtleburtle.net/bob/hash/integer.html
+// Reference from Nathan Reed's blog http://www.reedbeta.com/blog/2013/01/12/quick-and-easy-gpu-random-numbers-in-d3d11/
+int hash(int seed)
+{
+    seed = (seed ^ 61) ^ (seed >> 16);
+    seed *= 9;
+    seed = seed ^ (seed >> 4);
+    seed *= 0x27d4eb2d;
+    seed = seed ^ (seed >> 15);
+    return seed;
+}
 
 ivec2 randomNumberGeneratorOffset(in ivec4 seed, in int sequence)
 {
 	ivec2 res = textureSize(noiseTexture,0);
-	int offset = int((seed.x + seed.y * res.x) + hash(sequence) * (res.x * res.y));
+	int offset = hash(seed.x + seed.y * res.x) ^ hash(sequence);
 	return ivec2(offset % res.x,  (offset / res.x) % res.y);
 }
 

@@ -32,18 +32,18 @@ out vec4 outColor;
 #include <coordinates.h>
 #include <dda.h>
 #include <sampling.h>
-#include <generateRay.h>
 #include <random.h>
+#include <generateRay.h>
 #include <bsdf.h>
 #include <lights.h>
 
 float ISECT_EPSILON = 0.01;
 
-void generateRay(out vec3 wsRayOrigin, out vec3 wsRayDir)
+void generateRay(inout ivec2 rngOffset, out vec3 wsRayOrigin, out vec3 wsRayDir)
 {
 	if (enableDOF != 0)
 	{
-		generateRay_ThinLens(gl_FragCoord.xyz, wsRayOrigin, wsRayDir);
+		generateRay_ThinLens(gl_FragCoord.xyz, rngOffset, wsRayOrigin, wsRayDir);
 	}
 	else
 	{
@@ -102,7 +102,7 @@ void main()
 
 	vec3 wsRayOrigin;
 	vec3 wsRayDir;
-	generateRay(wsRayOrigin, wsRayDir);
+	generateRay(rngOffset, wsRayOrigin, wsRayDir);
 
 	// test intersection with bounds to trivially discard rays before entering
 	// traversal.

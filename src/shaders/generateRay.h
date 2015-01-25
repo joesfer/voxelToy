@@ -1,5 +1,7 @@
 #ifdef PINHOLE
-void generateRay_Pinhole(in vec3 fragmentPos, out vec3 wsRayOrigin, out vec3 wsRayDir)
+void generateRay_Pinhole(in vec3 fragmentPos, 
+						 out vec3 wsRayOrigin, 
+						 out vec3 wsRayDir)
 {
 	wsRayOrigin = (cameraInverseModelView * vec4(0,0,0,1)).xyz;
 	vec3 wsFragmentPos = screenToWorldSpace(fragmentPos);
@@ -8,7 +10,10 @@ void generateRay_Pinhole(in vec3 fragmentPos, out vec3 wsRayOrigin, out vec3 wsR
 #endif
 
 #ifdef THINLENS
-void generateRay_ThinLens(in vec3 fragmentPos, out vec3 wsRayOrigin, out vec3 wsRayDir)
+void generateRay_ThinLens(in vec3 fragmentPos, 
+						  inout ivec2 rngOffset,
+						  out vec3 wsRayOrigin, 
+						  out vec3 wsRayDir)
 {
 	// thin lens model
 
@@ -54,7 +59,7 @@ void generateRay_ThinLens(in vec3 fragmentPos, out vec3 wsRayOrigin, out vec3 ws
 	// the comment above.
 	float cameraFocalDistance = texelFetch(focalDistanceTexture, ivec2(0,0), 0).r;
 
-	vec4 uniformRandomSample = texelFetch(noiseTexture, ivec2(sampleCount, 0), 0);
+	vec4 uniformRandomSample = rand(rngOffset);
 	vec2 unitDiskSample = uniformlySampleDisk(uniformRandomSample.xy);
 	vec3 esLensSamplePoint = vec3(unitDiskSample * cameraLensRadius, 0);
 
