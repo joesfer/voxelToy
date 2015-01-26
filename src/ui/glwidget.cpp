@@ -146,6 +146,7 @@ void GLWidget::paintGL()
 	{
 		update();
 	}
+	emit statusChanged(QString(m_renderer.getStatus().c_str()));
 }
 
 void GLWidget::mousePressEvent(QMouseEvent *event)

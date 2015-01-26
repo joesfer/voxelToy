@@ -277,7 +277,8 @@ void Renderer::reloadShaders(const std::string& shaderPath)
 		!reloadFocalDistanceShader(shaderPath) ||
 		!reloadVoxelizeShader(shaderPath))
 	{
-		std::cout << "Shader loading failed" << std::endl;
+		m_status = "Shader loading failed";
+		return;
     }
 	updateCamera();
 	updateRenderSettings();
@@ -565,7 +566,9 @@ Renderer::RenderResult Renderer::render()
 		if ( averageFrameSeconds > 0.f)
 		{
 			const float fps = 1.0f / averageFrameSeconds;
-			std::cout << "fps " <<  fps << std::endl;
+			std::stringstream ss;
+			ss << "fps " << fps;
+			m_status = ss.str();
 		}
 	}
 	

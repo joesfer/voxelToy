@@ -68,6 +68,8 @@ public:
 	RenderSettings& renderSettings() { return m_renderSettings; }
 	void updateRenderSettings();
 
+	const std::string& getStatus() const { return m_status; }
+
 private:
 	void updateCamera();
 	void createVoxelDataTexture (const Imath::V3i& resolution,
@@ -137,4 +139,6 @@ private:
     Mesh* m_mesh;
 
 	AveragedGpuTimer m_frameTimer;
+
+	std::string m_status;
 };

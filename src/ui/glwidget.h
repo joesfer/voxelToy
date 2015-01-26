@@ -25,6 +25,9 @@ public:
      QSize minimumSizeHint() const;
      QSize sizeHint() const;
 
+signals:
+	 void statusChanged(QString);
+
 public slots:
 	void reloadShaders();
     void loadMesh(QString file);
