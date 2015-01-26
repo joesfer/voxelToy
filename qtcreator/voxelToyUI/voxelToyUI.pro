@@ -71,4 +71,7 @@ CONFIG +=link_pkgconfig
 PKGCONFIG += OpenEXR
 
 RESOURCES += \
-    ../../src/ui/resources.qrc
+    ../../src/ui/resources.qrc \
+    ../../src/ui/qdarkstyle/style.qrc
+
+OTHER_FILES +=
