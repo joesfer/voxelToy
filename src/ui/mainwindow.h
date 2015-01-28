@@ -14,6 +14,8 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
+signals:
+	void actionTriggered(int, bool);
 
 private slots:
     void on_actionReload_Shaders_triggered();
@@ -23,6 +25,8 @@ private slots:
     void onResolutionSettingsChanged();
 
     void on_actionLoad_VOX_file_triggered();
+
+    void on_actionSelect_Focal_Point_toggled(bool arg1);
 
 private:
     Ui::MainWindow *ui;

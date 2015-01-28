@@ -78,3 +78,8 @@ void MainWindow::on_actionLoad_VOX_file_triggered()
         ui->glWidget->loadVoxFile(file);
     }
 }
+
+void MainWindow::on_actionSelect_Focal_Point_toggled(bool triggered)
+{
+   emit actionTriggered(GLWidget::ACTION_SELECT_FOCAL_POINT, triggered);
+}

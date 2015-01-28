@@ -58,7 +58,6 @@ public:
 	void reloadShaders(const std::string& shaderPath);
     void loadMesh(const std::string& file);
     void loadVoxFile(const std::string& file);
-	void setScreenFocalPoint(float x, float y);
     void resetRender();
 
 	bool onMouseMove(int dx, int dy, int buttons);
@@ -69,6 +68,14 @@ public:
 	void updateRenderSettings();
 
 	const std::string& getStatus() const { return m_status; }
+
+	enum PICKING_ACTION
+	{
+		PA_NONE,
+		PA_SELECT_FOCAL_POINT,
+		PA_GET_NEW_VOXEL_POSITION,
+	};
+	void pickingAction(float x, float y, PICKING_ACTION action);
 
 private:
 	void updateCamera();
@@ -105,10 +112,10 @@ private:
     GLuint m_noiseTexture;
 	GLint m_textureDimensions[2];
 
-	// Normalized coordinates in screen space from where the focal distance is
-	// retrieved (the actual pixel coordinates are calculated as
-	// m_screenFocalPoint * viewportSize;
-	Imath::V2f m_screenFocalPoint;
+	// Normalized coordinates in screen space from where the requested picking
+	// action is originated (the actual pixel coordinates are calculated as
+	// m_pickingActionPoint * viewportSize;
+	Imath::V2f m_pickingActionPoint;
 	GLuint m_focalDistanceFBO;
 	GLuint m_focalDistanceRBO;
     GLuint m_focalDistanceTexture;
@@ -141,4 +148,6 @@ private:
 	AveragedGpuTimer m_frameTimer;
 
 	std::string m_status;
+
+	PICKING_ACTION m_nextFramePickingAction;
 };

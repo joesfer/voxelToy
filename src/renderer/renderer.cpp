@@ -25,7 +25,9 @@ Renderer::Renderer()
     m_camera.setFStop(16);
 	m_activeSampleTexture = 0;
 	m_numberSamples = 0;
-	m_screenFocalPoint = Imath::V2f(0.5f, 0.5f);
+
+	m_pickingActionPoint = Imath::V2f(0.5f, 0.5f);
+	m_nextFramePickingAction = PA_NONE;
 
 	m_renderSettings.m_imageResolution.x = 512;
 	m_renderSettings.m_imageResolution.y = 512;
@@ -376,8 +378,8 @@ void Renderer::updateCamera()
     glUseProgram(m_settingsFocalDistance.m_program);
     glUniform1f(m_settingsFocalDistance.m_uniformCameraFocalLength  , m_camera.parameters().focalLength());
 	glUniform2f(m_settingsFocalDistance.m_uniformSampledFragment,
-				m_screenFocalPoint[0] * m_renderSettings.m_imageResolution.x, 
-				(1.0f - m_screenFocalPoint[1]) * m_renderSettings.m_imageResolution.y); // m_screenFocal point origin is at top-left, whilst glsl is bottom-left
+				m_pickingActionPoint.x * m_renderSettings.m_imageResolution.x, 
+				(1.0f - m_pickingActionPoint.y) * m_renderSettings.m_imageResolution.y); // m_screenFocal point origin is at top-left, whilst glsl is bottom-left
 		
 }
 
@@ -496,16 +498,15 @@ Renderer::RenderResult Renderer::render()
     glLoadIdentity();
     glDisable(GL_DEPTH_TEST);
 
-	// calculate focal distance
-	if (m_numberSamples == 0)
+	// calculate focal distance if requested
+	if ( m_nextFramePickingAction == PA_SELECT_FOCAL_POINT )
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_focalDistanceFBO);
-
 		glViewport(0,0,FOCAL_DISTANCE_TEXTURE_RESOLUTION,FOCAL_DISTANCE_TEXTURE_RESOLUTION);
-
 		glUseProgram(m_settingsFocalDistance.m_program);
-
 		drawFullscreenQuad();
+
+		m_nextFramePickingAction = PA_NONE;
 	}
 
 	const float viewportAspectRatio = (float)m_renderSettings.m_imageResolution.x / m_renderSettings.m_imageResolution.y;
@@ -592,12 +593,13 @@ void Renderer::drawFullscreenQuad()
 	glEnd();
 }
 
-void Renderer::setScreenFocalPoint(float x, float y)
+void Renderer::pickingAction(float x, float y, PICKING_ACTION action)
 {
-        m_screenFocalPoint.x = x;
-        m_screenFocalPoint.y = y;
-        updateCamera();
-        m_numberSamples = 0;
+	m_pickingActionPoint.x = x;
+	m_pickingActionPoint.y = y;
+	m_nextFramePickingAction = action;
+	updateCamera();
+	m_numberSamples = 0;
 }
 
 bool Renderer::onMouseMove(int dx, int dy, int buttons)

@@ -8,8 +8,9 @@
 
 #include <OpenEXR/ImathVec.h>
 
-#include "../renderer/renderer.h"
-#include "renderpropertiesui.h"
+#include "renderer/renderer.h"
+#include "ui/renderpropertiesui.h"
+#include "tools/tool.h"
 
 class GLWidget : public QGLWidget
 #ifdef QT5
@@ -25,10 +26,16 @@ public:
      QSize minimumSizeHint() const;
      QSize sizeHint() const;
 
+	 enum Actions
+	 {
+		 ACTION_SELECT_FOCAL_POINT
+	 };
 signals:
-	 void statusChanged(QString);
+	void statusChanged(QString);
+	void currentToolActioned();
 
 public slots:
+	void onActionTriggered(int, bool);
 	void reloadShaders();
     void loadMesh(QString file);
     void loadVoxFile(QString file);
@@ -58,4 +65,7 @@ private:
     Renderer                           m_renderer;
     RenderPropertiesUI::ResolutionMode m_resolutionMode;
     unsigned int                       m_resolutionLongestAxis;
+	Tool*                              m_activeTool;
+
+
 };
