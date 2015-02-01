@@ -85,7 +85,7 @@ struct TexturedShaderSettings
     GLuint m_uniformViewport;
 };
 
-struct FocalDistanceShaderSettings 
+struct PickingShaderSettings
 {
 	GLuint m_program;
 	
@@ -104,7 +104,29 @@ struct FocalDistanceShaderSettings
 	GLuint m_uniformSampledFragment;
 	GLuint m_uniformSSBOStorageBlock;
 };
-typedef FocalDistanceShaderSettings SelectActiveVoxelShaderSettings;
+
+typedef PickingShaderSettings FocalDistanceShaderSettings;
+typedef PickingShaderSettings SelectActiveVoxelShaderSettings;
+
+struct AddVoxelShaderSettings
+{
+	GLuint m_program;
+
+	// uniforms
+	GLuint m_uniformVoxelOccupancyTexture;
+	GLuint m_uniformVoxelColorTexture;
+	GLuint m_uniformSelectedVoxelSSBOStorageBlock;
+	GLuint m_uniformNewVoxelColor;
+};
+
+struct RemoveVoxelShaderSettings
+{
+	GLuint m_program;
+
+	// uniforms
+	GLuint m_uniformVoxelOccupancyTexture;
+	GLuint m_uniformSelectedVoxelSSBOStorageBlock;
+};
 
 struct VoxelizeShaderSettings
 {

@@ -11,7 +11,7 @@
 #include "ui/glwidget.h"
 
 #include "tools/toolFocalDistance.h"
-#include "tools/toolAddVoxel.h"
+#include "tools/toolAddRemoveVoxel.h"
 
 #include <math.h>
 
@@ -320,9 +320,9 @@ void GLWidget::onActionTriggered(int action, bool triggered)
 			m_activeTool = new ToolFocalDistance(m_renderer);
 			break;
 		}
-		case ACTION_ADD_VOXEL: 
+		case ACTION_EDIT_VOXELS: 
 		{
-			m_activeTool = new ToolAddVoxel(m_renderer);
+			m_activeTool = new ToolAddRemoveVoxel(m_renderer);
 			break;
 		}
 		default: return;

@@ -5,8 +5,7 @@
 bool raymarch(in vec3 wsRayOrigin, 
 			  in vec3 wsRayDir,
 			  in int maxSteps,
-			  out vec3 vsHitPos, 
-			  out vec3 vsHitNormal)
+			  out vec3 vsHitPos)
 {
 	// Traverse the grid using DDA, the code is inspired in iq's Voxel Edges 
 	// demo in Shadertoy at https://www.shadertoy.com/view/4dfGzs
@@ -44,7 +43,6 @@ bool raymarch(in vec3 wsRayOrigin,
 
 	}
 
-	vsHitNormal = -mask*wsRayDirSign;
 	vsHitPos = voxelPos;
 
 	return isect;
@@ -54,10 +52,9 @@ bool traverse(in vec3 wsRayOrigin,
 			  in vec3 wsRayDir, 
 			  in int maxSteps,
 			  out vec3 vsHitPos, 
-			  out vec3 vsHitNormal,
 			  out bool hitGround)
 {
-	if (raymarch(wsRayOrigin, wsRayDir, maxSteps, vsHitPos, vsHitNormal))
+	if (raymarch(wsRayOrigin, wsRayDir, maxSteps, vsHitPos))
 	{
 		hitGround = false;
 		return true;
@@ -72,7 +69,6 @@ bool traverse(in vec3 wsRayOrigin,
 bool traverse(in vec3 wsRayOrigin, 
 			  in vec3 wsRayDir,
 			  out vec3 vsHitPos, 
-			  out vec3 vsHitNormal,
 			  out bool hitGround)
 {
 	// In theory I should not need to enforce any clamping because we test on
@@ -88,7 +84,7 @@ bool traverse(in vec3 wsRayOrigin,
 	// DDA would take one extra step for every advanced voxel as it jumps through 
 	// adjacent faces and not vertices).  
 	int MAX_STEPS = int(2 * ceil(length(vec3(voxelResolution))));
-	return traverse(wsRayOrigin, wsRayDir, MAX_STEPS, vsHitPos, vsHitNormal, hitGround);
+	return traverse(wsRayOrigin, wsRayDir, MAX_STEPS, vsHitPos, hitGround);
 }
 
 

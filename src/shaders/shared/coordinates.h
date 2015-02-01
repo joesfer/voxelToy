@@ -43,7 +43,7 @@ vec3 worldToLocal(in vec3 wsV,
 				dot(wsV, basis.binormal));
 }
 
-void voxelSpaceToWorldSpace(in vec3 vsP, in vec3 vsN,
+void voxelSpaceToWorldSpace(in vec3 vsP, 
 							in vec3 wsRayOrigin, in vec3 wsRayDir,
 							out Basis wsHitBasis)
 {
@@ -56,9 +56,11 @@ void voxelSpaceToWorldSpace(in vec3 vsP, in vec3 vsN,
 
 	wsHitBasis.position = wsRayOrigin + wsRayDir * voxelHitDistance; 
 	
-	// note since we don't yet allow for transformation on the voxels, the 
-	// voxel-space and world-space normals coincide.
-	wsHitBasis.normal = vsN; 
+	vec3 wsVoxelCenter = wsVoxelMin + wsVoxelSize * 0.5;
+	vec3 centerToHit = wsHitBasis.position - wsVoxelCenter; 
+	vec3 absCenterToHit = abs(centerToHit); 
+	vec3 mask = step(absCenterToHit.yxx, absCenterToHit.xyz) * step(absCenterToHit.zzy, absCenterToHit.xyz);
+	wsHitBasis.normal = mask * sign(centerToHit);
 	
 	// since we're dealing with axis-aligned voxels, a diagonal unit vector is a
 	// safe choice for the cross product. 1/sqrt(3) = 0.57735026919 

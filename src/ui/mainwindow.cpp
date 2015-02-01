@@ -86,5 +86,5 @@ void MainWindow::on_actionSelect_Focal_Point_toggled(bool triggered)
 
 void MainWindow::on_actionAdd_Voxel_triggered(bool checked)
 {
-   emit actionTriggered(GLWidget::ACTION_ADD_VOXEL, checked);
+   emit actionTriggered(GLWidget::ACTION_EDIT_VOXELS, checked);
 }

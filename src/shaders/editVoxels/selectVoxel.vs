@@ -37,7 +37,7 @@ void main()
 	// traversal.
 	float aabbIsectDist = rayAABBIntersection(wsRayOrigin, wsRayDir,
 											  volumeBoundsMin, volumeBoundsMax); 
-	SelectVoxelData.selectedVoxel = ivec3(0,0,0);
+	SelectVoxelData.index = ivec4(0);
 
 	if (aabbIsectDist < 0)
 	{
@@ -46,13 +46,19 @@ void main()
 
 	float rayLength = aabbIsectDist;
 	vec3 rayPoint = wsRayOrigin + rayLength * wsRayDir;
-	vec3 vsHitPos, vsHitNormal;
+	vec3 vsHitPos;
 
 	bool hitGround;
-	if ( !traverse(rayPoint, wsRayDir, vsHitPos, vsHitNormal, hitGround) )
+	if ( !traverse(rayPoint, wsRayDir, vsHitPos, hitGround) )
 	{
 		return;
 	}
 
-	SelectVoxelData.selectedVoxel = ivec3(vsHitPos);
+	Basis wsHitBasis;
+	voxelSpaceToWorldSpace(vsHitPos, 
+						   wsRayOrigin, wsRayDir,
+						   wsHitBasis);
+
+	SelectVoxelData.index = ivec4(vsHitPos.xyz,0);
+	SelectVoxelData.normal = vec4(wsHitBasis.normal, 0);
 }

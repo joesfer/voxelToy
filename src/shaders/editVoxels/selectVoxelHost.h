@@ -5,5 +5,6 @@
 
 typedef struct 
 {
-	int selectedVoxel[3];
+	int index[4];
+	float normal[4];
 } SelectVoxelData;

@@ -71,6 +71,8 @@ public:
 	{
 		PA_SELECT_FOCAL_POINT,
 		PA_SELECT_ACTIVE_VOXEL,
+		PA_ADD_VOXEL,
+		PA_REMOVE_VOXEL
 	};
 	
 	void requestAction(float x, 
@@ -89,6 +91,8 @@ private:
 	bool reloadAverageShader(const std::string& shaderPath);
 	bool reloadPathtracerShader(const std::string& shaderPath);
 	bool reloadVoxelizeShader(const std::string& shaderPath);
+	bool reloadAddVoxelShader(const std::string& shaderPath);
+	bool reloadRemoveVoxelShader(const std::string& shaderPath);
 	void drawFullscreenQuad();
 	void drawSingleVertex();
 	void createFramebuffer();
@@ -104,6 +108,8 @@ private:
 	void processPendingActions();
 
 private:
+	bool m_initialized;
+
 	Imath::Box3f m_volumeBounds;
 	Imath::V3i	 m_volumeResolution;
 
@@ -131,6 +137,8 @@ private:
 	FocalDistanceShaderSettings     m_settingsFocalDistance;
 	VoxelizeShaderSettings          m_settingsVoxelize;
 	SelectActiveVoxelShaderSettings m_settingsSelectActiveVoxel;
+	AddVoxelShaderSettings          m_settingsAddVoxel;
+	RemoveVoxelShaderSettings       m_settingsRemoveVoxel;
 
 	enum TextureUnits
 	{

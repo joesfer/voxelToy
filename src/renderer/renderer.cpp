@@ -12,7 +12,7 @@
 #include "camera/cameraController.h"
 #include "renderer/voxLoader.h"
 #include "shaders/focalDistance/focalDistanceHost.h"
-#include "shaders/selectVoxel/selectVoxelHost.h"
+#include "shaders/editVoxels/selectVoxelHost.h"
 
 #define VOXELIZE_GPU 1
 
@@ -21,7 +21,6 @@ const GLuint g_selectedVoxelSSBOBindingPointIndex = 1;
 
 Renderer::Renderer()
 {
-	glewExperimental = true;
 
     m_camera.controller().lookAt(Imath::V3f(0,0,0));
     m_camera.controller().setDistanceFromTarget(100);
@@ -34,6 +33,7 @@ Renderer::Renderer()
     m_renderSettings.m_pathtracerMaxPathLength = 1;
     m_renderSettings.m_pathtracerMaxSamples = 128;
 	m_mesh = NULL;
+	m_initialized = false;
 }
 
 Renderer::~Renderer()
@@ -42,6 +42,7 @@ Renderer::~Renderer()
 
 void Renderer::initialize(const std::string& shaderPath)
 {
+	glewExperimental = true;
 	glewInit();
 	glClearColor(0.1f, 0.1f, 0.1f, 0);
 	glEnable(GL_DEPTH_TEST);
@@ -53,13 +54,34 @@ void Renderer::initialize(const std::string& shaderPath)
     if (glIsTexture(m_voxelColorTexture)) glDeleteTextures(1, &m_voxelColorTexture);
     glGenTextures(1, &m_voxelColorTexture);
 
-	createVoxelDataTexture(Imath::V3i(16));
     createFramebuffer();
 	reloadShaders(shaderPath);
+	createVoxelDataTexture(Imath::V3i(16));
 	updateCamera();
 	updateRenderSettings();
 
+	glBindImageTexture(0,                   // image unit
+					   m_occupancyTexture,  // texture
+					   0,                   // level
+					   GL_TRUE,             // layered
+					   0,                   // layer
+					   GL_WRITE_ONLY,       // access
+					   GL_R8UI              // format
+			);
+
+	glBindImageTexture(1,                   // image unit
+					   m_voxelColorTexture, // texture
+					   0,                   // level
+					   GL_TRUE,             // layered
+					   0,                   // layer
+					   GL_WRITE_ONLY,       // access
+					   GL_RGBA8             // format
+			);
+
+
 	m_frameTimer.init();
+
+	m_initialized = true;
 }
 
 Imath::V3f Renderer::lightDirection() const
@@ -120,12 +142,14 @@ bool Renderer::reloadFocalDistanceShader(const std::string& shaderPath)
 				m_volumeBounds.max.y,
 				m_volumeBounds.max.z);
 
+	glUseProgram(0);
+
 	return true;
 }
 
 bool Renderer::reloadSelectActiveVoxelShader(const std::string& shaderPath)
 {
-	std::string vs = shaderPath + std::string("selectVoxel/selectVoxel.vs");
+	std::string vs = shaderPath + std::string("editVoxels/selectVoxel.vs");
 	std::string fs = shaderPath + std::string("shared/trivial.fs");
 
     if ( !Shader::compileProgramFromFile("SelectActiveVoxel",
@@ -175,6 +199,8 @@ bool Renderer::reloadSelectActiveVoxelShader(const std::string& shaderPath)
 				m_volumeBounds.max.y,
 				m_volumeBounds.max.z);
 
+	glUseProgram(0);
+
 	return true;
 }
 
@@ -202,6 +228,8 @@ bool Renderer::reloadTexturedShader(const std::string& shaderPath)
                 m_renderSettings.m_viewport[2],
                 m_renderSettings.m_viewport[3]);
 
+	glUseProgram(0);
+
 	return true;
 }
 
@@ -226,6 +254,8 @@ bool Renderer::reloadAverageShader(const std::string& shaderPath)
 	m_settingsAverage.m_uniformViewport       = glGetUniformLocation(m_settingsAverage.m_program, "viewport");
 
     glUniform4f(m_settingsAverage.m_uniformViewport, 0, 0, (float)m_renderSettings.m_imageResolution.x, (float)m_renderSettings.m_imageResolution.y);
+
+	glUseProgram(0);
 
 	return true;
 }
@@ -302,6 +332,8 @@ bool Renderer::reloadPathtracerShader(const std::string& shaderPath)
 
     updateCamera();
 
+	glUseProgram(0);
+
 	return true;
 }
 
@@ -333,6 +365,66 @@ bool Renderer::reloadVoxelizeShader(const std::string& shaderPath)
 				m_volumeResolution.y, 
 				m_volumeResolution.z);
 
+	glUseProgram(0);
+
+	return true;
+}
+
+bool Renderer::reloadAddVoxelShader(const std::string& shaderPath)
+{
+	std::string vs = shaderPath + std::string("editVoxels/addVoxel.vs");
+	std::string fs = shaderPath + std::string("shared/trivial.fs");
+
+    if ( !Shader::compileProgramFromFile("AddVoxel",
+                                         vs, "",
+                                         fs, "",
+                                         m_settingsAddVoxel.m_program) )
+	{
+		return false;
+	}
+    
+	glUseProgram(m_settingsAddVoxel.m_program);
+
+	m_settingsAddVoxel.m_uniformVoxelOccupancyTexture   = glGetUniformLocation(m_settingsAddVoxel.m_program, "voxelOccupancy");
+	m_settingsAddVoxel.m_uniformVoxelColorTexture       = glGetUniformLocation(m_settingsAddVoxel.m_program, "voxelColor");
+	m_settingsAddVoxel.m_uniformNewVoxelColor           = glGetUniformLocation(m_settingsAddVoxel.m_program, "newVoxelColor");
+	
+	glUniform1i(m_settingsAddVoxel.m_uniformVoxelOccupancyTexture, TEXTURE_UNIT_OCCUPANCY);
+	glUniform1i(m_settingsAddVoxel.m_uniformVoxelColorTexture, TEXTURE_UNIT_COLOR);
+
+	m_settingsAddVoxel.m_uniformSelectedVoxelSSBOStorageBlock = glGetProgramResourceIndex(m_settingsAddVoxel.m_program, GL_SHADER_STORAGE_BLOCK, "SelectVoxelData");
+	glShaderStorageBlockBinding(m_settingsAddVoxel.m_program, m_settingsAddVoxel.m_uniformSelectedVoxelSSBOStorageBlock, g_selectedVoxelSSBOBindingPointIndex);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, g_selectedVoxelSSBOBindingPointIndex, m_selectedVoxelSSBO);
+
+	glUseProgram(0);
+
+	return true;
+}
+
+bool Renderer::reloadRemoveVoxelShader(const std::string& shaderPath)
+{
+	std::string vs = shaderPath + std::string("editVoxels/removeVoxel.vs");
+	std::string fs = shaderPath + std::string("shared/trivial.fs");
+
+    if ( !Shader::compileProgramFromFile("RemoveVoxel",
+                                         vs, "",
+                                         fs, "",
+                                         m_settingsRemoveVoxel.m_program) )
+	{
+		return false;
+	}
+    
+	glUseProgram(m_settingsRemoveVoxel.m_program);
+
+	m_settingsRemoveVoxel.m_uniformVoxelOccupancyTexture   = glGetUniformLocation(m_settingsRemoveVoxel.m_program, "voxelOccupancy");
+	
+	glUniform1i(m_settingsRemoveVoxel.m_uniformVoxelOccupancyTexture, TEXTURE_UNIT_OCCUPANCY);
+
+	m_settingsRemoveVoxel.m_uniformSelectedVoxelSSBOStorageBlock = glGetProgramResourceIndex(m_settingsRemoveVoxel.m_program, GL_SHADER_STORAGE_BLOCK, "SelectVoxelData");
+	glShaderStorageBlockBinding(m_settingsRemoveVoxel.m_program, m_settingsRemoveVoxel.m_uniformSelectedVoxelSSBOStorageBlock, g_selectedVoxelSSBOBindingPointIndex);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, g_selectedVoxelSSBOBindingPointIndex, m_selectedVoxelSSBO);
+	
+	glUseProgram(0);
 
 	return true;
 }
@@ -344,7 +436,9 @@ void Renderer::reloadShaders(const std::string& shaderPath)
 		!reloadTexturedShader(shaderPath)          ||
 		!reloadFocalDistanceShader(shaderPath)     ||
 		!reloadSelectActiveVoxelShader(shaderPath) ||
-		!reloadVoxelizeShader(shaderPath))
+		!reloadVoxelizeShader(shaderPath)          ||
+		!reloadAddVoxelShader(shaderPath)          ||
+		!reloadRemoveVoxelShader(shaderPath))
 	{
 		m_status = "Shader loading failed";
 		return;
@@ -465,6 +559,7 @@ void Renderer::updateCamera()
     glUniform2f(m_settingsPathtracer.m_uniformCameraFilmSize     , m_camera.parameters().filmSize().x, 
 															       m_camera.parameters().filmSize().y);
 		
+	glUseProgram(0);
 }
 
 void Renderer::resizeFrame(int frameBufferWidth, 
@@ -583,6 +678,11 @@ void Renderer::processPendingActions()
 	for( size_t i = 0; i < m_scheduledActions.size(); ++i )
 	{	
 		const Action& a = m_scheduledActions[i];
+		if (a.m_invalidatesRender) 
+		{
+			// restart accumulation on next visible frame
+			m_numberSamples = 0;
+		}
 		switch(a.m_type)
 		{
 			case PA_SELECT_FOCAL_POINT:
@@ -594,12 +694,6 @@ void Renderer::processPendingActions()
 							(1.0f - a.m_point.y) * m_renderSettings.m_imageResolution.y); // m_screenFocal point origin is at top-left, whilst glsl is bottom-left
 
 				drawSingleVertex();
-
-				if (a.m_invalidatesRender) 
-				{
-					// restart accumulation on next visible frame
-					m_numberSamples = 0;
-				}
 			} break;
 			case PA_SELECT_ACTIVE_VOXEL:
 			{
@@ -610,21 +704,27 @@ void Renderer::processPendingActions()
 							(1.0f - a.m_point.y) * m_renderSettings.m_imageResolution.y); // m_screenFocal point origin is at top-left, whilst glsl is bottom-left
 
 				drawSingleVertex();
+			} break;
+			case PA_ADD_VOXEL:
+			case PA_REMOVE_VOXEL:
+			{
 
-				if (a.m_invalidatesRender) 
-				{
-					// restart accumulation on next visible frame
-					m_numberSamples = 0;
-				}
+				if ( a.m_type == PA_ADD_VOXEL) glUseProgram(m_settingsAddVoxel.m_program);
+				else glUseProgram(m_settingsRemoveVoxel.m_program);
+
+				drawSingleVertex();
 			} break;
 			default: break;
 		}
 	}
+	glUseProgram(0);
 	m_scheduledActions.resize(0);
 }
 
 Renderer::RenderResult Renderer::render()
 {
+	if (!m_initialized) return RR_FINISHED_RENDERING;
+
 	m_frameTimer.sampleBegin();
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -699,6 +799,8 @@ Renderer::RenderResult Renderer::render()
 			m_status = ss.str();
 		}
 	}
+
+	glUseProgram(0);
 	
 	// run continuously?
     if ( m_numberSamples++ < m_renderSettings.m_pathtracerMaxSamples)
@@ -800,9 +902,14 @@ void Renderer::createFramebuffer()
 	// create selected voxel shader storage buffer object 
 	{
 		SelectVoxelData data;
-		data.selectedVoxel[0] = 0;
-		data.selectedVoxel[1] = 0;
-		data.selectedVoxel[2] = 0;
+		data.index[0] = 0;
+		data.index[1] = 0;
+		data.index[2] = 0;
+		data.index[3] = 0;
+		data.normal[0] = 1.f;
+		data.normal[1] = 0.f;
+		data.normal[2] = 0.f;
+		data.normal[3] = 0.f;
 
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_selectedVoxelSSBO);	
 		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(SelectVoxelData), &data, GL_DYNAMIC_COPY);	
@@ -1021,6 +1128,8 @@ void Renderer::createVoxelDataTexture(const Imath::V3i& resolution,
 				m_volumeBounds.max.x,
 				m_volumeBounds.max.y,
 				m_volumeBounds.max.z);
+
+	glUseProgram(0);
 }
 void Renderer::resetRender()
 {
@@ -1041,7 +1150,7 @@ void Renderer::updateRenderSettings()
 
 void Renderer::voxelizeGPU(const Mesh* mesh)
 {
-	createVoxelDataTexture(Imath::V3i(256));
+	createVoxelDataTexture(Imath::V3i(32));
 
 	glUseProgram(m_settingsVoxelize.m_program);
 
@@ -1055,27 +1164,9 @@ void Renderer::voxelizeGPU(const Mesh* mesh)
 					   GL_TRUE,
 					   &m_meshTransform.x[0][0]);
 
-	// Connect output image textures for the geometry shader
-	
-	glBindImageTexture(0,                   // image unit
-					   m_occupancyTexture,  // texture
-					   0,                   // level
-					   GL_TRUE,             // layered
-					   0,                   // layer
-					   GL_WRITE_ONLY,       // access
-					   GL_R8UI              // format
-			);
-
-	glBindImageTexture(1,                   // image unit
-					   m_voxelColorTexture, // texture
-					   0,                   // level
-					   GL_TRUE,             // layered
-					   0,                   // layer
-					   GL_WRITE_ONLY,       // access
-					   GL_RGBA8             // format
-			);
-
 	mesh->draw();
+
+	glUseProgram(0);
 }
 
 void Renderer::voxelizeCPU(const Imath::V3f* vertices, 

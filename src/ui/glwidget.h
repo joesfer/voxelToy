@@ -32,7 +32,7 @@ public:
 	 enum Actions
 	 {
 		 ACTION_SELECT_FOCAL_POINT,
-		 ACTION_ADD_VOXEL
+		 ACTION_EDIT_VOXELS
 	 };
 signals:
 	void statusChanged(QString);

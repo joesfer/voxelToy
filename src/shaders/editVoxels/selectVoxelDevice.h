@@ -4,5 +4,6 @@
 
 layout(std430, binding=1) buffer SelectVoxelData_t
 {
-	ivec3 selectedVoxel;
+	ivec4 index;
+	vec4  normal;
 } SelectVoxelData;

@@ -49,10 +49,10 @@ void main()
 
 	float rayLength = aabbIsectDist;
 	vec3 rayPoint = wsRayOrigin + rayLength * wsRayDir;
-	vec3 vsHitPos, vsHitNormal;
+	vec3 vsHitPos;
 
 	bool hitGround;
-	if ( !traverse(rayPoint, wsRayDir, vsHitPos, vsHitNormal, hitGround) )
+	if ( !traverse(rayPoint, wsRayDir, vsHitPos, hitGround) )
 	{
 		return;
 	}
