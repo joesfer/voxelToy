@@ -1,13 +1,10 @@
 #define GL_GLEXT_PROTOTYPES
-#ifdef QT5
-#include <QtOpenGLExtensions/qopenglextensions.h>
-#else
 #include <GL/glew.h>
-#endif
 #include <GL/glut.h>
 #include <GL/glu.h>
 
 #include "renderer/renderer.h"
+
 #include "mesh/mesh.h"
 #include "content.h"
 #include "mesh/meshLoader.h"
@@ -20,6 +17,8 @@
 
 Renderer::Renderer()
 {
+	glewExperimental = true;
+
     m_camera.controller().lookAt(Imath::V3f(0,0,0));
     m_camera.controller().setDistanceFromTarget(100);
     m_camera.setFStop(16);
@@ -42,6 +41,7 @@ Renderer::~Renderer()
 
 void Renderer::initialize(const std::string& shaderPath)
 {
+	glewInit();
 	glClearColor(0.1f, 0.1f, 0.1f, 0);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -69,8 +69,8 @@ Imath::V3f Renderer::lightDirection() const
 
 bool Renderer::reloadFocalDistanceShader(const std::string& shaderPath)
 {
-	std::string vs = shaderPath + std::string("screenSpace.vs");
-	std::string fs = shaderPath + std::string("focalDistance.fs");
+	std::string vs = shaderPath + std::string("shared/screenSpace.vs");
+	std::string fs = shaderPath + std::string("focalDistance/focalDistance.fs");
 
     if ( !Shader::compileProgramFromFile("FocalDistance",
                                         vs, "",
@@ -120,8 +120,8 @@ bool Renderer::reloadFocalDistanceShader(const std::string& shaderPath)
 
 bool Renderer::reloadTexturedShader(const std::string& shaderPath)
 {
-	std::string vs = shaderPath + std::string("screenSpace.vs");
-	std::string fs = shaderPath + std::string("textureMap.fs");
+	std::string vs = shaderPath + std::string("shared/screenSpace.vs");
+	std::string fs = shaderPath + std::string("shared/textureMap.fs");
 
     if ( !Shader::compileProgramFromFile("textured",
                                         vs, "",
@@ -147,8 +147,8 @@ bool Renderer::reloadTexturedShader(const std::string& shaderPath)
 
 bool Renderer::reloadAverageShader(const std::string& shaderPath)
 {
-	std::string vs = shaderPath + std::string("screenSpace.vs");
-	std::string fs = shaderPath + std::string("accumulation.fs");
+	std::string vs = shaderPath + std::string("shared/screenSpace.vs");
+	std::string fs = shaderPath + std::string("shared/accumulation.fs");
 
     if ( !Shader::compileProgramFromFile("accumulation",
                                         vs, "",
@@ -172,8 +172,8 @@ bool Renderer::reloadAverageShader(const std::string& shaderPath)
 
 bool Renderer::reloadPathtracerShader(const std::string& shaderPath)
 {
-	std::string vs = shaderPath + std::string("screenSpace.vs");
-	std::string fs = shaderPath + std::string("pathTracer.fs");
+	std::string vs = shaderPath + std::string("shared/screenSpace.vs");
+	std::string fs = shaderPath + std::string("shared/pathTracer.fs");
 
     if ( !Shader::compileProgramFromFile("PT",
                                         vs, "",
@@ -241,9 +241,9 @@ bool Renderer::reloadPathtracerShader(const std::string& shaderPath)
 
 bool Renderer::reloadVoxelizeShader(const std::string& shaderPath)
 {
-	std::string vs = shaderPath + std::string("voxelize.vs");
-	std::string gs = shaderPath + std::string("voxelize.gs");
-	std::string fs = shaderPath + std::string("trivial.fs");
+	std::string vs = shaderPath + std::string("shared/voxelize.vs");
+	std::string gs = shaderPath + std::string("shared/voxelize.gs");
+	std::string fs = shaderPath + std::string("shared/trivial.fs");
 
     if ( !Shader::compileProgramFromFile("Voxelize",
                                          vs, "",

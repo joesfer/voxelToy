@@ -2,13 +2,10 @@
 
 #include "renderer/noise.h"
 
-#if QT5
-#include <QOpenGLFunctions>
-#else
-#include <QtOpenGL>
-#endif
 #include <OpenEXR/ImathMatrix.h>
 #include <OpenEXR/ImathBox.h>
+
+#include <GL/gl.h>
 
 struct RGB
 {

@@ -27,7 +27,14 @@ SOURCES += ../../src/ui/mainwindow.cpp \
     ../../src/thirdParty/tinyobjloader/tiny_obj_loader.cc \
     ../../src/renderer/renderer.cpp \
     ../../src/svo/voxelizer.cpp \
-    ../../src/timer/gpuTimer.cpp
+    ../../src/timer/gpuTimer.cpp \
+    ../../src/camera/orbitCameraController.cpp \
+    ../../src/camera/flyCameraController.cpp \
+    ../../src/camera/cameraParameters.cpp \
+    ../../src/camera/cameraController.cpp \
+    ../../src/renderer/voxLoader.cpp \
+    ../../src/tools/toolFocalDistance.cpp \
+    ../../src/tools/toolAddVoxel.cpp
 
 HEADERS  += ../../src/ui/mainwindow.h \
     ../../src/camera/camera.h \

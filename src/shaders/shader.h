@@ -43,7 +43,6 @@ struct PathtracerShaderSettings
 	GLuint m_uniformVoxelOccupancyTexture;
 	GLuint m_uniformVoxelColorTexture;
 	GLuint m_uniformNoiseTexture;
-	GLuint m_uniformFocalDistanceTexture;
 	GLuint m_uniformVoxelDataResolution;
 	GLuint m_uniformVolumeBoundsMin;
 	GLuint m_uniformVolumeBoundsMax;
@@ -62,6 +61,7 @@ struct PathtracerShaderSettings
 	GLuint m_uniformPathtracerMaxPathLength;
 	GLuint m_uniformWireframeOpacity;
 	GLuint m_uniformWireframeThickness;
+	GLuint m_uniformFocalDistanceSSBOStorageBlock;
 };
 			
 struct AccumulationShaderSettings
@@ -101,7 +101,9 @@ struct FocalDistanceShaderSettings
 	GLuint m_uniformCameraInverseModelView;
 	GLuint m_uniformCameraFocalLength;
 	GLuint m_uniformSampledFragment;
+	GLuint m_uniformFocalDistanceSSBOStorageBlock;
 };
+typedef FocalDistanceShaderSettings SelectActiveVoxelShaderSettings;
 
 struct VoxelizeShaderSettings
 {

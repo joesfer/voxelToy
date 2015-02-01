@@ -1,9 +1,10 @@
-#version 130
+#version 430
+
+#include <../focalDistance/focalDistanceDevice.h>
 
 uniform sampler3D   occupancyTexture;
 uniform sampler3D   voxelColorTexture;
 uniform sampler2D   noiseTexture;
-uniform sampler2D   focalDistanceTexture;
 uniform ivec3       voxelResolution;
 uniform vec3        volumeBoundsMin;
 uniform vec3        volumeBoundsMax;

@@ -57,7 +57,7 @@ void generateRay_ThinLens(in vec3 fragmentPos,
 	// is quite confusing so we can simply lock down s2 to be the focal length and 
 	// s1 the focal distance, and force the convergence of rays as described in 
 	// the comment above.
-	float cameraFocalDistance = texelFetch(focalDistanceTexture, ivec2(0,0), 0).r;
+	float cameraFocalDistance = FocalDistanceData.focalDistance;
 
 	vec4 uniformRandomSample = rand(rngOffset);
 	vec2 unitDiskSample = uniformlySampleDisk(uniformRandomSample.xy);
