@@ -30,9 +30,6 @@ Renderer::Renderer()
 	m_activeSampleTexture = 0;
 	m_numberSamples = 0;
 
-	m_pickingActionPoint = Imath::V2f(0.5f, 0.5f);
-	m_nextFramePickingAction = PA_NONE;
-
 	m_renderSettings.m_imageResolution.x = 512;
 	m_renderSettings.m_imageResolution.y = 512;
     m_renderSettings.m_pathtracerMaxPathLength = 1;
@@ -468,17 +465,6 @@ void Renderer::updateCamera()
     glUniform1i(m_settingsPathtracer.m_uniformEnableDOF          , enableDOF ? 1 : 0 );
     glUniform2f(m_settingsPathtracer.m_uniformCameraFilmSize     , m_camera.parameters().filmSize().x, 
 															       m_camera.parameters().filmSize().y);
-    glUseProgram(m_settingsSelectActiveVoxel.m_program);
-    glUniform1f(m_settingsSelectActiveVoxel.m_uniformCameraFocalLength  , m_camera.parameters().focalLength());
-	glUniform2f(m_settingsSelectActiveVoxel.m_uniformSampledFragment,
-				m_pickingActionPoint.x * m_renderSettings.m_imageResolution.x, 
-				(1.0f - m_pickingActionPoint.y) * m_renderSettings.m_imageResolution.y); // m_screenFocal point origin is at top-left, whilst glsl is bottom-left
-
-    glUseProgram(m_settingsFocalDistance.m_program);
-    glUniform1f(m_settingsFocalDistance.m_uniformCameraFocalLength  , m_camera.parameters().focalLength());
-	glUniform2f(m_settingsFocalDistance.m_uniformSampledFragment,
-				m_pickingActionPoint.x * m_renderSettings.m_imageResolution.x, 
-				(1.0f - m_pickingActionPoint.y) * m_renderSettings.m_imageResolution.y); // m_screenFocal point origin is at top-left, whilst glsl is bottom-left
 		
 }
 
@@ -593,6 +579,61 @@ void Renderer::resizeFrame(int frameBufferWidth,
 
 }
 
+void Renderer::processPendingActions()
+{
+	for( size_t i = 0; i < m_scheduledActions.size(); ++i )
+	{	
+		const Action& a = m_scheduledActions[i];
+		switch(a.m_type)
+		{
+			case PA_SELECT_FOCAL_POINT:
+			{
+				// TODO: we currently do the computation in a fragment shader by
+				// drawing a quad to a 1x1 pixel framebuffer. Because we now use
+				// SSBBO instead of imageStores, it may be better to shift the
+				// computation to a vertex shader, disable the rasteriser, and
+				// send a single vertex.
+				glBindFramebuffer(GL_FRAMEBUFFER, m_focalDistanceFBO);
+				glViewport(0,0,FOCAL_DISTANCE_TEXTURE_RESOLUTION,FOCAL_DISTANCE_TEXTURE_RESOLUTION);
+
+				glUseProgram(m_settingsFocalDistance.m_program);
+				glUniform1f(m_settingsFocalDistance.m_uniformCameraFocalLength  , m_camera.parameters().focalLength());
+				glUniform2f(m_settingsFocalDistance.m_uniformSampledFragment,
+							a.m_point.x * m_renderSettings.m_imageResolution.x, 
+							(1.0f - a.m_point.y) * m_renderSettings.m_imageResolution.y); // m_screenFocal point origin is at top-left, whilst glsl is bottom-left
+
+				drawFullscreenQuad();
+				if (a.m_invalidatesRender) 
+				{
+					// restart accumulation on next visible frame
+					m_numberSamples = 0;
+				}
+			} break;
+			case PA_SELECT_ACTIVE_VOXEL:
+			{
+				glBindFramebuffer(GL_FRAMEBUFFER, m_focalDistanceFBO);
+				glViewport(0,0,FOCAL_DISTANCE_TEXTURE_RESOLUTION,FOCAL_DISTANCE_TEXTURE_RESOLUTION);
+
+				glUseProgram(m_settingsSelectActiveVoxel.m_program);
+				glUniform1f(m_settingsSelectActiveVoxel.m_uniformCameraFocalLength  , m_camera.parameters().focalLength());
+				glUniform2f(m_settingsSelectActiveVoxel.m_uniformSampledFragment,
+							a.m_point.x * m_renderSettings.m_imageResolution.x, 
+							(1.0f - a.m_point.y) * m_renderSettings.m_imageResolution.y); // m_screenFocal point origin is at top-left, whilst glsl is bottom-left
+
+				drawFullscreenQuad();
+
+				if (a.m_invalidatesRender) 
+				{
+					// restart accumulation on next visible frame
+					m_numberSamples = 0;
+				}
+			} break;
+			default: break;
+		}
+	}
+	m_scheduledActions.resize(0);
+}
+
 Renderer::RenderResult Renderer::render()
 {
 	m_frameTimer.sampleBegin();
@@ -604,25 +645,7 @@ Renderer::RenderResult Renderer::render()
     glLoadIdentity();
     glDisable(GL_DEPTH_TEST);
 
-	// calculate focal distance if requested
-	if ( m_nextFramePickingAction == PA_SELECT_FOCAL_POINT )
-	{
-		glBindFramebuffer(GL_FRAMEBUFFER, m_focalDistanceFBO);
-		glViewport(0,0,FOCAL_DISTANCE_TEXTURE_RESOLUTION,FOCAL_DISTANCE_TEXTURE_RESOLUTION);
-		glUseProgram(m_settingsFocalDistance.m_program);
-		drawFullscreenQuad();
-
-		m_nextFramePickingAction = PA_NONE;
-	}
-	else if ( m_nextFramePickingAction == PA_SELECT_ACTIVE_VOXEL)
-	{
-		glBindFramebuffer(GL_FRAMEBUFFER, m_focalDistanceFBO);
-		glViewport(0,0,FOCAL_DISTANCE_TEXTURE_RESOLUTION,FOCAL_DISTANCE_TEXTURE_RESOLUTION);
-		glUseProgram(m_settingsSelectActiveVoxel.m_program);
-		drawFullscreenQuad();
-
-		m_nextFramePickingAction = PA_NONE;
-	}
+	processPendingActions();
 
 	const float viewportAspectRatio = (float)m_renderSettings.m_imageResolution.x / m_renderSettings.m_imageResolution.y;
 	if (viewportAspectRatio >= 1.0f) 
@@ -708,13 +731,16 @@ void Renderer::drawFullscreenQuad()
 	glEnd();
 }
 
-void Renderer::pickingAction(float x, float y, PICKING_ACTION action)
+void Renderer::requestAction(float x, float y, 
+							 PICKING_ACTION action,
+							 bool restartAccumulation)
 {
-	m_pickingActionPoint.x = x;
-	m_pickingActionPoint.y = y;
-	m_nextFramePickingAction = action;
-	updateCamera();
-	m_numberSamples = 0;
+	Action a;
+	a.m_point.x = x;
+	a.m_point.y = y;
+	a.m_type = action;
+	a.m_invalidatesRender = restartAccumulation;
+	m_scheduledActions.push_back(a);
 }
 
 bool Renderer::onMouseMove(int dx, int dy, int buttons)

@@ -4,18 +4,14 @@
 bool ToolAddVoxel::mouseReleaseEvent(QMouseEvent* /*event*/, QSize /*widgetDimensions*/) 
 {
 	return false;
-	//m_renderer.pickingAction((float)event->pos().x() / widgetDimensions.width(), 
-	//					     (float)event->pos().y() / widgetDimensions.height(),
-	//						 Renderer::PA_SELECT_FOCAL_POINT);
-	//m_renderer.resetRender();
-	//return true;
 }
 
 bool ToolAddVoxel::mouseMoveEvent(QMouseEvent *event, QSize widgetDimensions)
 {
-	m_renderer.pickingAction((float)event->pos().x() / widgetDimensions.width(), 
+	m_renderer.requestAction((float)event->pos().x() / widgetDimensions.width(), 
 						     (float)event->pos().y() / widgetDimensions.height(),
-							 Renderer::PA_SELECT_ACTIVE_VOXEL);
+							 Renderer::PA_SELECT_ACTIVE_VOXEL, 
+							 true);
     return false; // don't kill the event, let the camera process it as well
 }
 

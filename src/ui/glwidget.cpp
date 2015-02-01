@@ -318,10 +318,12 @@ void GLWidget::onActionTriggered(int action, bool triggered)
 		case ACTION_SELECT_FOCAL_POINT:
 		{
 			m_activeTool = new ToolFocalDistance(m_renderer);
+			break;
 		}
 		case ACTION_ADD_VOXEL: 
 		{
 			m_activeTool = new ToolAddVoxel(m_renderer);
+			break;
 		}
 		default: return;
 	}

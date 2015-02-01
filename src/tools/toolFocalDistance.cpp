@@ -4,9 +4,9 @@ bool ToolFocalDistance::mousePressEvent(QMouseEvent *event, QSize widgetDimensio
 {
 	if ( !(event->buttons() & Qt::LeftButton) ) return false;
 
-	m_renderer.pickingAction((float)event->pos().x() / widgetDimensions.width(), 
+	m_renderer.requestAction((float)event->pos().x() / widgetDimensions.width(), 
 						     (float)event->pos().y() / widgetDimensions.height(),
-							 Renderer::PA_SELECT_FOCAL_POINT);
-	m_renderer.resetRender();
+							 Renderer::PA_SELECT_FOCAL_POINT, 
+							 true);
 	return true;
 }

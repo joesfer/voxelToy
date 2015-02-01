@@ -9,6 +9,8 @@
 #include <OpenEXR/ImathMatrix.h>
 #include <OpenEXR/ImathBox.h>
 
+#include <vector>
+
 class Mesh;
 
 struct RenderSettings
@@ -67,11 +69,14 @@ public:
 
 	enum PICKING_ACTION
 	{
-		PA_NONE,
 		PA_SELECT_FOCAL_POINT,
 		PA_SELECT_ACTIVE_VOXEL,
 	};
-	void pickingAction(float x, float y, PICKING_ACTION action);
+	
+	void requestAction(float x, 
+					   float y, 
+					   PICKING_ACTION action,
+					   bool restartAccumulation);
 
 private:
 	void updateCamera();
@@ -92,6 +97,10 @@ private:
 				     const unsigned int* indices,
 				     unsigned int numTriangles);
 	void voxelizeGPU(const Mesh* mesh);
+	// clear out list of pending "actions" requested by the user, such as
+	// selecting the active voxel, prior to rendering the next visible frame.
+	// Each action results in a render pass.
+	void processPendingActions();
 
 private:
 	Imath::Box3f m_volumeBounds;
@@ -109,10 +118,6 @@ private:
     GLuint m_noiseTexture;
 	GLint m_textureDimensions[2];
 
-	// Normalized coordinates in screen space from where the requested picking
-	// action is originated (the actual pixel coordinates are calculated as
-	// m_pickingActionPoint * viewportSize;
-	Imath::V2f m_pickingActionPoint;
 	GLuint m_focalDistanceFBO;
 	GLuint m_focalDistanceRBO;
     GLuint m_focalDistanceSSBO;
@@ -147,5 +152,16 @@ private:
 
 	std::string m_status;
 
-	PICKING_ACTION m_nextFramePickingAction;
+	struct Action
+	{
+		PICKING_ACTION m_type;
+		// Normalized coordinates in screen space from where the requested picking
+		// action is originated (the actual pixel coordinates are calculated as
+		// m_pickingActionPoint * viewportSize;
+		Imath::V2f m_point;
+		bool m_invalidatesRender;
+	};
+	
+	std::vector<Action> m_scheduledActions;
+
 };
