@@ -90,6 +90,7 @@ private:
 	bool reloadPathtracerShader(const std::string& shaderPath);
 	bool reloadVoxelizeShader(const std::string& shaderPath);
 	void drawFullscreenQuad();
+	void drawSingleVertex();
 	void createFramebuffer();
     Imath::V3f lightDirection() const;
 
@@ -118,8 +119,6 @@ private:
     GLuint m_noiseTexture;
 	GLint m_textureDimensions[2];
 
-	GLuint m_focalDistanceFBO;
-	GLuint m_focalDistanceRBO;
     GLuint m_focalDistanceSSBO;
     GLuint m_selectedVoxelSSBO;
 

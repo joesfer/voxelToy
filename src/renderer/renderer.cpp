@@ -14,7 +14,6 @@
 #include "shaders/focalDistance/focalDistanceHost.h"
 #include "shaders/selectVoxel/selectVoxelHost.h"
 
-#define FOCAL_DISTANCE_TEXTURE_RESOLUTION 1 
 #define VOXELIZE_GPU 1
 
 const GLuint g_focalDistanceSSBOBindingPointIndex = 0;
@@ -71,12 +70,12 @@ Imath::V3f Renderer::lightDirection() const
 
 bool Renderer::reloadFocalDistanceShader(const std::string& shaderPath)
 {
-	std::string vs = shaderPath + std::string("shared/screenSpace.vs");
-	std::string fs = shaderPath + std::string("focalDistance/focalDistance.fs");
+	std::string vs = shaderPath + std::string("focalDistance/focalDistance.vs");
+	std::string fs = shaderPath + std::string("shared/trivial.fs");
 
     if ( !Shader::compileProgramFromFile("FocalDistance",
-                                        vs, "",
-                                        fs, "#define PINHOLE\n",
+                                        vs, "#define PINHOLE\n",
+                                        fs, "",
                                         m_settingsFocalDistance.m_program) )
 	{
 		return false;
@@ -126,12 +125,12 @@ bool Renderer::reloadFocalDistanceShader(const std::string& shaderPath)
 
 bool Renderer::reloadSelectActiveVoxelShader(const std::string& shaderPath)
 {
-	std::string vs = shaderPath + std::string("shared/screenSpace.vs");
-	std::string fs = shaderPath + std::string("selectVoxel/selectVoxel.fs");
+	std::string vs = shaderPath + std::string("selectVoxel/selectVoxel.vs");
+	std::string fs = shaderPath + std::string("shared/trivial.fs");
 
     if ( !Shader::compileProgramFromFile("SelectActiveVoxel",
-                                        vs, "",
-                                        fs, "#define PINHOLE\n",
+                                        vs, "#define PINHOLE\n",
+                                        fs, "",
                                         m_settingsSelectActiveVoxel.m_program) )
 	{
 		return false;
@@ -588,21 +587,14 @@ void Renderer::processPendingActions()
 		{
 			case PA_SELECT_FOCAL_POINT:
 			{
-				// TODO: we currently do the computation in a fragment shader by
-				// drawing a quad to a 1x1 pixel framebuffer. Because we now use
-				// SSBBO instead of imageStores, it may be better to shift the
-				// computation to a vertex shader, disable the rasteriser, and
-				// send a single vertex.
-				glBindFramebuffer(GL_FRAMEBUFFER, m_focalDistanceFBO);
-				glViewport(0,0,FOCAL_DISTANCE_TEXTURE_RESOLUTION,FOCAL_DISTANCE_TEXTURE_RESOLUTION);
-
 				glUseProgram(m_settingsFocalDistance.m_program);
 				glUniform1f(m_settingsFocalDistance.m_uniformCameraFocalLength  , m_camera.parameters().focalLength());
 				glUniform2f(m_settingsFocalDistance.m_uniformSampledFragment,
 							a.m_point.x * m_renderSettings.m_imageResolution.x, 
 							(1.0f - a.m_point.y) * m_renderSettings.m_imageResolution.y); // m_screenFocal point origin is at top-left, whilst glsl is bottom-left
 
-				drawFullscreenQuad();
+				drawSingleVertex();
+
 				if (a.m_invalidatesRender) 
 				{
 					// restart accumulation on next visible frame
@@ -611,16 +603,13 @@ void Renderer::processPendingActions()
 			} break;
 			case PA_SELECT_ACTIVE_VOXEL:
 			{
-				glBindFramebuffer(GL_FRAMEBUFFER, m_focalDistanceFBO);
-				glViewport(0,0,FOCAL_DISTANCE_TEXTURE_RESOLUTION,FOCAL_DISTANCE_TEXTURE_RESOLUTION);
-
 				glUseProgram(m_settingsSelectActiveVoxel.m_program);
 				glUniform1f(m_settingsSelectActiveVoxel.m_uniformCameraFocalLength  , m_camera.parameters().focalLength());
 				glUniform2f(m_settingsSelectActiveVoxel.m_uniformSampledFragment,
 							a.m_point.x * m_renderSettings.m_imageResolution.x, 
 							(1.0f - a.m_point.y) * m_renderSettings.m_imageResolution.y); // m_screenFocal point origin is at top-left, whilst glsl is bottom-left
 
-				drawFullscreenQuad();
+				drawSingleVertex();
 
 				if (a.m_invalidatesRender) 
 				{
@@ -730,6 +719,19 @@ void Renderer::drawFullscreenQuad()
 		glVertex3f(  1.0f, -1.0f, m_camera.parameters().nearDistance());
 	glEnd();
 }
+
+void Renderer::drawSingleVertex()
+{
+	// disable rasterisation and issue a single vertex draw call. This is used
+	// with vertex shaders performing computations which are not meant to be
+	// drawn directly.
+	glEnable(GL_RASTERIZER_DISCARD);
+	glBegin(GL_POINTS);
+		glVertex3f(0,0,0);
+	glEnd();
+	glDisable(GL_RASTERIZER_DISCARD);
+}
+
 
 void Renderer::requestAction(float x, float y, 
 							 PICKING_ACTION action,
@@ -865,35 +867,6 @@ void Renderer::createFramebuffer()
                      NULL);
 	}
 
-	// generate focal distance shader's fbo/rbo
-	
-    if (glIsRenderbuffer(m_focalDistanceRBO)) glDeleteRenderbuffers(1, &m_focalDistanceRBO);
-    glGenRenderbuffers(1, &m_focalDistanceRBO);
-
-    glBindRenderbuffer(GL_RENDERBUFFER, m_focalDistanceRBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 
-						  FOCAL_DISTANCE_TEXTURE_RESOLUTION, 
-						  FOCAL_DISTANCE_TEXTURE_RESOLUTION);
-
-    //
-    if (glIsFramebuffer(m_focalDistanceFBO)) glDeleteFramebuffers(1, &m_focalDistanceFBO);
-    glGenFramebuffers(1, &m_focalDistanceFBO);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, m_focalDistanceFBO);
-	
-	// attach texture to color0
-    glFramebufferTexture2D(GL_FRAMEBUFFER,
-                           GL_COLOR_ATTACHMENT0,
-                           GL_TEXTURE_2D,
-                           m_focalDistanceSSBO, // where we'll write to
-                           0);
-	
-	// attach a texture to depth attachment point
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER,
-							  GL_DEPTH_ATTACHMENT, 
-							  GL_RENDERBUFFER,
-                              m_focalDistanceRBO);
-	
 	// generate main fbo/rbo
 
     if (glIsRenderbuffer(m_mainRBO)) glDeleteRenderbuffers(1, &m_mainRBO);

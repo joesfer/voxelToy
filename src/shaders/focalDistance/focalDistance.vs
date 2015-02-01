@@ -1,6 +1,6 @@
 #version 430
 
-#include <selectVoxelDevice.h>
+#include <focalDistanceDevice.h>
 
 uniform sampler3D   occupancyTexture;
 uniform ivec3       voxelResolution;
@@ -18,29 +18,29 @@ uniform vec2        cameraFilmSize;
 
 uniform vec2        sampledFragment;
 
-out float wsDistance;
-
 #include <../shared/aabb.h>
 #include <../shared/coordinates.h>
 #include <../shared/dda.h>
 #include <../shared/sampling.h>
 #include <../shared/generateRay.h>
 
-// This fragment shader should run for a single fragment, and calculates the
-// voxel index of the closest intersection.
+// This vertex shader should run for a single vertex, and calculates the
+// distance to the closest intersection, in world-space. The distance is then
+// fed to another shader down the line to be used as the camera focal distance.
+
+const float Infinity = 99999999.0;	
 
 void main()
 {
 	vec3 wsRayOrigin;
 	vec3 wsRayDir;
-	generateRay_Pinhole(vec3(sampledFragment, gl_FragCoord.z), wsRayOrigin, wsRayDir);
+	generateRay_Pinhole(vec3(sampledFragment, 0), wsRayOrigin, wsRayDir);
 	
 	// test intersection with bounds to trivially discard rays before entering
 	// traversal.
 	float aabbIsectDist = rayAABBIntersection(wsRayOrigin, wsRayDir,
 											  volumeBoundsMin, volumeBoundsMax); 
-	wsDistance = 99999999.0;	
-	SelectVoxelData.selectedVoxel = ivec3(0,0,0);
+	FocalDistanceData.focalDistance = Infinity;
 
 	if (aabbIsectDist < 0)
 	{
@@ -57,5 +57,12 @@ void main()
 		return;
 	}
 
-	SelectVoxelData.selectedVoxel = ivec3(vsHitPos);
+	// vsHitPos marks the lower-left corner of the voxel. Calculate the
+	// precise ray/voxel intersection in world-space
+	vec3 wsVoxelSize = (volumeBoundsMax - volumeBoundsMin) / voxelResolution;
+	vec3 wsVoxelMin = vsHitPos * wsVoxelSize + volumeBoundsMin; 
+	vec3 wsVoxelMax = wsVoxelMin + wsVoxelSize; 
+	float voxelHitDistance = rayAABBIntersection(wsRayOrigin, wsRayDir, wsVoxelMin, wsVoxelMax);
+
+	FocalDistanceData.focalDistance = voxelHitDistance;
 }
