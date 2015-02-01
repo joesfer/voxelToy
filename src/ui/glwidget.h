@@ -31,7 +31,8 @@ public:
 
 	 enum Actions
 	 {
-		 ACTION_SELECT_FOCAL_POINT
+		 ACTION_SELECT_FOCAL_POINT,
+		 ACTION_ADD_VOXEL
 	 };
 signals:
 	void statusChanged(QString);

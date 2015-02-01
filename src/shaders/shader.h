@@ -62,6 +62,7 @@ struct PathtracerShaderSettings
 	GLuint m_uniformWireframeOpacity;
 	GLuint m_uniformWireframeThickness;
 	GLuint m_uniformFocalDistanceSSBOStorageBlock;
+	GLuint m_uniformSelectedVoxelSSBOStorageBlock;
 };
 			
 struct AccumulationShaderSettings
@@ -101,7 +102,7 @@ struct FocalDistanceShaderSettings
 	GLuint m_uniformCameraInverseModelView;
 	GLuint m_uniformCameraFocalLength;
 	GLuint m_uniformSampledFragment;
-	GLuint m_uniformFocalDistanceSSBOStorageBlock;
+	GLuint m_uniformSSBOStorageBlock;
 };
 typedef FocalDistanceShaderSettings SelectActiveVoxelShaderSettings;
 

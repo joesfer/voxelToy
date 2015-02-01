@@ -560,7 +560,14 @@ QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
     </property>
     <addaction name="actionSelect_Focal_Point"/>
    </widget>
+   <widget class="QMenu" name="menuEdit_2">
+    <property name="title">
+     <string>Edit</string>
+    </property>
+    <addaction name="actionAdd_Voxel"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuEdit_2"/>
    <addaction name="menuEdit"/>
    <addaction name="menuDevelopment"/>
   </widget>
@@ -578,6 +585,7 @@ QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
    <addaction name="actionLoad_Mesh"/>
    <addaction name="actionReload_Shaders"/>
    <addaction name="actionSelect_Focal_Point"/>
+   <addaction name="actionAdd_Voxel"/>
   </widget>
   <action name="actionReload_Shaders">
    <property name="icon">
@@ -634,6 +642,21 @@ QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
    </property>
    <property name="shortcut">
     <string>Ctrl+F</string>
+   </property>
+  </action>
+  <action name="actionAdd_Voxel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/icons/add.png</normaloff>:/icons/icons/add.png</iconset>
+   </property>
+   <property name="text">
+    <string>Add Voxel</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+A</string>
    </property>
   </action>
  </widget>

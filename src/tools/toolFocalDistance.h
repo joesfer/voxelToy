@@ -7,7 +7,7 @@ class ToolFocalDistance : public Tool
 {
 public:
 	ToolFocalDistance(Renderer& renderer) : m_renderer(renderer) {}
-    virtual bool mouseReleaseEvent(QMouseEvent *event, QSize widgetDimensions);
+    virtual bool mousePressEvent(QMouseEvent *event, QSize widgetDimensions);
 
 private:
 	Renderer& m_renderer;

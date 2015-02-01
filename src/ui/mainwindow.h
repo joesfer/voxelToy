@@ -28,6 +28,8 @@ private slots:
 
     void on_actionSelect_Focal_Point_toggled(bool arg1);
 
+    void on_actionAdd_Voxel_triggered(bool checked);
+
 private:
     Ui::MainWindow *ui;
 };

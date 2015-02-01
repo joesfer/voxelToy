@@ -1,6 +1,7 @@
 #version 430
 
 #include <../focalDistance/focalDistanceDevice.h>
+#include <../selectVoxel/selectVoxelDevice.h>
 
 uniform sampler3D   occupancyTexture;
 uniform sampler3D   voxelColorTexture;
@@ -172,6 +173,14 @@ void main()
 
 			wireframe = (1-wireframeOpacity) + wireframeOpacity * wireframe;	
 			albedo *= vec3(wireframe);
+		}
+
+		//if ( ivec3(vsHitPos).xz == SelectVoxelData.selectedVoxel.xz )
+		if ( ivec3(vsHitPos) == SelectVoxelData.selectedVoxel )
+		{
+			albedo = vec3(1,0,0);
+			radiance += albedo; 
+			break;
 		}
 
 		// the salient direction for the incoming light, bounced back though the 

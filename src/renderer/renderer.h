@@ -69,7 +69,7 @@ public:
 	{
 		PA_NONE,
 		PA_SELECT_FOCAL_POINT,
-		PA_GET_NEW_VOXEL_POSITION,
+		PA_SELECT_ACTIVE_VOXEL,
 	};
 	void pickingAction(float x, float y, PICKING_ACTION action);
 
@@ -79,6 +79,7 @@ private:
 								 const GLubyte* occupancyTexels = NULL,
 								 const GLubyte* colorTexels = NULL);
 	bool reloadFocalDistanceShader(const std::string& shaderPath);
+	bool reloadSelectActiveVoxelShader(const std::string& shaderPath);
 	bool reloadTexturedShader(const std::string& shaderPath);
 	bool reloadAverageShader(const std::string& shaderPath);
 	bool reloadPathtracerShader(const std::string& shaderPath);
@@ -114,16 +115,18 @@ private:
 	Imath::V2f m_pickingActionPoint;
 	GLuint m_focalDistanceFBO;
 	GLuint m_focalDistanceRBO;
-    GLuint m_focalDistanceTexture;
+    GLuint m_focalDistanceSSBO;
+    GLuint m_selectedVoxelSSBO;
 
     GLuint m_occupancyTexture;
     GLuint m_voxelColorTexture;
 
-	PathtracerShaderSettings     m_settingsPathtracer;
-	AccumulationShaderSettings   m_settingsAverage;
-	TexturedShaderSettings       m_settingsTextured;
-	FocalDistanceShaderSettings  m_settingsFocalDistance;
-	VoxelizeShaderSettings       m_settingsVoxelize;
+	PathtracerShaderSettings        m_settingsPathtracer;
+	AccumulationShaderSettings      m_settingsAverage;
+	TexturedShaderSettings          m_settingsTextured;
+	FocalDistanceShaderSettings     m_settingsFocalDistance;
+	VoxelizeShaderSettings          m_settingsVoxelize;
+	SelectActiveVoxelShaderSettings m_settingsSelectActiveVoxel;
 
 	enum TextureUnits
 	{
@@ -132,8 +135,7 @@ private:
 		TEXTURE_UNIT_SAMPLE,
 		TEXTURE_UNIT_AVERAGE0,
 		TEXTURE_UNIT_AVERAGE1,
-		TEXTURE_UNIT_NOISE,
-		TEXTURE_UNIT_FOCAL_DISTANCE
+		TEXTURE_UNIT_NOISE
     };
 	
 	RenderSettings m_renderSettings;
