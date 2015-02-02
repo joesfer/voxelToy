@@ -35,7 +35,7 @@ public:
 
 };
 
-struct PathtracerShaderSettings
+struct IntegratorShaderSettings
 {
 	GLuint m_program;
 
@@ -113,6 +113,8 @@ struct AddVoxelShaderSettings
 	GLuint m_program;
 
 	// uniforms
+	GLuint m_uniformCameraInverseModelView;
+	GLuint m_uniformScreenSpaceMotion;
 	GLuint m_uniformVoxelOccupancyTexture;
 	GLuint m_uniformVoxelColorTexture;
 	GLuint m_uniformSelectedVoxelSSBOStorageBlock;

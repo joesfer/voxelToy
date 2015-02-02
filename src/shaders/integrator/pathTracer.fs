@@ -33,14 +33,14 @@ uniform float		wireframeThickness = 0.01;
 
 out vec4 outColor;
 
-#include <aabb.h>
-#include <coordinates.h>
-#include <dda.h>
-#include <sampling.h>
-#include <random.h>
-#include <generateRay.h>
-#include <bsdf.h>
-#include <lights.h>
+#include <../shared/aabb.h>
+#include <../shared/coordinates.h>
+#include <../shared/dda.h>
+#include <../shared/sampling.h>
+#include <../shared/random.h>
+#include <../shared/generateRay.h>
+#include <../shared/bsdf.h>
+#include <../shared/lights.h>
 
 float ISECT_EPSILON = 0.01;
 

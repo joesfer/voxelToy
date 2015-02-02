@@ -15,10 +15,25 @@
 #include "shaders/editVoxels/selectVoxelHost.h"
 #include <memory.h>
 
+#include <Qt> // FIXME used for Qt::Key codes
+
 #define VOXELIZE_GPU 1
 
 const GLuint g_focalDistanceSSBOBindingPointIndex = 0;
 const GLuint g_selectedVoxelSSBOBindingPointIndex = 1;
+
+struct IntegratorSetup
+{
+	std::string vs;
+	std::string fs;
+	std::string name;
+};
+
+IntegratorSetup integratorSetup[Renderer::INTEGRATOR_TOTAL] = 
+{
+	{"shared/screenSpace.vs" , "integrator/pathTracer.fs" , "PT"} ,
+	{"shared/screenSpace.vs" , "integrator/editMode.fs"   , "EditMode"} ,
+};
 
 Renderer::Renderer()
 {
@@ -34,6 +49,9 @@ Renderer::Renderer()
     m_renderSettings.m_pathtracerMaxPathLength = 1;
     m_renderSettings.m_pathtracerMaxSamples = 128;
 	m_mesh = NULL;
+
+	m_currentIntegrator = INTEGRATOR_PATHTRACER;
+
 	m_initialized = false;
 }
 
@@ -261,72 +279,76 @@ bool Renderer::reloadAverageShader(const std::string& shaderPath)
 	return true;
 }
 
-bool Renderer::reloadPathtracerShader(const std::string& shaderPath)
+bool Renderer::reloadIntegratorShader(const std::string& shaderPath, 
+									  const std::string& name,
+									  const std::string& vsFile,
+									  const std::string& fsFile,
+									  IntegratorShaderSettings& settings)
 {
-	std::string vs = shaderPath + std::string("shared/screenSpace.vs");
-	std::string fs = shaderPath + std::string("shared/pathTracer.fs");
+	std::string vs = shaderPath + vsFile;
+	std::string fs = shaderPath + fsFile; 
 
-    if ( !Shader::compileProgramFromFile("PT",
+    if ( !Shader::compileProgramFromFile(name,
                                         vs, "",
                                         fs, "#define PINHOLE\n#define THINLENS\n",
-                                        m_settingsPathtracer.m_program) )
+                                        settings.m_program) )
 	{
 		return false;
 	}
     
-	glUseProgram(m_settingsPathtracer.m_program);
+	glUseProgram(settings.m_program);
 
-	m_settingsPathtracer.m_uniformVoxelOccupancyTexture   = glGetUniformLocation(m_settingsPathtracer.m_program, "occupancyTexture");
-	m_settingsPathtracer.m_uniformVoxelColorTexture       = glGetUniformLocation(m_settingsPathtracer.m_program, "voxelColorTexture");
-	m_settingsPathtracer.m_uniformNoiseTexture            = glGetUniformLocation(m_settingsPathtracer.m_program, "noiseTexture");
-	m_settingsPathtracer.m_uniformVoxelDataResolution     = glGetUniformLocation(m_settingsPathtracer.m_program, "voxelResolution");
-	m_settingsPathtracer.m_uniformVolumeBoundsMin         = glGetUniformLocation(m_settingsPathtracer.m_program, "volumeBoundsMin");
-	m_settingsPathtracer.m_uniformVolumeBoundsMax         = glGetUniformLocation(m_settingsPathtracer.m_program, "volumeBoundsMax");
-	m_settingsPathtracer.m_uniformViewport                = glGetUniformLocation(m_settingsPathtracer.m_program, "viewport");
-	m_settingsPathtracer.m_uniformCameraNear              = glGetUniformLocation(m_settingsPathtracer.m_program, "cameraNear");
-	m_settingsPathtracer.m_uniformCameraFar               = glGetUniformLocation(m_settingsPathtracer.m_program, "cameraFar");
-	m_settingsPathtracer.m_uniformCameraProj              = glGetUniformLocation(m_settingsPathtracer.m_program, "cameraProj");
-	m_settingsPathtracer.m_uniformCameraInverseProj       = glGetUniformLocation(m_settingsPathtracer.m_program, "cameraInverseProj");
-	m_settingsPathtracer.m_uniformCameraInverseModelView  = glGetUniformLocation(m_settingsPathtracer.m_program, "cameraInverseModelView");
-	m_settingsPathtracer.m_uniformCameraFocalLength       = glGetUniformLocation(m_settingsPathtracer.m_program, "cameraFocalLength");
-	m_settingsPathtracer.m_uniformCameraLensRadius        = glGetUniformLocation(m_settingsPathtracer.m_program, "cameraLensRadius");
-	m_settingsPathtracer.m_uniformCameraFilmSize          = glGetUniformLocation(m_settingsPathtracer.m_program, "cameraFilmSize");
-	m_settingsPathtracer.m_uniformLightDir                = glGetUniformLocation(m_settingsPathtracer.m_program, "wsLightDir");
-	m_settingsPathtracer.m_uniformSampleCount             = glGetUniformLocation(m_settingsPathtracer.m_program, "sampleCount");
-	m_settingsPathtracer.m_uniformEnableDOF               = glGetUniformLocation(m_settingsPathtracer.m_program, "enableDOF");
-	m_settingsPathtracer.m_uniformPathtracerMaxPathLength = glGetUniformLocation(m_settingsPathtracer.m_program, "pathtracerMaxPathLength");
-	m_settingsPathtracer.m_uniformWireframeOpacity        = glGetUniformLocation(m_settingsPathtracer.m_program, "wireframeOpacity");
-	m_settingsPathtracer.m_uniformWireframeThickness      = glGetUniformLocation(m_settingsPathtracer.m_program, "wireframeThickness");
+	settings.m_uniformVoxelOccupancyTexture   = glGetUniformLocation(settings.m_program, "occupancyTexture");
+	settings.m_uniformVoxelColorTexture       = glGetUniformLocation(settings.m_program, "voxelColorTexture");
+	settings.m_uniformNoiseTexture            = glGetUniformLocation(settings.m_program, "noiseTexture");
+	settings.m_uniformVoxelDataResolution     = glGetUniformLocation(settings.m_program, "voxelResolution");
+	settings.m_uniformVolumeBoundsMin         = glGetUniformLocation(settings.m_program, "volumeBoundsMin");
+	settings.m_uniformVolumeBoundsMax         = glGetUniformLocation(settings.m_program, "volumeBoundsMax");
+	settings.m_uniformViewport                = glGetUniformLocation(settings.m_program, "viewport");
+	settings.m_uniformCameraNear              = glGetUniformLocation(settings.m_program, "cameraNear");
+	settings.m_uniformCameraFar               = glGetUniformLocation(settings.m_program, "cameraFar");
+	settings.m_uniformCameraProj              = glGetUniformLocation(settings.m_program, "cameraProj");
+	settings.m_uniformCameraInverseProj       = glGetUniformLocation(settings.m_program, "cameraInverseProj");
+	settings.m_uniformCameraInverseModelView  = glGetUniformLocation(settings.m_program, "cameraInverseModelView");
+	settings.m_uniformCameraFocalLength       = glGetUniformLocation(settings.m_program, "cameraFocalLength");
+	settings.m_uniformCameraLensRadius        = glGetUniformLocation(settings.m_program, "cameraLensRadius");
+	settings.m_uniformCameraFilmSize          = glGetUniformLocation(settings.m_program, "cameraFilmSize");
+	settings.m_uniformLightDir                = glGetUniformLocation(settings.m_program, "wsLightDir");
+	settings.m_uniformSampleCount             = glGetUniformLocation(settings.m_program, "sampleCount");
+	settings.m_uniformEnableDOF               = glGetUniformLocation(settings.m_program, "enableDOF");
+	settings.m_uniformPathtracerMaxPathLength = glGetUniformLocation(settings.m_program, "pathtracerMaxPathLength");
+	settings.m_uniformWireframeOpacity        = glGetUniformLocation(settings.m_program, "wireframeOpacity");
+	settings.m_uniformWireframeThickness      = glGetUniformLocation(settings.m_program, "wireframeThickness");
 
-	m_settingsPathtracer.m_uniformFocalDistanceSSBOStorageBlock = glGetProgramResourceIndex(m_settingsPathtracer.m_program, GL_SHADER_STORAGE_BLOCK, "FocalDistanceData");
-	glShaderStorageBlockBinding(m_settingsPathtracer.m_program, m_settingsPathtracer.m_uniformFocalDistanceSSBOStorageBlock, g_focalDistanceSSBOBindingPointIndex);
+	settings.m_uniformFocalDistanceSSBOStorageBlock = glGetProgramResourceIndex(settings.m_program, GL_SHADER_STORAGE_BLOCK, "FocalDistanceData");
+	glShaderStorageBlockBinding(settings.m_program, settings.m_uniformFocalDistanceSSBOStorageBlock, g_focalDistanceSSBOBindingPointIndex);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, g_focalDistanceSSBOBindingPointIndex, m_focalDistanceSSBO);
 
-	m_settingsPathtracer.m_uniformSelectedVoxelSSBOStorageBlock = glGetProgramResourceIndex(m_settingsPathtracer.m_program, GL_SHADER_STORAGE_BLOCK, "SelectVoxelData");
-	glShaderStorageBlockBinding(m_settingsPathtracer.m_program, m_settingsPathtracer.m_uniformSelectedVoxelSSBOStorageBlock, g_selectedVoxelSSBOBindingPointIndex);
+	settings.m_uniformSelectedVoxelSSBOStorageBlock = glGetProgramResourceIndex(settings.m_program, GL_SHADER_STORAGE_BLOCK, "SelectVoxelData");
+	glShaderStorageBlockBinding(settings.m_program, settings.m_uniformSelectedVoxelSSBOStorageBlock, g_selectedVoxelSSBOBindingPointIndex);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, g_selectedVoxelSSBOBindingPointIndex, m_selectedVoxelSSBO);
 
 	glViewport(0,0,m_renderSettings.m_imageResolution.x, m_renderSettings.m_imageResolution.y);
-	glUniform4f(m_settingsPathtracer.m_uniformViewport, 0, 0, (float)m_renderSettings.m_imageResolution.x, (float)m_renderSettings.m_imageResolution.y);
+	glUniform4f(settings.m_uniformViewport, 0, 0, (float)m_renderSettings.m_imageResolution.x, (float)m_renderSettings.m_imageResolution.y);
 
 	Imath::V3f lightDir = lightDirection();
-	glUniform3f(m_settingsPathtracer.m_uniformLightDir, lightDir.x, lightDir.y, -lightDir.z);
+	glUniform3f(settings.m_uniformLightDir, lightDir.x, lightDir.y, -lightDir.z);
 
-	glUniform1i(m_settingsPathtracer.m_uniformVoxelOccupancyTexture, TEXTURE_UNIT_OCCUPANCY);
-	glUniform1i(m_settingsPathtracer.m_uniformVoxelColorTexture, TEXTURE_UNIT_COLOR);
-	glUniform1i(m_settingsPathtracer.m_uniformNoiseTexture, TEXTURE_UNIT_NOISE);
+	glUniform1i(settings.m_uniformVoxelOccupancyTexture, TEXTURE_UNIT_OCCUPANCY);
+	glUniform1i(settings.m_uniformVoxelColorTexture, TEXTURE_UNIT_COLOR);
+	glUniform1i(settings.m_uniformNoiseTexture, TEXTURE_UNIT_NOISE);
 	
-	glUniform3i(m_settingsPathtracer.m_uniformVoxelDataResolution, 
+	glUniform3i(settings.m_uniformVoxelDataResolution, 
 				m_volumeResolution.x, 
 				m_volumeResolution.y, 
 				m_volumeResolution.z);
 
-	glUniform3f(m_settingsPathtracer.m_uniformVolumeBoundsMin,
+	glUniform3f(settings.m_uniformVolumeBoundsMin,
 				m_volumeBounds.min.x,
 				m_volumeBounds.min.y,
 				m_volumeBounds.min.z);
 
-	glUniform3f(m_settingsPathtracer.m_uniformVolumeBoundsMax,
+	glUniform3f(settings.m_uniformVolumeBoundsMax,
 				m_volumeBounds.max.x,
 				m_volumeBounds.max.y,
 				m_volumeBounds.max.z);
@@ -386,6 +408,8 @@ bool Renderer::reloadAddVoxelShader(const std::string& shaderPath)
     
 	glUseProgram(m_settingsAddVoxel.m_program);
 
+	m_settingsAddVoxel.m_uniformCameraInverseModelView  = glGetUniformLocation(m_settingsAddVoxel.m_program, "cameraInverseModelView");
+	m_settingsAddVoxel.m_uniformScreenSpaceMotion       = glGetUniformLocation(m_settingsAddVoxel.m_program, "screenSpaceMotion");
 	m_settingsAddVoxel.m_uniformVoxelOccupancyTexture   = glGetUniformLocation(m_settingsAddVoxel.m_program, "voxelOccupancy");
 	m_settingsAddVoxel.m_uniformVoxelColorTexture       = glGetUniformLocation(m_settingsAddVoxel.m_program, "voxelColor");
 	m_settingsAddVoxel.m_uniformNewVoxelColor           = glGetUniformLocation(m_settingsAddVoxel.m_program, "newVoxelColor");
@@ -432,8 +456,7 @@ bool Renderer::reloadRemoveVoxelShader(const std::string& shaderPath)
 
 void Renderer::reloadShaders(const std::string& shaderPath)
 {
-	if (!reloadPathtracerShader(shaderPath)        ||
-		!reloadAverageShader(shaderPath)           ||
+	if (!reloadAverageShader(shaderPath)           ||
 		!reloadTexturedShader(shaderPath)          ||
 		!reloadFocalDistanceShader(shaderPath)     ||
 		!reloadSelectActiveVoxelShader(shaderPath) ||
@@ -444,6 +467,17 @@ void Renderer::reloadShaders(const std::string& shaderPath)
 		m_status = "Shader loading failed";
 		return;
     }
+	for( int i = 0; i < INTEGRATOR_TOTAL; ++i )
+	{
+		if ( !reloadIntegratorShader(shaderPath, 
+									 integratorSetup[i].name,
+									 integratorSetup[i].vs,
+									 integratorSetup[i].fs,
+									 m_settingsIntegrator[i]) )
+		{
+			m_status = integratorSetup[i].name + " loading failed";
+		}
+	}
 	updateCamera();
 	updateRenderSettings();
 }
@@ -481,6 +515,15 @@ void Renderer::updateCamera()
 
     M44f invModelView = mvm.inverse();
     M44f invProj = pm.inverse();
+	
+	// Add Voxel shader
+
+    glUseProgram(m_settingsAddVoxel.m_program);
+
+    glUniformMatrix4fv(m_settingsAddVoxel.m_uniformCameraInverseModelView,
+                       1,
+                       GL_TRUE,
+                       &invModelView.x[0][0]);
 	
 	// FocalDistance shader
 
@@ -526,40 +569,44 @@ void Renderer::updateCamera()
                        GL_TRUE,
 					   &invProj.x[0][0]);
 	
-	// Path tracer shader 
+	// integrator shaders
 	
-    glUseProgram(m_settingsPathtracer.m_program);
+	for( int i = 0; i < INTEGRATOR_TOTAL; ++i )
+	{
+		const IntegratorShaderSettings& integratorSettings = m_settingsIntegrator[i];
+		glUseProgram(integratorSettings.m_program);
 
-    glUniform1f(m_settingsPathtracer.m_uniformCameraNear, m_camera.parameters().nearDistance());
-	glUniform1f(m_settingsPathtracer.m_uniformCameraFar, m_camera.parameters().farDistance());
+		glUniform1f(integratorSettings.m_uniformCameraNear, m_camera.parameters().nearDistance());
+		glUniform1f(integratorSettings.m_uniformCameraFar, m_camera.parameters().farDistance());
 
-    glUniformMatrix4fv(m_settingsPathtracer.m_uniformCameraInverseModelView,
-                       1,
-                       GL_TRUE,
-                       &invModelView.x[0][0]);
+		glUniformMatrix4fv(integratorSettings.m_uniformCameraInverseModelView,
+						   1,
+						   GL_TRUE,
+						   &invModelView.x[0][0]);
 
-    glUniformMatrix4fv(m_settingsPathtracer.m_uniformCameraProj,
-					   1,
-                       GL_TRUE,
-					   &pm.x[0][0]);
+		glUniformMatrix4fv(integratorSettings.m_uniformCameraProj,
+						   1,
+						   GL_TRUE,
+						   &pm.x[0][0]);
 
-    glUniformMatrix4fv(m_settingsPathtracer.m_uniformCameraInverseProj,
-					   1,
-                       GL_TRUE,
-					   &invProj.x[0][0]);
+		glUniformMatrix4fv(integratorSettings.m_uniformCameraInverseProj,
+						   1,
+						   GL_TRUE,
+						   &invProj.x[0][0]);
 
-	bool enableDOF = m_camera.parameters().lensModel() == CameraParameters::CLM_THIN_LENS; 
-	enableDOF &= (m_numberSamples > 0); // Disable DOF while tumbling around
+		bool enableDOF = m_camera.parameters().lensModel() == CameraParameters::CLM_THIN_LENS; 
+		enableDOF &= (m_numberSamples > 0); // Disable DOF while tumbling around
 
-	// TODO the focal length can be extracted from the perspective matrix (FOV)
-	// so we should choose either method, but not both.
-    glUseProgram(m_settingsPathtracer.m_program);
-    glUniform1f(m_settingsPathtracer.m_uniformCameraFocalLength  , m_camera.parameters().focalLength());
-    glUniform1f(m_settingsPathtracer.m_uniformCameraLensRadius   , m_camera.parameters().lensRadius());
-    glUniform1i(m_settingsPathtracer.m_uniformEnableDOF          , enableDOF ? 1 : 0 );
-    glUniform2f(m_settingsPathtracer.m_uniformCameraFilmSize     , m_camera.parameters().filmSize().x, 
-															       m_camera.parameters().filmSize().y);
+		// TODO the focal length can be extracted from the perspective matrix (FOV)
+		// so we should choose either method, but not both.
+		glUseProgram(integratorSettings.m_program);
+		glUniform1f(integratorSettings.m_uniformCameraFocalLength  , m_camera.parameters().focalLength());
+		glUniform1f(integratorSettings.m_uniformCameraLensRadius   , m_camera.parameters().lensRadius());
+		glUniform1i(integratorSettings.m_uniformEnableDOF          , enableDOF ? 1 : 0 );
+		glUniform2f(integratorSettings.m_uniformCameraFilmSize     , m_camera.parameters().filmSize().x, 
+																	   m_camera.parameters().filmSize().y);
 		
+	}
 	glUseProgram(0);
 }
 
@@ -578,13 +625,17 @@ void Renderer::resizeFrame(int frameBufferWidth,
 	m_renderSettings.m_viewport[2] = viewportW;
 	m_renderSettings.m_viewport[3] = viewportH;
 
-    glUseProgram(m_settingsPathtracer.m_program);
-	glUniform4f(m_settingsPathtracer.m_uniformViewport, 
-				0, 
-				0, 
-				m_renderSettings.m_imageResolution.x, 
-				m_renderSettings.m_imageResolution.y);
+	for( int i = 0; i < INTEGRATOR_TOTAL; ++i )
+	{
+		const IntegratorShaderSettings& integratorSettings = m_settingsIntegrator[i];
 
+		glUseProgram(integratorSettings.m_program);
+		glUniform4f(integratorSettings.m_uniformViewport, 
+					0, 
+					0, 
+					m_renderSettings.m_imageResolution.x, 
+					m_renderSettings.m_imageResolution.y);
+	}
     glUseProgram(m_settingsAverage.m_program);
     glUniform4f(m_settingsAverage.m_uniformViewport,
 				0, 
@@ -710,8 +761,17 @@ void Renderer::processPendingActions()
 			case PA_REMOVE_VOXEL:
 			{
 
-				if ( a.m_type == PA_ADD_VOXEL) glUseProgram(m_settingsAddVoxel.m_program);
-				else glUseProgram(m_settingsRemoveVoxel.m_program);
+				if ( a.m_type == PA_ADD_VOXEL) 
+				{
+					glUseProgram(m_settingsAddVoxel.m_program);
+					glUniform2f(m_settingsAddVoxel.m_uniformScreenSpaceMotion,
+								a.m_velocity.x * m_renderSettings.m_imageResolution.x, 
+								(-a.m_velocity.y) * m_renderSettings.m_imageResolution.y); // m_screenFocal point origin is at top-left, whilst glsl is bottom-left
+				}
+				else 
+				{
+					glUseProgram(m_settingsRemoveVoxel.m_program);
+				}
 
 				drawSingleVertex();
 			} break;
@@ -758,8 +818,9 @@ Renderer::RenderResult Renderer::render()
                            m_sampleTexture, // where we'll write to
                            0);
 
-    glUseProgram(m_settingsPathtracer.m_program);
-    glUniform1i(m_settingsPathtracer.m_uniformSampleCount, std::min(m_numberSamples, m_renderSettings.m_pathtracerMaxSamples - 1));
+	const IntegratorShaderSettings& integratorSettings = m_settingsIntegrator[m_currentIntegrator];
+	glUseProgram(integratorSettings.m_program);
+	glUniform1i(integratorSettings.m_uniformSampleCount, std::min(m_numberSamples, m_renderSettings.m_pathtracerMaxSamples - 1));
 
 	glViewport(0,0,m_textureDimensions[0], m_textureDimensions[1]);
     drawFullscreenQuad();
@@ -837,12 +898,15 @@ void Renderer::drawSingleVertex()
 
 
 void Renderer::requestAction(float x, float y, 
+							 float dx, float dy,
 							 PICKING_ACTION action,
 							 bool restartAccumulation)
 {
 	Action a;
 	a.m_point.x = x;
 	a.m_point.y = y;
+	a.m_velocity.x = dx;
+	a.m_velocity.y = dy;
 	a.m_type = action;
 	a.m_invalidatesRender = restartAccumulation;
 	m_scheduledActions.push_back(a);
@@ -865,6 +929,12 @@ bool Renderer::onKeyPress(int key)
 	if (m_camera.controller().onKeyPress(key))
 	{
 		updateCamera();
+		m_numberSamples = 0;
+		return true;
+	}
+	if ( key == Qt::Key_Space )
+	{
+		m_currentIntegrator = (Integrator)(!(int)m_currentIntegrator);
 		m_numberSamples = 0;
 		return true;
 	}
@@ -1076,21 +1146,25 @@ void Renderer::createVoxelDataTexture(const Imath::V3i& resolution,
 
 	// Set new resolution and volume bounds in all shaders
 
-	glUseProgram(m_settingsPathtracer.m_program);
-	glUniform3i(m_settingsPathtracer.m_uniformVoxelDataResolution, 
-				m_volumeResolution.x, 
-				m_volumeResolution.y, 
-				m_volumeResolution.z);
+	for( int i = 0; i < INTEGRATOR_TOTAL; ++i )
+	{
+		const IntegratorShaderSettings& integratorSettings = m_settingsIntegrator[i];
+		glUseProgram(integratorSettings.m_program);
+		glUniform3i(integratorSettings.m_uniformVoxelDataResolution, 
+					m_volumeResolution.x, 
+					m_volumeResolution.y, 
+					m_volumeResolution.z);
 
-	glUniform3f(m_settingsPathtracer.m_uniformVolumeBoundsMin,
-				m_volumeBounds.min.x,
-				m_volumeBounds.min.y,
-				m_volumeBounds.min.z);
+		glUniform3f(integratorSettings.m_uniformVolumeBoundsMin,
+					m_volumeBounds.min.x,
+					m_volumeBounds.min.y,
+					m_volumeBounds.min.z);
 
-	glUniform3f(m_settingsPathtracer.m_uniformVolumeBoundsMax,
-				m_volumeBounds.max.x,
-				m_volumeBounds.max.y,
-				m_volumeBounds.max.z);
+		glUniform3f(integratorSettings.m_uniformVolumeBoundsMax,
+					m_volumeBounds.max.x,
+					m_volumeBounds.max.y,
+					m_volumeBounds.max.z);
+	}
 
 	glUseProgram(m_settingsVoxelize.m_program);
 	glUniform3i(m_settingsVoxelize.m_uniformVoxelDataResolution, 
@@ -1140,10 +1214,14 @@ void Renderer::resetRender()
 
 void Renderer::updateRenderSettings()
 {
-	glUseProgram(m_settingsPathtracer.m_program);
-	glUniform1i(m_settingsPathtracer.m_uniformPathtracerMaxPathLength , m_renderSettings.m_pathtracerMaxPathLength);
-	glUniform1f(m_settingsPathtracer.m_uniformWireframeOpacity        , m_renderSettings.m_wireframeOpacity);
-	glUniform1f(m_settingsPathtracer.m_uniformWireframeThickness      , m_renderSettings.m_wireframeThickness);
+	for( int i = 0; i < INTEGRATOR_TOTAL; ++i )
+	{
+		const IntegratorShaderSettings& integratorSettings = m_settingsIntegrator[i];
+		glUseProgram(integratorSettings.m_program);
+		glUniform1i(integratorSettings.m_uniformPathtracerMaxPathLength , m_renderSettings.m_pathtracerMaxPathLength);
+		glUniform1f(integratorSettings.m_uniformWireframeOpacity        , m_renderSettings.m_wireframeOpacity);
+		glUniform1f(integratorSettings.m_uniformWireframeThickness      , m_renderSettings.m_wireframeThickness);
+	}
 
 	glUseProgram(0);
     resetRender();

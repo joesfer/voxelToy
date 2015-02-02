@@ -77,10 +77,22 @@ public:
 	
 	void requestAction(float x, 
 					   float y, 
+					   float dx,
+					   float dy,
 					   PICKING_ACTION action,
 					   bool restartAccumulation);
 
+	enum Integrator
+	{
+		INTEGRATOR_PATHTRACER = 0,
+		INTEGRATOR_EDIT_MODE,
+		INTEGRATOR_TOTAL,
+	};
+
+
 private:
+	struct IntegratorSetup;
+
 	void updateCamera();
 	void createVoxelDataTexture (const Imath::V3i& resolution,
 								 const GLubyte* occupancyTexels = NULL,
@@ -89,7 +101,11 @@ private:
 	bool reloadSelectActiveVoxelShader(const std::string& shaderPath);
 	bool reloadTexturedShader(const std::string& shaderPath);
 	bool reloadAverageShader(const std::string& shaderPath);
-	bool reloadPathtracerShader(const std::string& shaderPath);
+	bool reloadIntegratorShader(const std::string& shaderPath, 
+								const std::string& name,
+								const std::string& vsFile,
+								const std::string& fsFile,
+								IntegratorShaderSettings& settings);
 	bool reloadVoxelizeShader(const std::string& shaderPath);
 	bool reloadAddVoxelShader(const std::string& shaderPath);
 	bool reloadRemoveVoxelShader(const std::string& shaderPath);
@@ -131,7 +147,7 @@ private:
     GLuint m_occupancyTexture;
     GLuint m_voxelColorTexture;
 
-	PathtracerShaderSettings        m_settingsPathtracer;
+	IntegratorShaderSettings        m_settingsIntegrator[INTEGRATOR_TOTAL];
 	AccumulationShaderSettings      m_settingsAverage;
 	TexturedShaderSettings          m_settingsTextured;
 	FocalDistanceShaderSettings     m_settingsFocalDistance;
@@ -166,9 +182,12 @@ private:
 		// action is originated (the actual pixel coordinates are calculated as
 		// m_pickingActionPoint * viewportSize;
 		Imath::V2f m_point;
+		// screen-space normalized movement 
+		Imath::V2f m_velocity;
 		bool m_invalidatesRender;
 	};
 	
 	std::vector<Action> m_scheduledActions;
 
+	Integrator m_currentIntegrator;
 };
