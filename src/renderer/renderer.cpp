@@ -13,6 +13,7 @@
 #include "renderer/voxLoader.h"
 #include "shaders/focalDistance/focalDistanceHost.h"
 #include "shaders/editVoxels/selectVoxelHost.h"
+#include <memory.h>
 
 #define VOXELIZE_GPU 1
 

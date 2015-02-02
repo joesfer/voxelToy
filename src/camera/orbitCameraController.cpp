@@ -26,7 +26,11 @@ bool OrbitCameraController::onMouseMove(float dx, float dy, int buttons)
         m_parameters->orbitAroundTarget(theta, phi);
 		change = true;
     }
+#ifdef QT5
     else if( buttons & Qt::MiddleButton)
+#else
+    else if( buttons & Qt::MidButton)
+#endif
     {
         const float speed = 1.05f;
         m_parameters->setDistanceFromTarget( dy > 0 ? m_parameters->distanceToTarget() * speed :
