@@ -6,6 +6,7 @@ bool ToolFocalDistance::mousePressEvent(QMouseEvent *event, QSize widgetDimensio
 
 	m_renderer.requestAction((float)event->pos().x() / widgetDimensions.width(), 
 						     (float)event->pos().y() / widgetDimensions.height(),
+							 0, 0,
 							 Renderer::PA_SELECT_FOCAL_POINT, 
 							 true);
 	return true;

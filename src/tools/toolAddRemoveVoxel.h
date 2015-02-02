@@ -12,5 +12,6 @@ public:
 
 private:
 	Renderer& m_renderer;
+	int m_lastPos[2];
 };
 

@@ -133,7 +133,7 @@ void main()
 
 	// dot normal lighting
 	float lighting = max(0, dot(-wsRayDir, wsHitBasis.normal));
-
+lighting = sqrt(lighting);
 	// trace shadow ray
 	if ( traverse(wsHitBasis.position -lightDirection * ISECT_EPSILON, -lightDirection, vsHitPos, hitGround) )
 	{
