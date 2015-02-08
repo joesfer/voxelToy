@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>374</width>
-    <height>362</height>
+    <width>545</width>
+    <height>566</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -281,8 +281,163 @@
      </layout>
     </widget>
    </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_4">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>3</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="title">
+      <string>Background</string>
+     </property>
+     <layout class="QFormLayout" name="formLayout_3">
+      <item row="0" column="0">
+       <widget class="QRadioButton" name="backgroundConstant">
+        <property name="text">
+         <string>Constant color</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
+         <spacer name="horizontalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="ColorPickerButton" name="backgroundConstantButton">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="1" column="0">
+       <widget class="QRadioButton" name="backgroundGradient">
+        <property name="text">
+         <string>Gradient</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <layout class="QHBoxLayout" name="horizontalLayout_4">
+        <item>
+         <spacer name="horizontalSpacer_4">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="ColorPickerButton" name="backgroundGradientFromButton">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="ColorPickerButton" name="backgroundGradientToButton">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="2" column="0">
+       <widget class="QRadioButton" name="backgroundImage">
+        <property name="text">
+         <string>Image</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <layout class="QHBoxLayout" name="horizontalLayout_5">
+        <item>
+         <widget class="QLineEdit" name="lineEdit">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_4">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="baseSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>...</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ColorPickerButton</class>
+   <extends>QPushButton</extends>
+   <header>ui/colorpicker.h</header>
+   <slots>
+    <signal>colorChanged(QColor)</signal>
+   </slots>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>resolutionFixedRadioButton</tabstop>
   <tabstop>resolutionFixedWidthSpinBox</tabstop>
@@ -308,8 +463,8 @@
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
-     <x>235</x>
-     <y>51</y>
+     <x>406</x>
+     <y>61</y>
     </hint>
    </hints>
   </connection>
@@ -324,8 +479,8 @@
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
-     <x>314</x>
-     <y>44</y>
+     <x>485</x>
+     <y>61</y>
     </hint>
    </hints>
   </connection>
@@ -340,8 +495,8 @@
      <y>117</y>
     </hint>
     <hint type="destinationlabel">
-     <x>314</x>
-     <y>80</y>
+     <x>485</x>
+     <y>96</y>
     </hint>
    </hints>
   </connection>
@@ -356,8 +511,8 @@
      <y>81</y>
     </hint>
     <hint type="destinationlabel">
-     <x>314</x>
-     <y>86</y>
+     <x>485</x>
+     <y>96</y>
     </hint>
    </hints>
   </connection>
@@ -372,8 +527,8 @@
      <y>47</y>
     </hint>
     <hint type="destinationlabel">
-     <x>235</x>
-     <y>44</y>
+     <x>406</x>
+     <y>61</y>
     </hint>
    </hints>
   </connection>
@@ -388,8 +543,8 @@
      <y>48</y>
     </hint>
     <hint type="destinationlabel">
-     <x>314</x>
-     <y>59</y>
+     <x>485</x>
+     <y>61</y>
     </hint>
    </hints>
   </connection>
@@ -404,8 +559,8 @@
      <y>117</y>
     </hint>
     <hint type="destinationlabel">
-     <x>235</x>
-     <y>52</y>
+     <x>406</x>
+     <y>61</y>
     </hint>
    </hints>
   </connection>
@@ -420,8 +575,8 @@
      <y>115</y>
     </hint>
     <hint type="destinationlabel">
-     <x>314</x>
-     <y>45</y>
+     <x>485</x>
+     <y>61</y>
     </hint>
    </hints>
   </connection>
@@ -436,8 +591,8 @@
      <y>51</y>
     </hint>
     <hint type="destinationlabel">
-     <x>314</x>
-     <y>82</y>
+     <x>485</x>
+     <y>96</y>
     </hint>
    </hints>
   </connection>
@@ -496,8 +651,8 @@
    <slot>onResolutionSettingsChanged()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>314</x>
-     <y>95</y>
+     <x>485</x>
+     <y>96</y>
     </hint>
     <hint type="destinationlabel">
      <x>315</x>
@@ -512,8 +667,8 @@
    <slot>onResolutionSettingsChanged()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>235</x>
-     <y>53</y>
+     <x>406</x>
+     <y>61</y>
     </hint>
     <hint type="destinationlabel">
      <x>373</x>
@@ -528,8 +683,8 @@
    <slot>onResolutionSettingsChanged()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>314</x>
-     <y>40</y>
+     <x>485</x>
+     <y>61</y>
     </hint>
     <hint type="destinationlabel">
      <x>373</x>
@@ -601,6 +756,182 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>backgroundGradient</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>backgroundGradientFromButton</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>66</x>
+     <y>427</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>461</x>
+     <y>446</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>backgroundGradient</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>backgroundGradientToButton</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>88</x>
+     <y>429</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>472</x>
+     <y>434</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>backgroundImage</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>lineEdit</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>81</x>
+     <y>465</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>209</x>
+     <y>468</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>backgroundImage</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>pushButton_4</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>80</x>
+     <y>457</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>469</x>
+     <y>470</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>backgroundConstant</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>backgroundConstantButton</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>113</x>
+     <y>396</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>509</x>
+     <y>396</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>backgroundConstantButton</sender>
+   <signal>colorChanged(QColor)</signal>
+   <receiver>RenderPropertiesUI</receiver>
+   <slot>onBackgroundColorChangedConstant(QColor)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>509</x>
+     <y>398</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>538</x>
+     <y>361</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>backgroundGradientFromButton</sender>
+   <signal>colorChanged(QColor)</signal>
+   <receiver>RenderPropertiesUI</receiver>
+   <slot>onBackgroundColorChangedGradientFrom(QColor)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>440</x>
+     <y>429</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>536</x>
+     <y>411</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>backgroundGradientToButton</sender>
+   <signal>colorChanged(QColor)</signal>
+   <receiver>RenderPropertiesUI</receiver>
+   <slot>onBackgroundColorChangedGradientTo(QColor)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>481</x>
+     <y>425</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>540</x>
+     <y>452</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>backgroundConstant</sender>
+   <signal>clicked()</signal>
+   <receiver>RenderPropertiesUI</receiver>
+   <slot>onBackgroundColorConstant()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>35</x>
+     <y>394</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>6</x>
+     <y>356</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>backgroundGradient</sender>
+   <signal>clicked()</signal>
+   <receiver>RenderPropertiesUI</receiver>
+   <slot>onBackgroundColorGradient()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>49</x>
+     <y>421</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>140</x>
+     <y>353</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>backgroundImage</sender>
+   <signal>clicked()</signal>
+   <receiver>RenderPropertiesUI</receiver>
+   <slot>onBackgroundColorImage()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>36</x>
+     <y>456</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>115</x>
+     <y>358</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <signal>pathtracerMaxPathLengthChanged(int)</signal>
@@ -613,5 +944,11 @@
   <slot>onPathtracerMaxSamplesChanged(int)</slot>
   <slot>onWireframeOpacityChanged(int)</slot>
   <slot>onWireframeThicknessChanged(int)</slot>
+  <slot>onBackgroundColorChangedConstant(QColor)</slot>
+  <slot>onBackgroundColorChangedGradientFrom(QColor)</slot>
+  <slot>onBackgroundColorChangedGradientTo(QColor)</slot>
+  <slot>onBackgroundColorConstant()</slot>
+  <slot>onBackgroundColorGradient()</slot>
+  <slot>onBackgroundColorImage()</slot>
  </slots>
 </ui>

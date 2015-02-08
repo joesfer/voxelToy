@@ -1,7 +1,7 @@
 vec3 getBackgroundColor(in vec3 v)
 {
 	float bias = max(0.0, v.y);
-	return (backgroundColorGround * (1.0 - bias) + backgroundColorSky * bias).xyz;
+	return (backgroundColorBottom * (1.0 - bias) + backgroundColorTop * bias);
 }
 
 // returns vec4(L.rgb, pdf)

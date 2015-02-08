@@ -33,6 +33,7 @@ struct RenderSettings
 	float m_wireframeOpacity;
 	float m_wireframeThickness;
 
+	Imath::V3f m_backgroundColor[2]; // gradient (top/bottom)
 };
 
 

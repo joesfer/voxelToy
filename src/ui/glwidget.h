@@ -53,6 +53,9 @@ public slots:
     void onResolutionSettingsChanged(RenderPropertiesUI::ResolutionMode mode, int axis1, int axis2);
     void onWireframeOpacityChanged(int);
     void onWireframeThicknessChanged(int);
+    void onBackgroundColorChangedConstant(QColor);
+    void onBackgroundColorChangedGradientFrom(QColor);
+    void onBackgroundColorChangedGradientTo(QColor);
 
 protected:
 	void initializeGL();

@@ -319,6 +319,8 @@ bool Renderer::reloadIntegratorShader(const std::string& shaderPath,
 	settings.m_uniformPathtracerMaxPathLength = glGetUniformLocation(settings.m_program, "pathtracerMaxPathLength");
 	settings.m_uniformWireframeOpacity        = glGetUniformLocation(settings.m_program, "wireframeOpacity");
 	settings.m_uniformWireframeThickness      = glGetUniformLocation(settings.m_program, "wireframeThickness");
+	settings.m_uniformBackgroundColorTop	  = glGetUniformLocation(settings.m_program, "backgroundColorTop");
+	settings.m_uniformBackgroundColorBottom   = glGetUniformLocation(settings.m_program, "backgroundColorBottom");
 
 	settings.m_uniformFocalDistanceSSBOStorageBlock = glGetProgramResourceIndex(settings.m_program, GL_SHADER_STORAGE_BLOCK, "FocalDistanceData");
 	glShaderStorageBlockBinding(settings.m_program, settings.m_uniformFocalDistanceSSBOStorageBlock, g_focalDistanceSSBOBindingPointIndex);
@@ -1214,6 +1216,8 @@ void Renderer::resetRender()
 
 void Renderer::updateRenderSettings()
 {
+	if (!m_initialized) return;
+
 	for( int i = 0; i < INTEGRATOR_TOTAL; ++i )
 	{
 		const IntegratorShaderSettings& integratorSettings = m_settingsIntegrator[i];
@@ -1221,6 +1225,16 @@ void Renderer::updateRenderSettings()
 		glUniform1i(integratorSettings.m_uniformPathtracerMaxPathLength , m_renderSettings.m_pathtracerMaxPathLength);
 		glUniform1f(integratorSettings.m_uniformWireframeOpacity        , m_renderSettings.m_wireframeOpacity);
 		glUniform1f(integratorSettings.m_uniformWireframeThickness      , m_renderSettings.m_wireframeThickness);
+
+		glUniform3f(integratorSettings.m_uniformBackgroundColorTop, 
+					m_renderSettings.m_backgroundColor[0].x,
+					m_renderSettings.m_backgroundColor[0].y, 
+					m_renderSettings.m_backgroundColor[0].z );
+
+		glUniform3f(integratorSettings.m_uniformBackgroundColorBottom, 
+					m_renderSettings.m_backgroundColor[1].x,
+					m_renderSettings.m_backgroundColor[1].y, 
+					m_renderSettings.m_backgroundColor[1].z );
 	}
 
 	glUseProgram(0);

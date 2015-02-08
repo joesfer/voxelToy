@@ -52,6 +52,7 @@ void GLWidget::initializeGL()
 	shaderPath += QDir::separator().toLatin1();
 
 	m_renderer.initialize(shaderPath);
+	m_renderer.updateRenderSettings();
 }
 
 void GLWidget::resizeRender(int renderW, int renderH, 
@@ -328,3 +329,24 @@ void GLWidget::onActionTriggered(int action, bool triggered)
 		default: return;
 	}
 }
+
+void GLWidget::onBackgroundColorChangedConstant(QColor color)
+{
+	m_renderer.renderSettings().m_backgroundColor[0] = Imath::V3f(color.redF(), color.greenF(), color.blueF());
+	m_renderer.renderSettings().m_backgroundColor[1] = Imath::V3f(color.redF(), color.greenF(), color.blueF());
+	m_renderer.updateRenderSettings();
+	update();
+}
+void GLWidget::onBackgroundColorChangedGradientFrom(QColor color)
+{
+	m_renderer.renderSettings().m_backgroundColor[0] = Imath::V3f(color.redF(), color.greenF(), color.blueF());
+	m_renderer.updateRenderSettings();
+	update();
+}
+void GLWidget::onBackgroundColorChangedGradientTo(QColor color)
+{
+	m_renderer.renderSettings().m_backgroundColor[1] = Imath::V3f(color.redF(), color.greenF(), color.blueF());
+	m_renderer.updateRenderSettings();
+	update();
+}
+

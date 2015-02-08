@@ -34,7 +34,8 @@ SOURCES += ../../src/ui/mainwindow.cpp \
     ../../src/camera/cameraController.cpp \
     ../../src/renderer/voxLoader.cpp \
     ../../src/tools/toolFocalDistance.cpp \
-    ../../src/tools/toolAddVoxel.cpp
+    ../../src/ui/colorpicker.cpp \
+    ../../src/tools/toolAddRemoveVoxel.cpp
 
 HEADERS  += ../../src/ui/mainwindow.h \
     ../../src/camera/camera.h \
@@ -62,7 +63,11 @@ HEADERS  += ../../src/ui/mainwindow.h \
     ../../src/thirdParty/boost/threadpool/detail/future.hpp \
     ../../src/thirdParty/boost/threadpool/detail/scope_guard.hpp \
     ../../src/svo/voxelizer.h \
-    ../../src/timer/gpuTimer.h
+    ../../src/timer/gpuTimer.h \
+    ../../src/ui/colorpicker.h \
+    ../../src/tools/toolFocalDistance.h \
+    ../../src/tools/toolAddRemoveVoxel.h \
+    ../../src/tools/tool.h
 
 FORMS    += ../../src/ui/mainwindow.ui \
     ../../src/ui/camerapropertiesui.ui \

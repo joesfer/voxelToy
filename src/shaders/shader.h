@@ -63,6 +63,8 @@ struct IntegratorShaderSettings
 	GLuint m_uniformWireframeThickness;
 	GLuint m_uniformFocalDistanceSSBOStorageBlock;
 	GLuint m_uniformSelectedVoxelSSBOStorageBlock;
+	GLuint m_uniformBackgroundColorTop;
+	GLuint m_uniformBackgroundColorBottom;
 };
 			
 struct AccumulationShaderSettings

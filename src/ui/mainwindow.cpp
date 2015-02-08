@@ -33,6 +33,15 @@ MainWindow::MainWindow(QWidget *parent) :
             ui->glWidget, SLOT(onWireframeOpacityChanged(int)));
     connect(ui->renderProperties, SIGNAL(wireframeThicknessChanged(int)),
             ui->glWidget, SLOT(onWireframeThicknessChanged(int)));
+    connect(ui->renderProperties, SIGNAL(backgroundColorChangedConstant(QColor)),
+            ui->glWidget, SLOT(onBackgroundColorChangedConstant(QColor)));
+    connect(ui->renderProperties, SIGNAL(backgroundColorChangedGradientFrom(QColor)),
+            ui->glWidget, SLOT(onBackgroundColorChangedGradientFrom(QColor)));
+    connect(ui->renderProperties, SIGNAL(backgroundColorChangedGradientTo(QColor)),
+            ui->glWidget, SLOT(onBackgroundColorChangedGradientTo(QColor)));
+
+	ui->renderProperties->setBackground(QColor(192, 192, 192));
+	ui->renderProperties->setBackground(QColor(153, 187, 201), QColor(77, 64, 50));
 }
 
 MainWindow::~MainWindow()
