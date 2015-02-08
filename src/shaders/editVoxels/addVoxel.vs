@@ -25,11 +25,14 @@ void main()
 	vec2 absScreenSpaceMotion = abs(screenSpaceMotion); 
 	vec2 mask = step(absScreenSpaceMotion.yx, absScreenSpaceMotion.xy);
 	vec2 dominantMotion = mask * sign(screenSpaceMotion);
-	vec3 normal = (aaCameraRight * dominantMotion.x + aaCameraUp * dominantMotion.y);
+	vec3 normal = any(bvec2(absScreenSpaceMotion)) ? 
+					(aaCameraRight * dominantMotion.x + aaCameraUp * dominantMotion.y) :
+					SelectVoxelData.normal.xyz;
 				  
 
 	ivec3 coord = SelectVoxelData.index.xyz + ivec3(normal);
 	imageStore(voxelOccupancy, coord, uvec4(255));
-	imageStore(voxelColor, coord, newVoxelColor);
+	vec4 prevColor = imageLoad(voxelColor, SelectVoxelData.index.xyz);
+	imageStore(voxelColor, coord, prevColor);
 }
 

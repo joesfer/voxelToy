@@ -31,7 +31,7 @@ uniform int			pathtracerMaxPathLength;
 uniform float		wireframeOpacity = 0;
 uniform float		wireframeThickness = 0.01;
 
-uniform vec3		lightDirection = vec3(1, -1, 1);
+uniform vec3		lightDirection = vec3(1, -1, -1);
 uniform float		ambientLight = 0.5;
 out vec4 outColor;
 
