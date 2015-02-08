@@ -26,7 +26,11 @@ bool FlyCameraController::onMouseMove(float dx, float dy, int buttons)
         m_parameters->orbitAroundEye(theta, phi);
 		return true;
     }
+#ifdef QT5
     else if( buttons & Qt::MiddleButton)
+#else
+    else if( buttons & Qt::MidButton)
+#endif
     {
 		const float speed = 100;
 		Imath::V3f up = dy * m_parameters->upUnitVector() * speed;

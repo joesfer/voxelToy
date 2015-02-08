@@ -10,6 +10,8 @@
 
 #include "ui/glwidget.h"
 
+#include "tools/toolFocalDistance.h"
+#include "tools/toolAddRemoveVoxel.h"
 
 #include <math.h>
 
@@ -21,6 +23,7 @@ GLWidget::GLWidget(QWidget *parent)
 {
     m_resolutionMode = RenderPropertiesUI::RM_MATCH_WINDOW;
 	m_resolutionLongestAxis = 1024;
+	m_activeTool = NULL;
 }
 
 GLWidget::~GLWidget()
@@ -151,41 +154,62 @@ void GLWidget::paintGL()
 
 void GLWidget::mousePressEvent(QMouseEvent *event)
 {
-    m_lastPos = event->pos();
-    if (event->buttons() & Qt::LeftButton)
+	if ( m_activeTool != NULL &&
+		 m_activeTool->mousePressEvent(event, this->size()))
     {
-		m_renderer.setScreenFocalPoint((float)event->pos().x() / width(), 
-									   (float)event->pos().y() / height());
+		emit currentToolActioned();
 		update();
     }
-
 }
 
 void GLWidget::mouseMoveEvent(QMouseEvent *event)
 {
-    int dx = event->x() - m_lastPos.x();
-    int dy = event->y() - m_lastPos.y();
+	if ( m_activeTool != NULL &&
+		 m_activeTool->mouseMoveEvent(event, this->size()))
+	{
+		emit currentToolActioned();
+		update();
+		return;
+	}
 
-	m_renderer.onMouseMove(dx, dy, (int)event->buttons());
+	// if event is not processed by active tool, hand it off to the renderer
+
+    const int dx = event->x() - m_lastPos.x();
+    const int dy = event->y() - m_lastPos.y();
+	if (m_renderer.onMouseMove(dx, dy, (int)event->buttons()))
+	{
+		update();
+	}
 
     m_lastPos = event->pos();
 	m_lastMouseButtons = event->buttons();
-
-	if ( !(event->buttons() & Qt::NoButton) ) update();
-
 }
 
 void GLWidget::mouseReleaseEvent(QMouseEvent *event)
 {
+	if ( m_activeTool != NULL &&
+		 m_activeTool->mouseReleaseEvent(event, this->size()))
+	{
+		emit currentToolActioned();
+		update();
+		return;
+	}
+
     m_lastPos = event->pos();
 	m_lastMouseButtons = event->buttons();
-
-	m_renderer.resetRender();
-	update();
 }
 
 void GLWidget::keyPressEvent(QKeyEvent* event)
 {
+	if ( m_activeTool != NULL &&
+		 m_activeTool->keyPressEvent(event))
+	{
+		emit currentToolActioned();
+		update();
+		return;
+	}
+
+	// if event is not processed by active tool, hand it off to the renderer
 	if (m_renderer.onKeyPress(event->key()))
 	{
 		update();
@@ -278,4 +302,29 @@ void GLWidget::onResolutionSettingsChanged(RenderPropertiesUI::ResolutionMode mo
     m_resolutionMode = mode;
     m_resolutionLongestAxis = axis1;
 	resizeRender(axis1, axis2, width(), height());
+}
+
+void GLWidget::onActionTriggered(int action, bool triggered)
+{
+	if (!triggered) 
+	{
+		delete m_activeTool;
+		m_activeTool = NULL;
+		return;
+	}
+
+	switch(action)
+	{
+		case ACTION_SELECT_FOCAL_POINT:
+		{
+			m_activeTool = new ToolFocalDistance(m_renderer);
+			break;
+		}
+		case ACTION_EDIT_VOXELS: 
+		{
+			m_activeTool = new ToolAddRemoveVoxel(m_renderer);
+			break;
+		}
+		default: return;
+	}
 }

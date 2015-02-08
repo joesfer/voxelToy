@@ -26,8 +26,8 @@ layout(triangle_strip, max_vertices = 3) out;
 uniform ivec3 voxelResolution;
 
 //Voxel output
-layout(r8ui, binding = 0) uniform uimage3D voxelOccupancy;
-layout(rgba8, binding = 1) uniform image3D voxelColor;
+layout(r8ui, binding = 0) uniform writeonly uimage3D voxelOccupancy;
+layout(rgba8, binding = 1) uniform writeonly image3D voxelColor;
 
 in block
 {

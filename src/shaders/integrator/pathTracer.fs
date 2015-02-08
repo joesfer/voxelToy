@@ -1,9 +1,11 @@
-#version 130
+#version 430
+
+#include <../focalDistance/focalDistanceDevice.h>
+#include <../editVoxels/selectVoxelDevice.h>
 
 uniform sampler3D   occupancyTexture;
 uniform sampler3D   voxelColorTexture;
 uniform sampler2D   noiseTexture;
-uniform sampler2D   focalDistanceTexture;
 uniform ivec3       voxelResolution;
 uniform vec3        volumeBoundsMin;
 uniform vec3        volumeBoundsMax;
@@ -31,14 +33,14 @@ uniform float		wireframeThickness = 0.01;
 
 out vec4 outColor;
 
-#include <aabb.h>
-#include <coordinates.h>
-#include <dda.h>
-#include <sampling.h>
-#include <random.h>
-#include <generateRay.h>
-#include <bsdf.h>
-#include <lights.h>
+#include <../shared/aabb.h>
+#include <../shared/coordinates.h>
+#include <../shared/dda.h>
+#include <../shared/sampling.h>
+#include <../shared/random.h>
+#include <../shared/generateRay.h>
+#include <../shared/bsdf.h>
+#include <../shared/lights.h>
 
 float ISECT_EPSILON = 0.01;
 
@@ -73,10 +75,9 @@ vec3 directLighting(in vec3 albedo,
 	// trace shadow ray to determine whether the radiance reaches the sampled
 	// point.
 	vec3 vsShadowHitPos;
-	vec3 vsShadowHitNormal;
 	bool hitGround;
 	if( traverse(wsHitBasis.position + ISECT_EPSILON * wsToLight_pdf.xyz, 
-				 wsToLight_pdf.xyz, vsShadowHitPos, vsShadowHitNormal, hitGround) )
+				 wsToLight_pdf.xyz, vsShadowHitPos, hitGround) )
 	{
 		// light is not visible. No light contribution.
 		return vec3(0);
@@ -128,11 +129,11 @@ void main()
 	vec3 halfVoxellDist = 0*sign(wsRayDir) * 0.5 / voxelResolution; 
 	vec3 wsRayEntryPoint = wsRayOrigin + rayLength * wsRayDir + halfVoxellDist;
 
-	vec3 vsHitPos, vsHitNormal;
+	vec3 vsHitPos;
 
 	// Cast primary ray
 	vec3 throughput = vec3(1.0);
-	if ( !traverse(wsRayEntryPoint, wsRayDir, vsHitPos, vsHitNormal, hitGround) )
+	if ( !traverse(wsRayEntryPoint, wsRayDir, vsHitPos, hitGround) )
 	{
 		outColor = vec4(getBackgroundColor(wsRayDir),1);
 		return;
@@ -150,7 +151,7 @@ void main()
 		// <wsHitTangent, wsHitNormal, wsHitBinormal> which we'll use for the 
 		// local<->world space conversions.
 		Basis wsHitBasis;
-		voxelSpaceToWorldSpace(vsHitPos, vsHitNormal,
+		voxelSpaceToWorldSpace(vsHitPos, 
 							   wsRayOrigin, wsRayDir,
 							   wsHitBasis);
 		
@@ -164,13 +165,20 @@ void main()
 		{
 			vec3 vsVoxelCenter = (wsHitBasis.position - volumeBoundsMin) / (volumeBoundsMax - volumeBoundsMin) * voxelResolution;
 			vec3 uvw = vsHitPos - vsVoxelCenter;
-			//vec2 uv = vec2(dot(vsHitNormal.yzx, uvw), dot( vsHitNormal.zxy, uvw) ) * oneOverCos45;
-			vec2 uv = abs(vec2(dot(vsHitNormal.yzx, uvw), dot( vsHitNormal.zxy, uvw)));
+			vec2 uv = abs(vec2(dot(wsHitBasis.normal.yzx, uvw), dot( wsHitBasis.normal.zxy, uvw)));
 			float wireframe = step(wireframeThickness, uv.x) * step(uv.x, 1-wireframeThickness) *
 							  step(wireframeThickness, uv.y) * step(uv.y, 1-wireframeThickness);
 
 			wireframe = (1-wireframeOpacity) + wireframeOpacity * wireframe;	
 			albedo *= vec3(wireframe);
+		}
+
+		if ( ivec3(vsHitPos) == SelectVoxelData.index.xyz )
+		{
+			// Draw selected voxel as red
+			albedo = vec3(1,0,0); 
+			radiance += albedo; 
+			break;
 		}
 
 		// the salient direction for the incoming light, bounced back though the 
@@ -195,7 +203,7 @@ void main()
 		wsRayDir = wsWi;
 
 		// find new vertex of path 
-		if ( !traverse(wsRayOrigin + wsRayDir * ISECT_EPSILON, wsRayDir, vsHitPos, vsHitNormal, hitGround) )
+		if ( !traverse(wsRayOrigin + wsRayDir * ISECT_EPSILON, wsRayDir, vsHitPos, hitGround) )
 		{
 			// the ray missed the scene. Handle the environment light here.
 			vec4 environtmentRadiance_Pdf = evaluateEnvironmentRadiance(wsRayDir);

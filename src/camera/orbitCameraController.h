@@ -1,6 +1,6 @@
 #pragma once
 
-#include "src/camera/cameraController.h"
+#include "camera/cameraController.h"
 
 class OrbitCameraController : public CameraController
 {

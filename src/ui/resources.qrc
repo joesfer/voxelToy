@@ -3,5 +3,6 @@
         <file>icons/refresh.png</file>
         <file>icons/add.png</file>
         <file>icons/floppy.png</file>
+        <file>icons/pin-2.png</file>
     </qresource>
 </RCC>

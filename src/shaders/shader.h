@@ -35,7 +35,7 @@ public:
 
 };
 
-struct PathtracerShaderSettings
+struct IntegratorShaderSettings
 {
 	GLuint m_program;
 
@@ -43,7 +43,6 @@ struct PathtracerShaderSettings
 	GLuint m_uniformVoxelOccupancyTexture;
 	GLuint m_uniformVoxelColorTexture;
 	GLuint m_uniformNoiseTexture;
-	GLuint m_uniformFocalDistanceTexture;
 	GLuint m_uniformVoxelDataResolution;
 	GLuint m_uniformVolumeBoundsMin;
 	GLuint m_uniformVolumeBoundsMax;
@@ -62,6 +61,8 @@ struct PathtracerShaderSettings
 	GLuint m_uniformPathtracerMaxPathLength;
 	GLuint m_uniformWireframeOpacity;
 	GLuint m_uniformWireframeThickness;
+	GLuint m_uniformFocalDistanceSSBOStorageBlock;
+	GLuint m_uniformSelectedVoxelSSBOStorageBlock;
 };
 			
 struct AccumulationShaderSettings
@@ -84,7 +85,7 @@ struct TexturedShaderSettings
     GLuint m_uniformViewport;
 };
 
-struct FocalDistanceShaderSettings 
+struct PickingShaderSettings
 {
 	GLuint m_program;
 	
@@ -101,6 +102,32 @@ struct FocalDistanceShaderSettings
 	GLuint m_uniformCameraInverseModelView;
 	GLuint m_uniformCameraFocalLength;
 	GLuint m_uniformSampledFragment;
+	GLuint m_uniformSSBOStorageBlock;
+};
+
+typedef PickingShaderSettings FocalDistanceShaderSettings;
+typedef PickingShaderSettings SelectActiveVoxelShaderSettings;
+
+struct AddVoxelShaderSettings
+{
+	GLuint m_program;
+
+	// uniforms
+	GLuint m_uniformCameraInverseModelView;
+	GLuint m_uniformScreenSpaceMotion;
+	GLuint m_uniformVoxelOccupancyTexture;
+	GLuint m_uniformVoxelColorTexture;
+	GLuint m_uniformSelectedVoxelSSBOStorageBlock;
+	GLuint m_uniformNewVoxelColor;
+};
+
+struct RemoveVoxelShaderSettings
+{
+	GLuint m_program;
+
+	// uniforms
+	GLuint m_uniformVoxelOccupancyTexture;
+	GLuint m_uniformSelectedVoxelSSBOStorageBlock;
 };
 
 struct VoxelizeShaderSettings

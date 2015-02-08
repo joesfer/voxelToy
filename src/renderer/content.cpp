@@ -1,6 +1,7 @@
 #include "renderer/content.h"
 #include <cstdio>
 #include <memory.h>
+#include <stdlib.h>
 
 namespace VoxelTools
 {

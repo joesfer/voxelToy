@@ -132,11 +132,13 @@ bool Shader::compileProgramFromFile( const std::string& name,
 	if (!parseShader( vertexShaderFile, vs ))
 	{
 		log(std::string("error parsing file ") + vertexShaderFile);
+		logWithLineNumbers(vs);
 		return false;
 	}
 	if (!parseShader( fragmentShaderFile, fs ))
 	{
 		log(std::string("error parsing file ") + fragmentShaderFile);
+		logWithLineNumbers(fs);
 		return false;
 	}
 	
@@ -145,6 +147,7 @@ bool Shader::compileProgramFromFile( const std::string& name,
 		!parseShader( geometryShaderFile, gs ))
 	{
 		log(std::string("error parsing file ") + geometryShaderFile);
+		logWithLineNumbers(gs);
 		return false;
 	}
 
@@ -188,7 +191,6 @@ bool Shader::compileProgramFromCode ( const std::string& name,
 	char infoLog[ 512 ];
 	GLsizei logLength = 0;
 
-    glewInit();
 	GLuint program = glCreateProgram();
 
 	{

@@ -1,4 +1,6 @@
-#version 130
+#version 430
+
+#include <focalDistanceDevice.h>
 
 uniform sampler3D   occupancyTexture;
 uniform ivec3       voxelResolution;
@@ -16,43 +18,42 @@ uniform vec2        cameraFilmSize;
 
 uniform vec2        sampledFragment;
 
-out float wsDistance;
+#include <../shared/aabb.h>
+#include <../shared/coordinates.h>
+#include <../shared/dda.h>
+#include <../shared/sampling.h>
+#include <../shared/generateRay.h>
 
-#include <aabb.h>
-#include <coordinates.h>
-#include <dda.h>
-#include <sampling.h>
-#include <generateRay.h>
-
-// This fragment shader should run for a single fragment, and calculates the
+// This vertex shader should run for a single vertex, and calculates the
 // distance to the closest intersection, in world-space. The distance is then
 // fed to another shader down the line to be used as the camera focal distance.
+
+const float Infinity = 99999999.0;	
 
 void main()
 {
 	vec3 wsRayOrigin;
 	vec3 wsRayDir;
-	generateRay_Pinhole(vec3(sampledFragment, gl_FragCoord.z), wsRayOrigin, wsRayDir);
+	generateRay_Pinhole(vec3(sampledFragment, 0), wsRayOrigin, wsRayDir);
 	
 	// test intersection with bounds to trivially discard rays before entering
 	// traversal.
 	float aabbIsectDist = rayAABBIntersection(wsRayOrigin, wsRayDir,
 											  volumeBoundsMin, volumeBoundsMax); 
+	FocalDistanceData.focalDistance = Infinity;
 
 	if (aabbIsectDist < 0)
 	{
-		wsDistance = 99999999.0;	
 		return;
 	}
 
 	float rayLength = aabbIsectDist;
 	vec3 rayPoint = wsRayOrigin + rayLength * wsRayDir;
-	vec3 vsHitPos, vsHitNormal;
+	vec3 vsHitPos;
 
 	bool hitGround;
-	if ( !traverse(rayPoint, wsRayDir, vsHitPos, vsHitNormal, hitGround) )
+	if ( !traverse(rayPoint, wsRayDir, vsHitPos, hitGround) )
 	{
-		wsDistance = 99999999.0;	
 		return;
 	}
 
@@ -62,5 +63,6 @@ void main()
 	vec3 wsVoxelMin = vsHitPos * wsVoxelSize + volumeBoundsMin; 
 	vec3 wsVoxelMax = wsVoxelMin + wsVoxelSize; 
 	float voxelHitDistance = rayAABBIntersection(wsRayOrigin, wsRayDir, wsVoxelMin, wsVoxelMax);
-	wsDistance = voxelHitDistance;
+
+	FocalDistanceData.focalDistance = voxelHitDistance;
 }
