@@ -1,6 +1,6 @@
 #version 430
 
-#include <focalDistanceDevice.h>
+#include <focalDistance/focalDistanceDevice.h>
 
 uniform sampler3D   occupancyTexture;
 uniform ivec3       voxelResolution;
@@ -16,13 +16,18 @@ uniform mat4        cameraInverseModelView;
 uniform float       cameraFocalLength;
 uniform vec2        cameraFilmSize;
 
+uniform sampler2D   backgroundCDFUTexture;
+uniform sampler1D   backgroundCDFVTexture;
+uniform float	    backgroundIntegral;
+
 uniform vec2        sampledFragment;
 
-#include <../shared/aabb.h>
-#include <../shared/coordinates.h>
-#include <../shared/dda.h>
-#include <../shared/sampling.h>
-#include <../shared/generateRay.h>
+#include <shared/constants.h>
+#include <shared/aabb.h>
+#include <shared/coordinates.h>
+#include <shared/dda.h>
+#include <shared/sampling.h>
+#include <shared/generateRay.h>
 
 // This vertex shader should run for a single vertex, and calculates the
 // distance to the closest intersection, in world-space. The distance is then

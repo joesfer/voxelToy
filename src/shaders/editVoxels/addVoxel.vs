@@ -1,6 +1,6 @@
 #version 430
 
-#include <selectVoxelDevice.h>
+#include <editVoxels/selectVoxelDevice.h>
 
 uniform vec4		newVoxelColor = vec4(0,0,1,0);
 uniform mat4        cameraInverseModelView;

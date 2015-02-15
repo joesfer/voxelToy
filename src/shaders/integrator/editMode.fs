@@ -1,7 +1,7 @@
 #version 430
 
-#include <../focalDistance/focalDistanceDevice.h>
-#include <../editVoxels/selectVoxelDevice.h>
+#include <focalDistance/focalDistanceDevice.h>
+#include <editVoxels/selectVoxelDevice.h>
 
 uniform sampler3D   occupancyTexture;
 uniform sampler3D   voxelColorTexture;
@@ -40,14 +40,15 @@ uniform vec3		lightDirection = vec3(1, -1, -1);
 uniform float		ambientLight = 0.5;
 out vec4 outColor;
 
-#include <../shared/aabb.h>
-#include <../shared/coordinates.h>
-#include <../shared/dda.h>
-#include <../shared/sampling.h>
-#include <../shared/random.h>
-#include <../shared/generateRay.h>
-#include <../shared/bsdf.h>
-#include <../shared/lights.h>
+#include <shared/constants.h>
+#include <shared/aabb.h>
+#include <shared/coordinates.h>
+#include <shared/dda.h>
+#include <shared/sampling.h>
+#include <shared/random.h>
+#include <shared/generateRay.h>
+#include <shared/bsdf.h>
+#include <shared/lights.h>
 
 float ISECT_EPSILON = 0.01;
 
