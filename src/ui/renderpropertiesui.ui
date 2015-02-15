@@ -387,19 +387,19 @@
       <item row="2" column="1">
        <layout class="QHBoxLayout" name="horizontalLayout_5">
         <item>
-         <widget class="QLineEdit" name="lineEdit">
+         <widget class="QLineEdit" name="backgroundImagePath">
           <property name="enabled">
            <bool>false</bool>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButton_4">
+         <widget class="QPushButton" name="backgroundImagePushButton">
           <property name="enabled">
            <bool>false</bool>
           </property>
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -415,6 +415,9 @@
             <width>0</width>
             <height>0</height>
            </size>
+          </property>
+          <property name="toolTip">
+           <string>Browse file</string>
           </property>
           <property name="text">
            <string>...</string>
@@ -791,7 +794,7 @@
   <connection>
    <sender>backgroundImage</sender>
    <signal>toggled(bool)</signal>
-   <receiver>lineEdit</receiver>
+   <receiver>backgroundImagePath</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -807,7 +810,7 @@
   <connection>
    <sender>backgroundImage</sender>
    <signal>toggled(bool)</signal>
-   <receiver>pushButton_4</receiver>
+   <receiver>backgroundImagePushButton</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -932,6 +935,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>backgroundImagePushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>RenderPropertiesUI</receiver>
+   <slot>onBackgroundImageBrowseClicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>470</x>
+     <y>461</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>539</x>
+     <y>485</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <signal>pathtracerMaxPathLengthChanged(int)</signal>
@@ -950,5 +969,6 @@
   <slot>onBackgroundColorConstant()</slot>
   <slot>onBackgroundColorGradient()</slot>
   <slot>onBackgroundColorImage()</slot>
+  <slot>onBackgroundImageBrowseClicked()</slot>
  </slots>
 </ui>

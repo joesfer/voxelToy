@@ -11,8 +11,10 @@
 #include "svo/voxelizer.h"
 #include "camera/cameraController.h"
 #include "renderer/voxLoader.h"
+#include "renderer/image.h"
 #include "shaders/focalDistance/focalDistanceHost.h"
 #include "shaders/editVoxels/selectVoxelHost.h"
+
 #include <memory.h>
 
 #include <Qt> // FIXME used for Qt::Key codes
@@ -51,6 +53,9 @@ Renderer::Renderer()
 	m_mesh = NULL;
 
 	m_currentIntegrator = INTEGRATOR_PATHTRACER;
+
+	m_currentBackgroundImage = "";
+	m_currentBackgroundRadianceIntegral = 0;
 
 	m_initialized = false;
 }
@@ -115,6 +120,7 @@ bool Renderer::reloadFocalDistanceShader(const std::string& shaderPath)
 	std::string fs = shaderPath + std::string("shared/trivial.fs");
 
     if ( !Shader::compileProgramFromFile("FocalDistance",
+										shaderPath,
                                         vs, "#define PINHOLE\n",
                                         fs, "",
                                         m_settingsFocalDistance.m_program) )
@@ -172,6 +178,7 @@ bool Renderer::reloadSelectActiveVoxelShader(const std::string& shaderPath)
 	std::string fs = shaderPath + std::string("shared/trivial.fs");
 
     if ( !Shader::compileProgramFromFile("SelectActiveVoxel",
+										shaderPath,
                                         vs, "#define PINHOLE\n",
                                         fs, "",
                                         m_settingsSelectActiveVoxel.m_program) )
@@ -229,6 +236,7 @@ bool Renderer::reloadTexturedShader(const std::string& shaderPath)
 	std::string fs = shaderPath + std::string("shared/textureMap.fs");
 
     if ( !Shader::compileProgramFromFile("textured",
+										shaderPath,
                                         vs, "",
                                         fs, "",
                                         m_settingsTextured.m_program) )
@@ -258,6 +266,7 @@ bool Renderer::reloadAverageShader(const std::string& shaderPath)
 	std::string fs = shaderPath + std::string("shared/accumulation.fs");
 
     if ( !Shader::compileProgramFromFile("accumulation",
+										shaderPath,
                                         vs, "",
                                         fs, "",
                                         m_settingsAverage.m_program) )
@@ -289,6 +298,7 @@ bool Renderer::reloadIntegratorShader(const std::string& shaderPath,
 	std::string fs = shaderPath + fsFile; 
 
     if ( !Shader::compileProgramFromFile(name,
+										shaderPath,
                                         vs, "",
                                         fs, "#define PINHOLE\n#define THINLENS\n",
                                         settings.m_program) )
@@ -321,6 +331,12 @@ bool Renderer::reloadIntegratorShader(const std::string& shaderPath,
 	settings.m_uniformWireframeThickness      = glGetUniformLocation(settings.m_program, "wireframeThickness");
 	settings.m_uniformBackgroundColorTop	  = glGetUniformLocation(settings.m_program, "backgroundColorTop");
 	settings.m_uniformBackgroundColorBottom   = glGetUniformLocation(settings.m_program, "backgroundColorBottom");
+	settings.m_uniformBackgroundUseImage      = glGetUniformLocation(settings.m_program, "backgroundUseImage");
+	settings.m_uniformBackgroundTexture       = glGetUniformLocation(settings.m_program, "backgroundTexture");
+	settings.m_uniformBackgroundCDFUTexture   = glGetUniformLocation(settings.m_program, "backgroundCDFUTexture");
+	settings.m_uniformBackgroundCDFVTexture   = glGetUniformLocation(settings.m_program, "backgroundCDFVTexture");
+	settings.m_uniformBackgroundIntegral      = glGetUniformLocation(settings.m_program, "backgroundIntegral");
+
 
 	settings.m_uniformFocalDistanceSSBOStorageBlock = glGetProgramResourceIndex(settings.m_program, GL_SHADER_STORAGE_BLOCK, "FocalDistanceData");
 	glShaderStorageBlockBinding(settings.m_program, settings.m_uniformFocalDistanceSSBOStorageBlock, g_focalDistanceSSBOBindingPointIndex);
@@ -369,6 +385,7 @@ bool Renderer::reloadVoxelizeShader(const std::string& shaderPath)
 	std::string fs = shaderPath + std::string("shared/trivial.fs");
 
     if ( !Shader::compileProgramFromFile("Voxelize",
+										 shaderPath,
                                          vs, "",
                                          gs, "",
                                          fs, "",
@@ -401,6 +418,7 @@ bool Renderer::reloadAddVoxelShader(const std::string& shaderPath)
 	std::string fs = shaderPath + std::string("shared/trivial.fs");
 
     if ( !Shader::compileProgramFromFile("AddVoxel",
+										 shaderPath,
                                          vs, "",
                                          fs, "",
                                          m_settingsAddVoxel.m_program) )
@@ -434,6 +452,7 @@ bool Renderer::reloadRemoveVoxelShader(const std::string& shaderPath)
 	std::string fs = shaderPath + std::string("shared/trivial.fs");
 
     if ( !Shader::compileProgramFromFile("RemoveVoxel",
+										 shaderPath,
                                          vs, "",
                                          fs, "",
                                          m_settingsRemoveVoxel.m_program) )
@@ -1214,14 +1233,130 @@ void Renderer::resetRender()
     m_numberSamples = 0;
 }
 
+bool Renderer::loadBackgroundImage( float& mapIntegralTimesSin )
+{
+	if ( m_renderSettings.m_backgroundImage.empty() ) 
+	{
+		// no background iamge set
+		mapIntegralTimesSin = 0;
+		return true;
+	}
+	else if ( m_renderSettings.m_backgroundImage == m_currentBackgroundImage )
+	{
+		// we've already loaded and processed this image
+		mapIntegralTimesSin = m_currentBackgroundRadianceIntegral;
+		return true;
+	}
+	
+	// new image
+	
+	mapIntegralTimesSin = 1.0f;
+	if (glIsTexture(m_backgroundTexture))
+	{
+		glDeleteTextures(1, &m_backgroundTexture);
+		m_backgroundTexture = 0;
+	}
+	if (glIsTexture(m_backgroundCDFUTexture))
+	{
+		glDeleteTextures(1, &m_backgroundCDFUTexture);
+		m_backgroundCDFUTexture = 0;
+	}
+	if (glIsTexture(m_backgroundCDFVTexture))
+	{
+		glDeleteTextures(1, &m_backgroundCDFVTexture);
+		m_backgroundCDFVTexture = 0;
+	}
+	const int useBackgroundImage = m_renderSettings.m_backgroundImage.empty() ? 0 : 1;
+	if(useBackgroundImage == 0) return true; // we're done
+
+	unsigned int w, h;
+	std::vector<float> pixels;
+	if (!loadImage(m_renderSettings.m_backgroundImage, w, h, pixels)) return false;
+
+	glGenTextures(1, &m_backgroundTexture);
+	glActiveTexture(GL_TEXTURE0 + TEXTURE_UNIT_BACKGROUND);
+	glBindTexture(GL_TEXTURE_2D, m_backgroundTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexImage2D(GL_TEXTURE_2D,
+				 0,
+				 GL_RGB,
+				 w,
+				 h,
+				 0,
+				 GL_RGB,
+				 GL_FLOAT,
+				 &pixels[0]);
+
+	// Calculate data required for light importance sampling
+
+	unsigned int cdfUDataWidth, cdfUDataHeight;
+	std::vector<float> cdfUData, cdfVData;
+	float integralTimesSin;
+	calculateCDF(&pixels[0], w, h,
+				 cdfUData, cdfUDataWidth, cdfUDataHeight,
+				 cdfVData, 
+				 integralTimesSin);
+	const unsigned int cdfVDataHeight = cdfVData.size();
+
+	glGenTextures(1, &m_backgroundCDFUTexture);
+	glActiveTexture(GL_TEXTURE0 + TEXTURE_UNIT_BACKGROUND_CDF_U);
+	glBindTexture(GL_TEXTURE_2D, m_backgroundCDFUTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexImage2D(GL_TEXTURE_2D,
+				 0,
+				 GL_R32F,
+				 cdfUDataWidth,
+				 cdfUDataHeight,
+				 0,
+				 GL_RED,
+				 GL_FLOAT,
+				 &cdfUData[0]);
+
+	glGenTextures(1, &m_backgroundCDFVTexture);
+	glActiveTexture(GL_TEXTURE0 + TEXTURE_UNIT_BACKGROUND_CDF_V);
+	glBindTexture(GL_TEXTURE_1D, m_backgroundCDFVTexture);
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexImage1D(GL_TEXTURE_1D,
+				 0,
+				 GL_R32F,
+				 cdfVDataHeight,
+				 0,
+				 GL_RED,
+				 GL_FLOAT,
+				 &cdfVData[0]);
+
+	mapIntegralTimesSin = integralTimesSin;
+
+	// store the current settings
+	m_currentBackgroundImage            = m_renderSettings.m_backgroundImage;
+	m_currentBackgroundRadianceIntegral = integralTimesSin;
+
+	return true;
+}
+
 void Renderer::updateRenderSettings()
 {
 	if (!m_initialized) return;
+
+	const int useBackgroundImage = m_renderSettings.m_backgroundImage.empty() ? 0 : 1;
+
+	float mapIntegralTimesSin = 0;
+	if (!loadBackgroundImage(mapIntegralTimesSin)) return;
 
 	for( int i = 0; i < INTEGRATOR_TOTAL; ++i )
 	{
 		const IntegratorShaderSettings& integratorSettings = m_settingsIntegrator[i];
 		glUseProgram(integratorSettings.m_program);
+
 		glUniform1i(integratorSettings.m_uniformPathtracerMaxPathLength , m_renderSettings.m_pathtracerMaxPathLength);
 		glUniform1f(integratorSettings.m_uniformWireframeOpacity        , m_renderSettings.m_wireframeOpacity);
 		glUniform1f(integratorSettings.m_uniformWireframeThickness      , m_renderSettings.m_wireframeThickness);
@@ -1235,6 +1370,21 @@ void Renderer::updateRenderSettings()
 					m_renderSettings.m_backgroundColor[1].x,
 					m_renderSettings.m_backgroundColor[1].y, 
 					m_renderSettings.m_backgroundColor[1].z );
+
+		glUniform1i(integratorSettings.m_uniformBackgroundUseImage, 
+				    useBackgroundImage);	
+
+		glUniform1i(integratorSettings.m_uniformBackgroundTexture, 
+				    TEXTURE_UNIT_BACKGROUND);	
+
+		glUniform1i(integratorSettings.m_uniformBackgroundCDFUTexture, 
+				    TEXTURE_UNIT_BACKGROUND_CDF_U);	
+
+		glUniform1i(integratorSettings.m_uniformBackgroundCDFVTexture, 
+				    TEXTURE_UNIT_BACKGROUND_CDF_V);	
+
+		glUniform1f(integratorSettings.m_uniformBackgroundIntegral, 
+				    mapIntegralTimesSin);	
 	}
 
 	glUseProgram(0);

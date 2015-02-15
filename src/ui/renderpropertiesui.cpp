@@ -1,6 +1,8 @@
 #include "renderpropertiesui.h"
 #include "ui_renderpropertiesui.h"
 
+#include <QFileDialog>
+
 RenderPropertiesUI::RenderPropertiesUI(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::RenderPropertiesUI)
@@ -72,6 +74,10 @@ void RenderPropertiesUI::onBackgroundColorChangedGradientTo(QColor color)
 {
 	emit backgroundColorChangedGradientTo(color);
 }
+void RenderPropertiesUI::onBackgroundColorChangedImage(QString path)
+{
+	emit backgroundColorChangedImage(path);
+}
 void RenderPropertiesUI::setBackground(QColor constantColor)
 {
 	ui->backgroundConstantButton->setColor(constantColor);
@@ -99,5 +105,19 @@ void RenderPropertiesUI::onBackgroundColorGradient()
 }
 void RenderPropertiesUI::onBackgroundColorImage()
 {
+	onBackgroundColorChangedImage(ui->backgroundImagePath->text());
 }
 
+void RenderPropertiesUI::onBackgroundImageBrowseClicked()
+{
+    QFileDialog dialog(this);
+    dialog.setFileMode(QFileDialog::ExistingFile);
+    dialog.setNameFilter(tr("Image files (*.jpg *.png *.exr *.hdr *.tiff)"));
+    dialog.setViewMode(QFileDialog::Detail);
+    if(dialog.exec())
+    {
+        QString file = dialog.selectedFiles()[0];
+        ui->backgroundImagePath->setText(file);
+		emit backgroundColorChangedImage(file);
+    }
+}

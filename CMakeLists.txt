@@ -16,6 +16,14 @@ include_directories(${GLEW_INCLUDE_DIR})
 include_directories(${OPENEXR_INCLUDE_DIR})
 include_directories(${Boost_INCLUDE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR} src)
+include_directories(${OPENIMAGEIO_INCLUDE_DIR})
+
+# OpenImageIO library ==========================================================
+
+find_library(OIIO_LIBRARY    OpenImageIO    ${OPENIMAGEIO_LIB_DIR})
+
+set(OIIO_LIBRARIES 
+	${OIIO_LIBRARY})
 
 # OpenEXR libraries ============================================================
 
@@ -129,6 +137,6 @@ target_link_libraries(VoxelToy
 	${OPENEXR_LIBRARIES}
 	${QT_LIBRARIES}
 	${BOOST_LIBRARIES}
+	${OIIO_LIBRARIES}
 	-lpthread)
-
 

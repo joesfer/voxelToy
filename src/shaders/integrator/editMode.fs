@@ -23,6 +23,11 @@ uniform vec2        cameraFilmSize;
 uniform vec3        backgroundColorTop = vec3(153.0 / 255, 187.0 / 255, 201.0 / 255) * 2;
 uniform vec3        backgroundColorBottom = vec3(77.0 / 255, 64.0 / 255, 50.0 / 255);
 uniform vec3        groundColor = vec3(0.5, 0.5, 0.5);
+uniform int         backgroundUseImage;
+uniform sampler2D   backgroundTexture;
+uniform sampler2D   backgroundCDFUTexture;
+uniform sampler1D   backgroundCDFVTexture;
+uniform float	    backgroundIntegral;
 
 uniform int         sampleCount;
 uniform int         enableDOF;

@@ -8,6 +8,7 @@ class Shader
 public:
 
 	static bool compileProgramFromFile( const std::string& name,
+										const std::string& includeBasePath,
 										const std::string &vertexShaderFile,
 										const std::string &vertexShaderPreprocessor,
 										const std::string &fragmentShaderFile,
@@ -15,6 +16,7 @@ public:
 										GLuint& result );
 
 	static bool compileProgramFromFile( const std::string& name,
+										const std::string& includeBasePath,
 										const std::string &vertexShaderFile,
 										const std::string &vertexShaderPreprocessor,
 										const std::string &geometryShaderFile,
@@ -65,6 +67,11 @@ struct IntegratorShaderSettings
 	GLuint m_uniformSelectedVoxelSSBOStorageBlock;
 	GLuint m_uniformBackgroundColorTop;
 	GLuint m_uniformBackgroundColorBottom;
+	GLuint m_uniformBackgroundUseImage;
+	GLuint m_uniformBackgroundTexture;
+	GLuint m_uniformBackgroundCDFUTexture;
+	GLuint m_uniformBackgroundCDFVTexture;
+	GLuint m_uniformBackgroundIntegral;
 };
 			
 struct AccumulationShaderSettings
