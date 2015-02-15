@@ -36,6 +36,9 @@ uniform int			pathtracerMaxPathLength;
 uniform float		wireframeOpacity = 0;
 uniform float		wireframeThickness = 0.01;
 
+uniform float		tonemappingGamma = 2.2;
+uniform float		tonemappingExposure = 1;
+
 out vec4 outColor;
 
 #include <shared/constants.h>
@@ -221,6 +224,7 @@ void main()
 		pathLength++;
 	}
 
+	radiance = pow(radiance * tonemappingExposure, vec3(1.0 / tonemappingGamma));
 	outColor = vec4(radiance,1);
 }
 
