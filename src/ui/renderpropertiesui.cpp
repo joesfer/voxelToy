@@ -1,6 +1,8 @@
 #include "renderpropertiesui.h"
 #include "ui_renderpropertiesui.h"
 
+#include <QFileDialog>
+
 RenderPropertiesUI::RenderPropertiesUI(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::RenderPropertiesUI)
@@ -57,5 +59,65 @@ void RenderPropertiesUI::getResolutionSettings(ResolutionMode &mode, int &axis1,
     else
     {
         mode = RM_MATCH_WINDOW;
+    }
+}
+
+void RenderPropertiesUI::onBackgroundColorChangedConstant(QColor color)
+{
+	emit backgroundColorChangedConstant(color);
+}
+void RenderPropertiesUI::onBackgroundColorChangedGradientFrom(QColor color)
+{
+	emit backgroundColorChangedGradientFrom(color);
+}
+void RenderPropertiesUI::onBackgroundColorChangedGradientTo(QColor color)
+{
+	emit backgroundColorChangedGradientTo(color);
+}
+void RenderPropertiesUI::onBackgroundColorChangedImage(QString path)
+{
+	emit backgroundColorChangedImage(path);
+}
+void RenderPropertiesUI::setBackground(QColor constantColor)
+{
+	ui->backgroundConstantButton->setColor(constantColor);
+	ui->backgroundConstant->setChecked(true);
+}
+void RenderPropertiesUI::setBackground(QColor gradientFrom, QColor gradientTo)
+{
+	ui->backgroundGradientFromButton->setColor(gradientFrom);
+	ui->backgroundGradientToButton->setColor(gradientTo);
+	ui->backgroundGradient->setChecked(true);
+}
+void RenderPropertiesUI::setBackground(QString image)
+{
+	ui->backgroundImage->setChecked(true);
+}
+
+void RenderPropertiesUI::onBackgroundColorConstant()
+{
+	onBackgroundColorChangedConstant(ui->backgroundConstantButton->getColor());
+}
+void RenderPropertiesUI::onBackgroundColorGradient()
+{
+	onBackgroundColorChangedGradientFrom(ui->backgroundGradientFromButton->getColor());
+	onBackgroundColorChangedGradientTo(ui->backgroundGradientToButton->getColor());
+}
+void RenderPropertiesUI::onBackgroundColorImage()
+{
+	onBackgroundColorChangedImage(ui->backgroundImagePath->text());
+}
+
+void RenderPropertiesUI::onBackgroundImageBrowseClicked()
+{
+    QFileDialog dialog(this);
+    dialog.setFileMode(QFileDialog::ExistingFile);
+    dialog.setNameFilter(tr("Image files (*.jpg *.png *.exr *.hdr *.tiff)"));
+    dialog.setViewMode(QFileDialog::Detail);
+    if(dialog.exec())
+    {
+        QString file = dialog.selectedFiles()[0];
+        ui->backgroundImagePath->setText(file);
+		emit backgroundColorChangedImage(file);
     }
 }

@@ -1,6 +1,6 @@
 #version 430
 
-#include <selectVoxelDevice.h>
+#include <editVoxels/selectVoxelDevice.h>
 
 uniform sampler3D   occupancyTexture;
 uniform ivec3       voxelResolution;
@@ -18,11 +18,12 @@ uniform vec2        cameraFilmSize;
 
 uniform vec2        sampledFragment;
 
-#include <../shared/aabb.h>
-#include <../shared/coordinates.h>
-#include <../shared/dda.h>
-#include <../shared/sampling.h>
-#include <../shared/generateRay.h>
+#include <shared/constants.h>
+#include <shared/aabb.h>
+#include <shared/coordinates.h>
+#include <shared/dda.h>
+#include <shared/sampling.h>
+#include <shared/generateRay.h>
 
 // This vertex shader should run for a single vertex, and calculates the
 // voxel index of the closest intersection.

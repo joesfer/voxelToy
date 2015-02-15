@@ -1,7 +1,7 @@
 #version 430
 
-#include <../focalDistance/focalDistanceDevice.h>
-#include <../editVoxels/selectVoxelDevice.h>
+#include <focalDistance/focalDistanceDevice.h>
+#include <editVoxels/selectVoxelDevice.h>
 
 uniform sampler3D   occupancyTexture;
 uniform sampler3D   voxelColorTexture;
@@ -20,9 +20,14 @@ uniform float       cameraFocalLength;
 uniform float       cameraLensRadius;
 uniform vec2        cameraFilmSize;
 
-uniform vec4        backgroundColorSky = vec4(153.0 / 255, 187.0 / 255, 201.0 / 255, 1) * 2;
-uniform vec4        backgroundColorGround = vec4(77.0 / 255, 64.0 / 255, 50.0 / 255, 1);
+uniform vec3        backgroundColorTop = vec3(153.0 / 255, 187.0 / 255, 201.0 / 255) * 2;
+uniform vec3        backgroundColorBottom = vec3(77.0 / 255, 64.0 / 255, 50.0 / 255);
 uniform vec3        groundColor = vec3(0.5, 0.5, 0.5);
+uniform int         backgroundUseImage;
+uniform sampler2D   backgroundTexture;
+uniform sampler2D   backgroundCDFUTexture;
+uniform sampler1D   backgroundCDFVTexture;
+uniform float	    backgroundIntegral;
 
 uniform int         sampleCount;
 uniform int         enableDOF;
@@ -35,14 +40,15 @@ uniform vec3		lightDirection = vec3(1, -1, -1);
 uniform float		ambientLight = 0.5;
 out vec4 outColor;
 
-#include <../shared/aabb.h>
-#include <../shared/coordinates.h>
-#include <../shared/dda.h>
-#include <../shared/sampling.h>
-#include <../shared/random.h>
-#include <../shared/generateRay.h>
-#include <../shared/bsdf.h>
-#include <../shared/lights.h>
+#include <shared/constants.h>
+#include <shared/aabb.h>
+#include <shared/coordinates.h>
+#include <shared/dda.h>
+#include <shared/sampling.h>
+#include <shared/random.h>
+#include <shared/generateRay.h>
+#include <shared/bsdf.h>
+#include <shared/lights.h>
 
 float ISECT_EPSILON = 0.01;
 

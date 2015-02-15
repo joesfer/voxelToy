@@ -1,6 +1,6 @@
 #version 430
 
-#include <selectVoxelDevice.h>
+#include <editVoxels/selectVoxelDevice.h>
 
 //Voxel output
 layout(r8ui, binding = 0) uniform uimage3D voxelOccupancy;

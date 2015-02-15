@@ -25,12 +25,21 @@ public:
     void getResolutionSettings(ResolutionMode& mode,
                                int& axis1,
                                int& axis2);
+
+	void setBackground(QColor constantColor);
+	void setBackground(QColor gradientFrom, QColor gradientTo);
+	void setBackground(QString image);
+
 signals:
 	void pathtracerMaxSamplesChanged(int);
 	void pathtracerMaxPathLengthChanged(int);
 	void resolutionSettingsChanged();
 	void wireframeOpacityChanged(int);
 	void wireframeThicknessChanged(int);
+    void backgroundColorChangedConstant(QColor);
+    void backgroundColorChangedGradientFrom(QColor);
+    void backgroundColorChangedGradientTo(QColor);
+    void backgroundColorChangedImage(QString);
 
 public slots:
 	void onPathtracerMaxSamplesChanged(int);
@@ -38,6 +47,14 @@ public slots:
 	void onResolutionSettingsChanged();
 	void onWireframeOpacityChanged(int value);
 	void onWireframeThicknessChanged(int value);
+    void onBackgroundColorChangedConstant(QColor);
+    void onBackgroundColorChangedGradientFrom(QColor);
+    void onBackgroundColorChangedGradientTo(QColor);
+    void onBackgroundColorChangedImage(QString);
+    void onBackgroundColorConstant();
+    void onBackgroundColorGradient();
+    void onBackgroundColorImage();
+	void onBackgroundImageBrowseClicked();
 
 private:
     Ui::RenderPropertiesUI *ui;

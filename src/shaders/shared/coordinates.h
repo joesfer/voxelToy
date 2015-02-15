@@ -69,6 +69,30 @@ void voxelSpaceToWorldSpace(in vec3 vsP,
 	wsHitBasis.tangent = normalize(cross(wsHitBasis.binormal, wsHitBasis.normal));
 }
 
+// pole at +Y (theta = 0)
+vec3 sphericalToCartesian(float phi, float theta)
+{
+	float sinTheta = sin(theta);
+	return vec3( sinTheta * cos(phi), cos(theta), sinTheta * sin(phi) );
+}
 
+vec2 uvCoordFromVector(in vec3 vec)
+{
+	// cartesian to spherical coordinates
+	// pole at Y, v is assumed to be normalized
+	const float theta = acos(vec.y);
+	const float phi = atan(vec.z, vec.x) + PI;
+	// map spherical coordinates to unit square (uv)
+	const float u = phi / TWO_PI;
+	const float v = theta / PI;
 
+	return vec2(u, v);
+}
+
+vec3 directionFromUVCoord(in vec2 uv)
+{
+	const float phi = uv.x * TWO_PI - PI;
+	const float theta = uv.y * PI;
+	return sphericalToCartesian(phi, theta);
+}
 

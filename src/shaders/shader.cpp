@@ -46,7 +46,7 @@ bool loadFile( const std::string& file, std::string& contents )
 
 // search for #include directives (not supported in GLSL, and emulate them
 // by pasting the header contents within the output stream
-bool includeHeaders( std::string& code, const std::string& parentPath )
+bool includeHeaders( std::string& code, const std::string& includeBasePath )
 {
 	using namespace std;	
 
@@ -74,9 +74,10 @@ bool includeHeaders( std::string& code, const std::string& parentPath )
 		}
 
 		string headercode;
-		if ( !loadFile(parentPath + headerFile, headercode) )
+		string headerFilePath = includeBasePath + headerFile;
+		if ( !loadFile(includeBasePath + headerFile, headercode) )
 		{
-			log("Failed to load header " + headerFile);
+			log("Failed to load header " + headerFilePath);
 			return false;	
 		}
 		code.insert(includeStart, headercode);
@@ -85,23 +86,19 @@ bool includeHeaders( std::string& code, const std::string& parentPath )
 	return true;
 }
 
-bool parseShader( const std::string& file, std::string& contents )
+bool parseShader( const std::string& file, 
+				  const std::string& includeBasePath,
+				  std::string& contents )
 {
 	using namespace std;
 
 	if (!loadFile( file, contents )) return false;
-
-	string parentPath;
-	string::size_type lastSlash = file.rfind('/', file.size() - 1);
-	if (lastSlash != string::npos)
-	{
-		parentPath = file.substr(0, lastSlash + 1);
-	}
 	
-	return includeHeaders(contents, parentPath);
+	return includeHeaders(contents, includeBasePath);
 }
 
 bool Shader::compileProgramFromFile( const std::string& name, 
+									 const std::string& includeBasePath,
 									 const std::string &vertexShaderFile,
 									 const std::string &vertexShaderPreprocessor,
 									 const std::string &fragmentShaderFile,
@@ -109,6 +106,7 @@ bool Shader::compileProgramFromFile( const std::string& name,
 									 GLuint& result )
 {
 	return compileProgramFromFile(name,
+								  includeBasePath,
 								  vertexShaderFile,
 								  vertexShaderPreprocessor,
 								  "", "",
@@ -118,6 +116,7 @@ bool Shader::compileProgramFromFile( const std::string& name,
 }
 
 bool Shader::compileProgramFromFile( const std::string& name, 
+									 const std::string& includeBasePath,
 									 const std::string &vertexShaderFile,
 									 const std::string &vertexShaderPreprocessor,
 									 const std::string &geometryShaderFile,
@@ -129,13 +128,13 @@ bool Shader::compileProgramFromFile( const std::string& name,
 	using namespace std;
 
 	string vs, gs, fs;
-	if (!parseShader( vertexShaderFile, vs ))
+	if (!parseShader( vertexShaderFile, includeBasePath, vs ))
 	{
 		log(std::string("error parsing file ") + vertexShaderFile);
 		logWithLineNumbers(vs);
 		return false;
 	}
-	if (!parseShader( fragmentShaderFile, fs ))
+	if (!parseShader( fragmentShaderFile, includeBasePath, fs ))
 	{
 		log(std::string("error parsing file ") + fragmentShaderFile);
 		logWithLineNumbers(fs);
@@ -144,7 +143,7 @@ bool Shader::compileProgramFromFile( const std::string& name,
 	
 	// Geometry shader is optional
 	if (!geometryShaderFile.empty() && 
-		!parseShader( geometryShaderFile, gs ))
+		!parseShader( geometryShaderFile, includeBasePath, gs ))
 	{
 		log(std::string("error parsing file ") + geometryShaderFile);
 		logWithLineNumbers(gs);

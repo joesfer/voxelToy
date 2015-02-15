@@ -10,6 +10,7 @@
 #include <OpenEXR/ImathBox.h>
 
 #include <vector>
+#include <string>
 
 class Mesh;
 
@@ -33,6 +34,8 @@ struct RenderSettings
 	float m_wireframeOpacity;
 	float m_wireframeThickness;
 
+	std::string m_backgroundImage;
+	Imath::V3f m_backgroundColor[2]; // gradient (top/bottom)
 };
 
 
@@ -109,6 +112,7 @@ private:
 	bool reloadVoxelizeShader(const std::string& shaderPath);
 	bool reloadAddVoxelShader(const std::string& shaderPath);
 	bool reloadRemoveVoxelShader(const std::string& shaderPath);
+	bool loadBackgroundImage(float&);
 	void drawFullscreenQuad();
 	void drawSingleVertex();
 	void createFramebuffer();
@@ -146,6 +150,9 @@ private:
 
     GLuint m_occupancyTexture;
     GLuint m_voxelColorTexture;
+	GLuint m_backgroundTexture;
+	GLuint m_backgroundCDFUTexture;
+	GLuint m_backgroundCDFVTexture;
 
 	IntegratorShaderSettings        m_settingsIntegrator[INTEGRATOR_TOTAL];
 	AccumulationShaderSettings      m_settingsAverage;
@@ -163,7 +170,10 @@ private:
 		TEXTURE_UNIT_SAMPLE,
 		TEXTURE_UNIT_AVERAGE0,
 		TEXTURE_UNIT_AVERAGE1,
-		TEXTURE_UNIT_NOISE
+		TEXTURE_UNIT_NOISE,
+		TEXTURE_UNIT_BACKGROUND,
+		TEXTURE_UNIT_BACKGROUND_CDF_U,
+		TEXTURE_UNIT_BACKGROUND_CDF_V
     };
 	
 	RenderSettings m_renderSettings;
@@ -190,4 +200,6 @@ private:
 	std::vector<Action> m_scheduledActions;
 
 	Integrator m_currentIntegrator;
+	std::string m_currentBackgroundImage;
+	float		m_currentBackgroundRadianceIntegral;
 };
