@@ -1282,7 +1282,7 @@ bool Renderer::loadBackgroundImage( float& mapIntegralTimesSin )
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 	glTexImage2D(GL_TEXTURE_2D,
 				 0,
-				 GL_RGB,
+				 GL_RGBA32F,
 				 w,
 				 h,
 				 0,

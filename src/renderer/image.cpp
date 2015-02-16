@@ -337,7 +337,6 @@ bool generateImageFunction( const float* rgbPixels,
 	// Blur the image with a 3x3 Gaussian kernel
 	ImageBuf kernel;
 	ImageBufAlgo::make_kernel (kernel, "gaussian", 3.0f, 3.0f);
-	ImageBuf Blurred;
 	if (!ImageBufAlgo::convolve(blurredIntensities, 
 							    intensities, 
 								kernel)) return false;
@@ -370,6 +369,7 @@ float calculateImageIntegral(const OpenImageIO::ImageBuf& image,
 		for( unsigned int x = 0; x < imageWidth; ++x )
 		{
 			image.getpixel(x, y, &value, 1);
+			value = std::max(0.f, value);
 			functionU[y * imageWidth + x] =  value * sinTheta;
 			textureTimesSinSum            += value * sinTheta;
 		}

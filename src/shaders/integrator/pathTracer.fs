@@ -75,12 +75,14 @@ vec3 directLighting(in vec3 albedo,
 	
 	vec4 wsToLight_pdf;
 	vec3 lightRadiance = sampleEnvironmentRadiance(wsHitBasis, rngOffset, wsToLight_pdf);
-	if ( wsToLight_pdf.w < 1e-5 )
+	if ( wsToLight_pdf.w < 1e-9 )
 	{
 		// don't bother with the visibility test, and early out.
 		return vec3(0);
 	}
 
+	// Sample light with MIS
+	
 	// trace shadow ray to determine whether the radiance reaches the sampled
 	// point.
 	vec3 vsShadowHitPos;
@@ -105,8 +107,12 @@ vec3 directLighting(in vec3 albedo,
 	vec4 bsdfF_pdf = evaluateBsdf(albedo, lsWo, lsWi);
 
 	float misWeight = powerHeuristic(wsToLight_pdf.w, bsdfF_pdf.w);
+	return bsdfF_pdf.xyz * lightRadiance * abs(dot(wsToLight_pdf.xyz, wsHitBasis.normal)) * misWeight / wsToLight_pdf.w;
 
-	return bsdfF_pdf.xyz * lightRadiance * abs(dot(wsToLight_pdf.xyz, wsHitBasis.normal)) * misWeight / max(1e-5, wsToLight_pdf.w);
+	// Note we do the second half, BSDF sampling, on the main integrator loop, 
+	// by sampling the BSDF for the next vertex path and calculating the MIS 
+	// weight when the ray misses and thus we have implicit visibility with the 
+	// environment light. 
 }
 
 void main()
@@ -215,9 +221,9 @@ void main()
 		if ( !traverse(wsRayOrigin + wsRayDir * ISECT_EPSILON, wsRayDir, vsHitPos, hitGround) )
 		{
 			// the ray missed the scene. Handle the environment light here.
-			vec4 environtmentRadiance_Pdf = evaluateEnvironmentRadiance(wsRayDir);
-			float misWeight = powerHeuristic(bsdfF_pdf.w, environtmentRadiance_Pdf.w);
-			radiance += throughput * environtmentRadiance_Pdf.xyz  * misWeight;
+			vec4 lightL_pdf = evaluateEnvironmentRadiance(wsRayDir);
+			float misWeight = powerHeuristic(bsdfF_pdf.w, lightL_pdf.w);
+			radiance += throughput * lightL_pdf.xyz  * misWeight;
 			break;
 		}
 

@@ -37,10 +37,9 @@ vec4 uniformlySampledHemisphere( vec2 uniformRandomSample )
 
 // Used for Multiple Importance Sampling.
 // PBRT2. Chapter 14. Page 693.
-float powerHeuristic(float a, float b)
+float powerHeuristic(float f, float g)
 {
-	float t = a * a;
-	return t / (t + b * b);
+	return f*f / (f*f + g*g);
 }
 
 
