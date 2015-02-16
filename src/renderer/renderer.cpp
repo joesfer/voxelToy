@@ -308,35 +308,35 @@ bool Renderer::reloadIntegratorShader(const std::string& shaderPath,
     
 	glUseProgram(settings.m_program);
 
-	settings.m_uniformVoxelOccupancyTexture   = glGetUniformLocation(settings.m_program, "occupancyTexture");
-	settings.m_uniformVoxelColorTexture       = glGetUniformLocation(settings.m_program, "voxelColorTexture");
-	settings.m_uniformNoiseTexture            = glGetUniformLocation(settings.m_program, "noiseTexture");
-	settings.m_uniformVoxelDataResolution     = glGetUniformLocation(settings.m_program, "voxelResolution");
-	settings.m_uniformVolumeBoundsMin         = glGetUniformLocation(settings.m_program, "volumeBoundsMin");
-	settings.m_uniformVolumeBoundsMax         = glGetUniformLocation(settings.m_program, "volumeBoundsMax");
-	settings.m_uniformViewport                = glGetUniformLocation(settings.m_program, "viewport");
-	settings.m_uniformCameraNear              = glGetUniformLocation(settings.m_program, "cameraNear");
-	settings.m_uniformCameraFar               = glGetUniformLocation(settings.m_program, "cameraFar");
-	settings.m_uniformCameraProj              = glGetUniformLocation(settings.m_program, "cameraProj");
-	settings.m_uniformCameraInverseProj       = glGetUniformLocation(settings.m_program, "cameraInverseProj");
-	settings.m_uniformCameraInverseModelView  = glGetUniformLocation(settings.m_program, "cameraInverseModelView");
-	settings.m_uniformCameraFocalLength       = glGetUniformLocation(settings.m_program, "cameraFocalLength");
-	settings.m_uniformCameraLensRadius        = glGetUniformLocation(settings.m_program, "cameraLensRadius");
-	settings.m_uniformCameraFilmSize          = glGetUniformLocation(settings.m_program, "cameraFilmSize");
-	settings.m_uniformLightDir                = glGetUniformLocation(settings.m_program, "wsLightDir");
-	settings.m_uniformSampleCount             = glGetUniformLocation(settings.m_program, "sampleCount");
-	settings.m_uniformEnableDOF               = glGetUniformLocation(settings.m_program, "enableDOF");
-	settings.m_uniformPathtracerMaxPathLength = glGetUniformLocation(settings.m_program, "pathtracerMaxPathLength");
-	settings.m_uniformWireframeOpacity        = glGetUniformLocation(settings.m_program, "wireframeOpacity");
-	settings.m_uniformWireframeThickness      = glGetUniformLocation(settings.m_program, "wireframeThickness");
-	settings.m_uniformBackgroundColorTop	  = glGetUniformLocation(settings.m_program, "backgroundColorTop");
-	settings.m_uniformBackgroundColorBottom   = glGetUniformLocation(settings.m_program, "backgroundColorBottom");
-	settings.m_uniformBackgroundUseImage      = glGetUniformLocation(settings.m_program, "backgroundUseImage");
-	settings.m_uniformBackgroundTexture       = glGetUniformLocation(settings.m_program, "backgroundTexture");
-	settings.m_uniformBackgroundCDFUTexture   = glGetUniformLocation(settings.m_program, "backgroundCDFUTexture");
-	settings.m_uniformBackgroundCDFVTexture   = glGetUniformLocation(settings.m_program, "backgroundCDFVTexture");
-	settings.m_uniformBackgroundIntegral      = glGetUniformLocation(settings.m_program, "backgroundIntegral");
-
+	settings.m_uniformVoxelOccupancyTexture     = glGetUniformLocation(settings.m_program, "occupancyTexture");
+	settings.m_uniformVoxelColorTexture         = glGetUniformLocation(settings.m_program, "voxelColorTexture");
+	settings.m_uniformNoiseTexture              = glGetUniformLocation(settings.m_program, "noiseTexture");
+	settings.m_uniformVoxelDataResolution       = glGetUniformLocation(settings.m_program, "voxelResolution");
+	settings.m_uniformVolumeBoundsMin           = glGetUniformLocation(settings.m_program, "volumeBoundsMin");
+	settings.m_uniformVolumeBoundsMax           = glGetUniformLocation(settings.m_program, "volumeBoundsMax");
+	settings.m_uniformViewport                  = glGetUniformLocation(settings.m_program, "viewport");
+	settings.m_uniformCameraNear                = glGetUniformLocation(settings.m_program, "cameraNear");
+	settings.m_uniformCameraFar                 = glGetUniformLocation(settings.m_program, "cameraFar");
+	settings.m_uniformCameraProj                = glGetUniformLocation(settings.m_program, "cameraProj");
+	settings.m_uniformCameraInverseProj         = glGetUniformLocation(settings.m_program, "cameraInverseProj");
+	settings.m_uniformCameraInverseModelView    = glGetUniformLocation(settings.m_program, "cameraInverseModelView");
+	settings.m_uniformCameraFocalLength         = glGetUniformLocation(settings.m_program, "cameraFocalLength");
+	settings.m_uniformCameraLensRadius          = glGetUniformLocation(settings.m_program, "cameraLensRadius");
+	settings.m_uniformCameraFilmSize            = glGetUniformLocation(settings.m_program, "cameraFilmSize");
+	settings.m_uniformLightDir                  = glGetUniformLocation(settings.m_program, "wsLightDir");
+	settings.m_uniformSampleCount               = glGetUniformLocation(settings.m_program, "sampleCount");
+	settings.m_uniformEnableDOF                 = glGetUniformLocation(settings.m_program, "enableDOF");
+	settings.m_uniformPathtracerMaxPathLength   = glGetUniformLocation(settings.m_program, "pathtracerMaxPathLength");
+	settings.m_uniformWireframeOpacity          = glGetUniformLocation(settings.m_program, "wireframeOpacity");
+	settings.m_uniformWireframeThickness        = glGetUniformLocation(settings.m_program, "wireframeThickness");
+	settings.m_uniformBackgroundColorTop        = glGetUniformLocation(settings.m_program, "backgroundColorTop");
+	settings.m_uniformBackgroundColorBottom     = glGetUniformLocation(settings.m_program, "backgroundColorBottom");
+	settings.m_uniformBackgroundUseImage        = glGetUniformLocation(settings.m_program, "backgroundUseImage");
+	settings.m_uniformBackgroundTexture         = glGetUniformLocation(settings.m_program, "backgroundTexture");
+	settings.m_uniformBackgroundCDFUTexture     = glGetUniformLocation(settings.m_program, "backgroundCDFUTexture");
+	settings.m_uniformBackgroundCDFVTexture     = glGetUniformLocation(settings.m_program, "backgroundCDFVTexture");
+	settings.m_uniformBackgroundIntegral        = glGetUniformLocation(settings.m_program, "backgroundIntegral");
+	settings.m_uniformBackgroundRotationRadians = glGetUniformLocation(settings.m_program, "backgroundRotationRadians");
 
 	settings.m_uniformFocalDistanceSSBOStorageBlock = glGetProgramResourceIndex(settings.m_program, GL_SHADER_STORAGE_BLOCK, "FocalDistanceData");
 	glShaderStorageBlockBinding(settings.m_program, settings.m_uniformFocalDistanceSSBOStorageBlock, g_focalDistanceSSBOBindingPointIndex);
@@ -1385,6 +1385,9 @@ void Renderer::updateRenderSettings()
 
 		glUniform1f(integratorSettings.m_uniformBackgroundIntegral, 
 				    mapIntegralTimesSin);	
+
+		glUniform1f(integratorSettings.m_uniformBackgroundRotationRadians, 
+				    m_renderSettings.m_backgroundRotationDegrees * M_PI / 180.0f);	
 	}
 
 	glUseProgram(0);

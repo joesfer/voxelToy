@@ -6,7 +6,7 @@ vec3 getBackgroundColor(in vec3 v)
 	if (backgroundUseImage != 0)
 	{
 		// sample from texture map
-		return texture(backgroundTexture, uvCoordFromVector(v)).rgb;
+		return texture(backgroundTexture, uvCoordFromVector(v, backgroundRotationRadians)).rgb;
 	}
 	else
 	{
@@ -41,7 +41,7 @@ vec3 sampleEnvironmentRadiance(in Basis surfaceBasis,
 	{
 		const vec2 uniformRandomSample = rand(rngOffset).xy;
 		const vec2 uv = sampleEnvironmentTexture(uniformRandomSample);
-		const vec3 wsW = directionFromUVCoord(uv);
+		const vec3 wsW = directionFromUVCoord(uv, backgroundRotationRadians);
 		const vec3 radiance = texture(backgroundTexture, uv).rgb;
 		const float pdf = luminance(radiance) / backgroundIntegral;
 		wsW_pdf = vec4(wsW, pdf);

@@ -41,6 +41,8 @@ MainWindow::MainWindow(QWidget *parent) :
             ui->glWidget, SLOT(onBackgroundColorChangedGradientTo(QColor)));
     connect(ui->renderProperties, SIGNAL(backgroundColorChangedImage(QString)),
             ui->glWidget, SLOT(onBackgroundColorChangedImage(QString)));
+    connect(ui->renderProperties, SIGNAL(backgroundImageRotationChanged(int)),
+            ui->glWidget, SLOT(onBackgroundImageRotationChanged(int)));
 
 	ui->renderProperties->setBackground(QColor(192, 192, 192));
 	ui->renderProperties->setBackground(QColor(153, 187, 201), QColor(77, 64, 50));

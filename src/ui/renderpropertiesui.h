@@ -40,6 +40,8 @@ signals:
     void backgroundColorChangedGradientFrom(QColor);
     void backgroundColorChangedGradientTo(QColor);
     void backgroundColorChangedImage(QString);
+    void backgroundImageRotation(int);
+    void backgroundImageRotationChanged(int);
 
 public slots:
 	void onPathtracerMaxSamplesChanged(int);
@@ -55,6 +57,7 @@ public slots:
     void onBackgroundColorGradient();
     void onBackgroundColorImage();
 	void onBackgroundImageBrowseClicked();
+    void onBackgroundImageRotationChanged(int);
 
 private:
     Ui::RenderPropertiesUI *ui;

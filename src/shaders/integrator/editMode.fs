@@ -28,6 +28,7 @@ uniform sampler2D   backgroundTexture;
 uniform sampler2D   backgroundCDFUTexture;
 uniform sampler1D   backgroundCDFVTexture;
 uniform float	    backgroundIntegral;
+uniform float	    backgroundRotationRadians;
 
 uniform int         sampleCount;
 uniform int         enableDOF;

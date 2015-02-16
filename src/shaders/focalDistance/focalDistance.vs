@@ -19,6 +19,7 @@ uniform vec2        cameraFilmSize;
 uniform sampler2D   backgroundCDFUTexture;
 uniform sampler1D   backgroundCDFVTexture;
 uniform float	    backgroundIntegral;
+uniform float	    backgroundRotationRadians;
 
 uniform vec2        sampledFragment;
 

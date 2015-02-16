@@ -342,7 +342,6 @@ bool generateImageFunction( const float* rgbPixels,
 								kernel)) return false;
 
 	result.swap(blurredIntensities);
-	result.save("filtered.jpg");
 	return true;
 }
 

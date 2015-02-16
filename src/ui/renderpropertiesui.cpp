@@ -8,6 +8,9 @@ RenderPropertiesUI::RenderPropertiesUI(QWidget *parent) :
     ui(new Ui::RenderPropertiesUI)
 {
     ui->setupUi(this);
+    ui->constantFrame->setEnabled(ui->backgroundConstant->isChecked());
+    ui->gradientFrame->setEnabled(ui->backgroundGradient->isChecked());
+    ui->imageFrame->setEnabled(ui->backgroundImage->isChecked());
 }
 
 RenderPropertiesUI::~RenderPropertiesUI()
@@ -78,6 +81,12 @@ void RenderPropertiesUI::onBackgroundColorChangedImage(QString path)
 {
 	emit backgroundColorChangedImage(path);
 }
+
+void RenderPropertiesUI::onBackgroundImageRotationChanged(int rotation)
+{
+	emit backgroundImageRotationChanged(rotation);
+}
+
 void RenderPropertiesUI::setBackground(QColor constantColor)
 {
 	ui->backgroundConstantButton->setColor(constantColor);

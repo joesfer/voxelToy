@@ -36,6 +36,7 @@ struct RenderSettings
 
 	std::string m_backgroundImage;
 	Imath::V3f m_backgroundColor[2]; // gradient (top/bottom)
+	int m_backgroundRotationDegrees;
 };
 
 

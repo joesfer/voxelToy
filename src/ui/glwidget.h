@@ -57,6 +57,7 @@ public slots:
     void onBackgroundColorChangedGradientFrom(QColor);
     void onBackgroundColorChangedGradientTo(QColor);
 	void onBackgroundColorChangedImage(QString);
+	void onBackgroundImageRotationChanged(int);
 
 protected:
 	void initializeGL();

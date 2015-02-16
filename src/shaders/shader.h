@@ -72,6 +72,7 @@ struct IntegratorShaderSettings
 	GLuint m_uniformBackgroundCDFUTexture;
 	GLuint m_uniformBackgroundCDFVTexture;
 	GLuint m_uniformBackgroundIntegral;
+	GLuint m_uniformBackgroundRotationRadians;
 };
 			
 struct AccumulationShaderSettings

@@ -358,3 +358,9 @@ void GLWidget::onBackgroundColorChangedImage(QString path)
 	m_renderer.updateRenderSettings();
 	update();
 }
+void GLWidget::onBackgroundImageRotationChanged(int rotation)
+{
+	m_renderer.renderSettings().m_backgroundRotationDegrees = rotation;
+	m_renderer.updateRenderSettings();
+	update();
+}
