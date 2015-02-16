@@ -119,7 +119,7 @@ void RenderPropertiesUI::onBackgroundColorImage()
 
 void RenderPropertiesUI::onBackgroundImageBrowseClicked()
 {
-    QFileDialog dialog(this);
+    QFileDialog dialog(QApplication::activeWindow());
     dialog.setFileMode(QFileDialog::ExistingFile);
     dialog.setNameFilter(tr("Image files (*.jpg *.png *.exr *.hdr *.tiff)"));
     dialog.setViewMode(QFileDialog::Detail);
