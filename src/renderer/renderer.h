@@ -60,6 +60,7 @@ public:
 	void reloadShaders(const std::string& shaderPath);
     void loadMesh(const std::string& file);
     void loadVoxFile(const std::string& file);
+    void saveImage(const std::string& file);
     void resetRender();
 
 	bool onMouseMove(int dx, int dy, int buttons);

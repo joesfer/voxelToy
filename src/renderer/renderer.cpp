@@ -3,6 +3,8 @@
 #include <GL/glut.h>
 #include <GL/glu.h>
 
+#include <OpenImageIO/imageio.h>
+
 #include "renderer/renderer.h"
 
 #include "mesh/mesh.h"
@@ -1521,3 +1523,37 @@ void Renderer::loadVoxFile(const std::string& file)
 	resetRender();
 }
 
+void Renderer::saveImage(const std::string& file)
+{
+	if (!m_initialized)  return;
+
+	OIIO_NAMESPACE_USING 
+
+	const int xres = m_renderSettings.m_imageResolution.x, 
+			  yres = m_renderSettings.m_imageResolution.y;
+	const int channels = 4; // RGBA
+	float* pixels = new float[xres*yres*channels];
+
+	glUseProgram(0);
+	glBindTexture(GL_TEXTURE_2D, m_averageTexture[m_activeSampleTexture]);
+	glGetTexImage(GL_TEXTURE_2D,
+				  0,
+				  GL_RGBA,
+				  GL_FLOAT,
+				  pixels);
+
+	ImageOutput* out = ImageOutput::create(file.c_str());
+	if (!out) return;
+	ImageSpec spec (xres, yres, channels, TypeDesc::FLOAT);
+	out->open(file.c_str(), spec);
+	const size_t scanlineSize = xres * channels * sizeof(float);
+	out->write_image(TypeDesc::FLOAT, 
+					 (const char*)pixels + (yres - 1) * scanlineSize, // offset to last
+					 AutoStride, 
+					 -(int)scanlineSize,  // negative stride = flip image vertically
+					 AutoStride);
+	delete[] pixels;
+	out->close();
+	delete out;
+	
+}

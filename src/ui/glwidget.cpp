@@ -288,6 +288,11 @@ void GLWidget::loadVoxFile(QString file)
     m_renderer.loadVoxFile(file.toStdString());
 }
 
+void GLWidget::saveImage(QString file)
+{
+	m_renderer.saveImage(file.toStdString());
+}
+
 void GLWidget::reloadShaders()
 {
 	std::string shaderPath(STRINGIFY(SHADER_DIR));

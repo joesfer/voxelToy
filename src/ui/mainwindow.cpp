@@ -101,3 +101,16 @@ void MainWindow::on_actionAdd_Voxel_triggered(bool checked)
 {
    emit actionTriggered(GLWidget::ACTION_EDIT_VOXELS, checked);
 }
+
+void MainWindow::on_actionSave_Image_triggered()
+{
+    QString fileName = QFileDialog::getSaveFileName(this,
+                                                    tr("Save File"),
+                                                     "untitled.png",
+                                                     tr("Images (*.png *.jpg)"));
+    if(fileName.size() > 0)
+    {
+        ui->glWidget->saveImage(fileName);
+    }
+
+}

@@ -30,6 +30,8 @@ private slots:
 
     void on_actionAdd_Voxel_triggered(bool checked);
 
+    void on_actionSave_Image_triggered();
+
 private:
     Ui::MainWindow *ui;
 };

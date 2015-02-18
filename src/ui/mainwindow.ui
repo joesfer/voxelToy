@@ -553,6 +553,7 @@ QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
     </property>
     <addaction name="actionLoad_Mesh"/>
     <addaction name="actionLoad_VOX_file"/>
+    <addaction name="actionSave_Image"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
     <property name="title">
@@ -581,6 +582,7 @@ QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionSave_Image"/>
    <addaction name="actionLoad_VOX_file"/>
    <addaction name="actionLoad_Mesh"/>
    <addaction name="actionReload_Shaders"/>
@@ -657,6 +659,21 @@ QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
    </property>
    <property name="shortcut">
     <string>Ctrl+A</string>
+   </property>
+  </action>
+  <action name="actionSave_Image">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/icons/floppy.png</normaloff>:/icons/icons/floppy.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save Image</string>
+   </property>
+   <property name="toolTip">
+    <string>Save current render</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
    </property>
   </action>
  </widget>

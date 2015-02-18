@@ -133,7 +133,7 @@ void main()
 	if (aabbIsectDist < 0)
 	{
 		// we're not even hitting the volume's bounding box. Early out.
-		outColor = vec4(getBackgroundColor(wsRayDir),1);
+		outColor = vec4(getBackgroundColor(wsRayDir), 0);
 		return;
 	}
 
@@ -151,7 +151,7 @@ void main()
 	vec3 throughput = vec3(1.0);
 	if ( !traverse(wsRayEntryPoint, wsRayDir, vsHitPos, hitGround) )
 	{
-		outColor = vec4(getBackgroundColor(wsRayDir),1);
+		outColor = vec4(getBackgroundColor(wsRayDir), 0);
 		return;
 	}
 
