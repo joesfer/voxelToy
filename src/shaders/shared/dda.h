@@ -15,6 +15,11 @@ bool raymarch(in vec3 wsRayOrigin,
 	vec3 voxelOrigin = (wsRayOrigin - volumeBoundsMin) * voxelExtent * voxelResolution;
 
 	vec3 voxelPos = floor(voxelOrigin);
+	
+	// prevent div by 0 in denominator. 
+	// this is equivalent to if(abs(wsRayDir.#) < 1e-5) wsRayDir.# = 1e-5;
+	wsRayDir = mix(wsRayDir, vec3(1e-5), step(abs(wsRayDir), vec3(1e-5)));
+
 	vec3 wsRayDirIncrement = vec3(1.0f) / wsRayDir;
 	vec3 wsRayDirSign = sign(wsRayDir);
 
@@ -42,7 +47,6 @@ bool raymarch(in vec3 wsRayOrigin,
 		steps++;
 
 	}
-
 	vsHitPos = voxelPos;
 
 	return isect;
