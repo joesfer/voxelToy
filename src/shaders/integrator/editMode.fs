@@ -53,27 +53,13 @@ out vec4 outColor;
 
 float ISECT_EPSILON = 0.01;
 
-void generateRay(inout ivec2 rngOffset, out vec3 wsRayOrigin, out vec3 wsRayDir)
-{
-	if (enableDOF != 0)
-	{
-		generateRay_ThinLens(gl_FragCoord.xyz, rngOffset, wsRayOrigin, wsRayDir);
-	}
-	else
-	{
-		generateRay_Pinhole(gl_FragCoord.xyz, wsRayOrigin, wsRayDir);
-	}
-
-}
-
-
 void main()
 {
 	ivec2 rngOffset = randomNumberGeneratorOffset(ivec4(gl_FragCoord), sampleCount);
 
 	vec3 wsRayOrigin;
 	vec3 wsRayDir;
-	generateRay_Pinhole(gl_FragCoord.xyz, wsRayOrigin, wsRayDir);
+	generateRay_Pinhole(gl_FragCoord.xyz, rngOffset, wsRayOrigin, wsRayDir);
 
 	// test intersection with bounds to trivially discard rays before entering
 	// traversal.

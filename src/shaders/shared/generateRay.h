@@ -1,10 +1,19 @@
 #ifdef PINHOLE
 void generateRay_Pinhole(in vec3 fragmentPos, 
+						 inout ivec2 rngOffset,
 						 out vec3 wsRayOrigin, 
 						 out vec3 wsRayDir)
 {
-	wsRayOrigin = (cameraInverseModelView * vec4(0,0,0,1)).xyz;
-	vec3 wsFragmentPos = screenToWorldSpace(fragmentPos);
+	vec4 uniformRandomSample = rand(rngOffset);
+	vec3 jitter =  vec3(uniformRandomSample.x - 0.5,
+					    uniformRandomSample.y - 0.5, 
+						0);
+
+	vec4 esOriginPos = vec4(0,0,0,1);
+	vec4 esFragmentPos = screenToEyeSpacePerspective(fragmentPos + jitter);
+
+	wsRayOrigin = (cameraInverseModelView * esOriginPos).xyz;
+	vec3 wsFragmentPos = (cameraInverseModelView * esFragmentPos).xyz;
 	wsRayDir =  normalize(wsFragmentPos - wsRayOrigin);
 }
 #endif

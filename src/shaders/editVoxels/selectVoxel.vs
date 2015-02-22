@@ -3,6 +3,7 @@
 #include <editVoxels/selectVoxelDevice.h>
 
 uniform sampler3D   occupancyTexture;
+uniform sampler2D   noiseTexture;
 uniform ivec3       voxelResolution;
 uniform vec3        volumeBoundsMin;
 uniform vec3        volumeBoundsMax;
@@ -23,6 +24,7 @@ uniform vec2        sampledFragment;
 #include <shared/coordinates.h>
 #include <shared/dda.h>
 #include <shared/sampling.h>
+#include <shared/random.h>
 #include <shared/generateRay.h>
 
 // This vertex shader should run for a single vertex, and calculates the
@@ -30,9 +32,10 @@ uniform vec2        sampledFragment;
 
 void main()
 {
+	ivec2 rngOffset = ivec2(0,0); 
 	vec3 wsRayOrigin;
 	vec3 wsRayDir;
-	generateRay_Pinhole(vec3(sampledFragment, 0), wsRayOrigin, wsRayDir);
+	generateRay_Pinhole(vec3(sampledFragment, 0), rngOffset, wsRayOrigin, wsRayDir);
 	
 	// test intersection with bounds to trivially discard rays before entering
 	// traversal.

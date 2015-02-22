@@ -57,6 +57,7 @@ float ISECT_EPSILON = 0.01;
 void generateRay(inout ivec2 rngOffset, out vec3 wsRayOrigin, out vec3 wsRayDir)
 {
 	if (enableDOF != 0)
+		generateRay_Pinhole(gl_FragCoord.xyz, rngOffset, wsRayOrigin, wsRayDir);
 	{
 		generateRay_ThinLens(gl_FragCoord.xyz, rngOffset, wsRayOrigin, wsRayDir);
 	}
