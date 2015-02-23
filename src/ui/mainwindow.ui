@@ -691,7 +691,7 @@ QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
     <slot>cameraFStopChanged(QString)</slot>
     <slot>cameraFocalLengthChanged(QString)</slot>
     <slot>cameraFocalDistanceChanged(QString)</slot>
-    <slot>cameraLensModelChanged(bool)</slot>
+    <slot>cameraLensModelChanged(int)</slot>
     <slot>onActionTriggered(int,bool)</slot>
    </slots>
   </customwidget>
@@ -701,8 +701,8 @@ QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
    <header>ui/camerapropertiesui.h</header>
    <container>1</container>
    <slots>
-    <signal>onLensModelChanged(bool)</signal>
-    <slot>lensModelChanged(bool)</slot>
+    <signal>onLensModelChanged(int)</signal>
+    <slot>lensModelChanged(int)</slot>
    </slots>
   </customwidget>
   <customwidget>

@@ -15,7 +15,9 @@ uniform mat4        cameraProj;
 uniform mat4        cameraInverseProj;
 uniform mat4        cameraInverseModelView;
 uniform float       cameraFocalLength;
+uniform float       cameraLensRadius;
 uniform vec2        cameraFilmSize;
+uniform int         cameraLensModel;
 
 uniform vec2        sampledFragment;
 
@@ -35,7 +37,7 @@ void main()
 	ivec2 rngOffset = ivec2(0,0); 
 	vec3 wsRayOrigin;
 	vec3 wsRayDir;
-	generateRay_Pinhole(vec3(sampledFragment, 0), rngOffset, wsRayOrigin, wsRayDir);
+	generateRay(vec3(sampledFragment, cameraNear), rngOffset, wsRayOrigin, wsRayDir);
 	
 	// test intersection with bounds to trivially discard rays before entering
 	// traversal.

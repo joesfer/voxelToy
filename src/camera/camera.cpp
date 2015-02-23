@@ -12,11 +12,9 @@ Camera::~Camera()
 {
 	delete m_controller;
 }
-void Camera::enableDOF(bool enable)
+void Camera::setLensModel(CameraParameters::CameraLensModel model)
 {
-	m_parameters.setLensModel( enable ? 
-								CameraParameters::CLM_THIN_LENS :
-								CameraParameters::CLM_PINHOLE);
+	m_parameters.setLensModel(model); 
 }
 
 void Camera::setFocalLength(float length)          { m_parameters.setFocalLength(length);        }

@@ -19,6 +19,7 @@ uniform mat4        cameraInverseModelView;
 uniform float       cameraFocalLength;
 uniform float       cameraLensRadius;
 uniform vec2        cameraFilmSize;
+uniform int         cameraLensModel;
 
 uniform vec3        backgroundColorTop = vec3(153.0 / 255, 187.0 / 255, 201.0 / 255) * 2;
 uniform vec3        backgroundColorBottom = vec3(77.0 / 255, 64.0 / 255, 50.0 / 255);
@@ -31,7 +32,6 @@ uniform float	    backgroundIntegral;
 uniform float	    backgroundRotationRadians;
 
 uniform int         sampleCount;
-uniform int         enableDOF;
 uniform int			pathtracerMaxPathLength;
 
 uniform float		wireframeOpacity = 0;
@@ -59,7 +59,7 @@ void main()
 
 	vec3 wsRayOrigin;
 	vec3 wsRayDir;
-	generateRay_Pinhole(gl_FragCoord.xyz, rngOffset, wsRayOrigin, wsRayDir);
+	generateRay(gl_FragCoord.xyz, rngOffset, wsRayOrigin, wsRayDir);
 
 	// test intersection with bounds to trivially discard rays before entering
 	// traversal.
@@ -76,11 +76,7 @@ void main()
 
 	float rayLength = aabbIsectDist;
 
-	// push the intersection slightly inside the hit voxel so that when we cast 
-	// to a voxel index we don't mistakenly take an adjacent voxel. This is 
-	// important to ensure the traversal starts inside of the volume bounds.
-	vec3 halfVoxellDist = 0*sign(wsRayDir) * 0.5 / voxelResolution; 
-	vec3 wsRayEntryPoint = wsRayOrigin + rayLength * wsRayDir + halfVoxellDist;
+	vec3 wsRayEntryPoint = wsRayOrigin + rayLength * wsRayDir;
 
 	vec3 vsHitPos;
 
@@ -126,7 +122,8 @@ void main()
 
 	// dot normal lighting
 	float lighting = max(0, dot(-wsRayDir, wsHitBasis.normal));
-lighting = sqrt(lighting);
+	lighting = sqrt(lighting);
+
 	// trace shadow ray
 	if ( traverse(wsHitBasis.position -lightDirection * ISECT_EPSILON, -lightDirection, vsHitPos, hitGround) )
 	{

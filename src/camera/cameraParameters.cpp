@@ -40,36 +40,34 @@ void CameraParameters::setDistanceFromTarget(float distance)
 	m_eye = m_target - forwardUnitVector() * distance;
 }
 
-Imath::V3f CameraParameters::rightUnitVector() const
+void CameraParameters::getBasis(Imath::V3f& forwardUnitVector,
+							    Imath::V3f& rightUnitVector,
+							    Imath::V3f& upUnitVector) const
 {
-	const float phi = rotationPhi();
-	const float theta0 = rotationTheta();
-	const float theta1 = rotationTheta() - 0.1f;
-	const float sinTheta0 = sin(theta0);
-	const float sinTheta1 = sin(theta1);
-
-	const Imath::V3f v0(sinTheta0 * cos(phi), cos(theta0), sinTheta0 * sin(phi));
-	const Imath::V3f v1(sinTheta1 * cos(phi), cos(theta1), sinTheta1 * sin(phi));
-
-    return v1.cross(v0).normalized();
-} 
-
-Imath::V3f CameraParameters::upUnitVector() const
-{
-	const float phi0 = rotationPhi();
-	const float phi1 = rotationPhi() + 0.1f;
-	const float theta = rotationTheta();
-	const float sinTheta = sin(theta);
-
-	const Imath::V3f v0(sinTheta * cos(phi0), cos(theta), sinTheta * sin(phi0));
-	const Imath::V3f v1(sinTheta * cos(phi1), cos(theta), sinTheta * sin(phi1));
-
-    return v1.cross(v0).normalized();
+	forwardUnitVector = (m_target - m_eye).normalized();
+	rightUnitVector = Imath::V3f(0,1,0).cross(forwardUnitVector).normalized();
+	upUnitVector = forwardUnitVector.cross(rightUnitVector);
 }
 
 Imath::V3f CameraParameters::forwardUnitVector() const
 {
-	return (m_target - m_eye).normalized();
+	Imath::V3f right, up, forward;
+	getBasis(forward, right, up);
+	return forward;
+}
+
+Imath::V3f CameraParameters::rightUnitVector() const
+{
+	Imath::V3f right, up, forward;
+	getBasis(forward, right, up);
+	return right;
+}
+
+Imath::V3f CameraParameters::upUnitVector() const
+{
+	Imath::V3f right, up, forward;
+	getBasis(forward, right, up);
+	return up;
 }
 
 float CameraParameters::rotationTheta() const

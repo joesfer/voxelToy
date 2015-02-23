@@ -1,3 +1,11 @@
+void generateRay_Orthographic(in vec3 fragmentPos, 
+							  out vec3 wsRayOrigin, 
+							  out vec3 wsRayDir)
+{
+	wsRayOrigin = (cameraInverseModelView * screenToEyeSpaceOrthographic(fragmentPos)).xyz;
+	wsRayDir = (cameraInverseModelView * vec4(0,0,-1,0)).xyz;
+}
+
 #ifdef PINHOLE
 void generateRay_Pinhole(in vec3 fragmentPos, 
 						 inout ivec2 rngOffset,
@@ -72,24 +80,45 @@ void generateRay_ThinLens(in vec3 fragmentPos,
 	vec2 unitDiskSample = uniformlySampleDisk(uniformRandomSample.xy);
 	vec3 esLensSamplePoint = vec3(unitDiskSample * cameraLensRadius, 0);
 
-	// calculate the sample on the image plane (which corresponds to the
-	// current fragment at 'focal length' distance from the origin/lens)
-	vec3 esImagePlanePoint = vec3((fragmentPos.xy/viewport.zw - vec2(0.5)) * cameraFilmSize, cameraFocalLength);
-	vec3 esImagePlaneToLensCenter = normalize(-esImagePlanePoint);
-	
-	// focalPlane.z = esImagePlanePoint.z + esImagePlaneToLensCenter.z * t;
-	float t = (cameraFocalDistance - esImagePlanePoint.z) / esImagePlaneToLensCenter.z;
+	vec3 esRayOrigin = screenToEyeSpacePerspective(fragmentPos).xyz;
+
+	vec3 esRayDir;
+	esRayDir = normalize(esRayOrigin); 
+
+	float t = cameraFocalDistance / -(esRayDir.z); // rayDir.z will be negative
 	
 	// work out the intersection with the focal plane using a ray starting at
 	// the image plane sample, going through the center of the lens. This is
 	// what would happen in a pinhole (i.e. completely sharp) camera, but all
 	// our lens samples do converge at exactly the same point after refraction. 
-	vec3 esFocalPlanePoint = esImagePlanePoint + t * esImagePlaneToLensCenter;
-	esFocalPlanePoint.z *= -1; // FIXME: this must be a bug somewhere, why is this needed?
+	//vec3 esFocalPlanePoint = esImagePlanePoint + t * esImagePlaneToLensCenter;
+	vec3 esFocalPlanePoint = esRayOrigin + t * esRayDir;
 	vec3 wsFocalPlanePoint = (cameraInverseModelView * vec4(esFocalPlanePoint, 1)).xyz;
+
 
 	wsRayOrigin = (cameraInverseModelView * vec4(esLensSamplePoint,1)).xyz;
 	wsRayDir = normalize(wsFocalPlanePoint - wsRayOrigin); 
 }
 #endif
+
+void generateRay(vec3 frag, inout ivec2 rngOffset, out vec3 wsRayOrigin, out vec3 wsRayDir)
+{
+	if (cameraLensModel == 0)
+	{
+		generateRay_Pinhole(frag, rngOffset, wsRayOrigin, wsRayDir);
+	}
+	else if(cameraLensModel == 1)
+	{
+#ifdef THINLENS
+		generateRay_ThinLens(frag, rngOffset, wsRayOrigin, wsRayDir);
+#else
+		generateRay_Pinhole(frag, rngOffset, wsRayOrigin, wsRayDir);
+#endif
+	}
+	else
+	{
+		generateRay_Orthographic(frag, wsRayOrigin, wsRayDir);
+	}
+
+}
 

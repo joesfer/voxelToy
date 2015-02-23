@@ -12,8 +12,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // Camera properties widget
 
-    connect(ui->cameraProperties, SIGNAL(lensModelChanged(bool)),
-            ui->glWidget, SLOT(cameraLensModelChanged(bool)));
+    connect(ui->cameraProperties, SIGNAL(lensModelChanged(int)),
+            ui->glWidget, SLOT(cameraLensModelChanged(int)));
     connect(ui->cameraProperties, SIGNAL(lensRadiusChanged(QString)),
             ui->glWidget, SLOT(cameraFStopChanged(QString)));
     connect(ui->cameraProperties, SIGNAL(focalLengthChanged(QString)),

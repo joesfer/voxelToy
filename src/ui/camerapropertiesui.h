@@ -16,16 +16,19 @@ public:
     ~CameraPropertiesUI();
 
 signals:
-    void lensModelChanged(bool);
+    void lensModelChanged(int);
     void lensRadiusChanged(QString);
     void focalLengthChanged(QString);
     void cameraControllerChanged(QString);
 
 public slots:
-    void onLensModelChanged(bool );
+    void onLensModelChanged(int);
     void onLensRadiusChanged(QString);
     void onFocalLengthChanged(QString);
     void onCameraControllerChanged(QString);
+
+private slots:
+    void on_cameraLensModel_activated(int index);
 
 private:
     Ui::CameraPropertiesUI *ui;

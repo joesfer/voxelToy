@@ -14,7 +14,7 @@ public:
 	const CameraParameters& parameters() const { return m_parameters; }
 	CameraController& controller() const { return *m_controller; }
 
-	void enableDOF(bool enable);
+	void setLensModel(CameraParameters::CameraLensModel);
 	void setFocalLength(float length);
 	void setFocalDistance(float distance);
 	void setFilmSize(float filmW, float filmH);

@@ -21,13 +21,6 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="1">
-    <widget class="QCheckBox" name="enableDOF">
-     <property name="text">
-      <string>Depth of Field</string>
-     </property>
-    </widget>
-   </item>
    <item row="1" column="0">
     <widget class="QLabel" name="label">
      <property name="text">
@@ -150,42 +143,29 @@
      </item>
     </widget>
    </item>
+   <item row="0" column="1">
+    <widget class="QComboBox" name="cameraLensModel">
+     <item>
+      <property name="text">
+       <string>Pinhole</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Thin Lens</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Orthographic</string>
+      </property>
+     </item>
+    </widget>
+   </item>
   </layout>
  </widget>
  <resources/>
  <connections>
-  <connection>
-   <sender>enableDOF</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>cameraFStop</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>222</x>
-     <y>27</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>222</x>
-     <y>50</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>enableDOF</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>CameraPropertiesUI</receiver>
-   <slot>onLensModelChanged(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>172</x>
-     <y>20</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>94</x>
-     <y>41</y>
-    </hint>
-   </hints>
-  </connection>
   <connection>
    <sender>cameraFStop</sender>
    <signal>currentIndexChanged(QString)</signal>
@@ -234,13 +214,29 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>cameraLensModel</sender>
+   <signal>activated(int)</signal>
+   <receiver>CameraPropertiesUI</receiver>
+   <slot>onLensModelChanged(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>160</x>
+     <y>23</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>105</x>
+     <y>5</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
-  <signal>lensModelChanged(bool)</signal>
+  <signal>lensModelChanged(int)</signal>
   <signal>lensRadiusChanged(QString)</signal>
   <signal>focalLengthChanged(QString)</signal>
   <signal>cameraControllerChanged(QString)</signal>
-  <slot>onLensModelChanged(bool)</slot>
+  <slot>onLensModelChanged(int)</slot>
   <slot>onLensRadiusChanged(QString)</slot>
   <slot>onFocalLengthChanged(QString)</slot>
   <slot>onCameraControllerChanged(QString)</slot>

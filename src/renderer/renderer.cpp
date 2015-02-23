@@ -4,6 +4,7 @@
 #include <GL/glu.h>
 
 #include <OpenImageIO/imageio.h>
+#include <OpenEXR/ImathMatrixAlgo.h>
 
 #include "renderer/renderer.h"
 
@@ -252,10 +253,10 @@ bool Renderer::reloadTexturedShader(const std::string& shaderPath)
 	m_settingsTextured.m_uniformViewport = glGetUniformLocation(m_settingsTextured.m_program, "viewport");
 
     glUniform4f(m_settingsTextured.m_uniformViewport, 
-                m_renderSettings.m_viewport[0],
-                m_renderSettings.m_viewport[1],
-                m_renderSettings.m_viewport[2],
-                m_renderSettings.m_viewport[3]);
+                (float)m_renderSettings.m_viewport[0],
+                (float)m_renderSettings.m_viewport[1],
+                (float)m_renderSettings.m_viewport[2],
+                (float)m_renderSettings.m_viewport[3]);
 
 	glUseProgram(0);
 
@@ -325,9 +326,9 @@ bool Renderer::reloadIntegratorShader(const std::string& shaderPath,
 	settings.m_uniformCameraFocalLength         = glGetUniformLocation(settings.m_program, "cameraFocalLength");
 	settings.m_uniformCameraLensRadius          = glGetUniformLocation(settings.m_program, "cameraLensRadius");
 	settings.m_uniformCameraFilmSize            = glGetUniformLocation(settings.m_program, "cameraFilmSize");
+	settings.m_uniformCameraLensModel           = glGetUniformLocation(settings.m_program, "cameraLensModel");
 	settings.m_uniformLightDir                  = glGetUniformLocation(settings.m_program, "wsLightDir");
 	settings.m_uniformSampleCount               = glGetUniformLocation(settings.m_program, "sampleCount");
-	settings.m_uniformEnableDOF                 = glGetUniformLocation(settings.m_program, "enableDOF");
 	settings.m_uniformPathtracerMaxPathLength   = glGetUniformLocation(settings.m_program, "pathtracerMaxPathLength");
 	settings.m_uniformWireframeOpacity          = glGetUniformLocation(settings.m_program, "wireframeOpacity");
 	settings.m_uniformWireframeThickness        = glGetUniformLocation(settings.m_program, "wireframeThickness");
@@ -509,9 +510,8 @@ void Renderer::updateCamera()
 {
 	using namespace Imath;
 	V3f eye     = m_camera.parameters().eye();
-	V3f right   = m_camera.parameters().rightUnitVector();
-	V3f up      = m_camera.parameters().upUnitVector();
-	V3f forward = m_camera.parameters().forwardUnitVector();
+	V3f right, up, forward;
+	m_camera.parameters().getBasis(forward, right, up);
 
 	M44f mvm; // modelViewMatrix
 	M44f pm; // projectionMatrix
@@ -524,6 +524,27 @@ void Renderer::updateCamera()
         mvm.x[3][0] = 0           ; mvm.x[3][1] = 0           ; mvm.x[3][2] = 0           ; mvm.x[3][3] = 1 ;
 	}
 
+	if (m_camera.parameters().lensModel() == CameraParameters::CLM_ORTHOGRAPHIC)
+	{ // gluOrtho2D
+	
+		const float a = (float)m_renderSettings.m_imageResolution.x / m_renderSettings.m_imageResolution.y;
+		const float left = -tan(m_camera.parameters().fovY() / 2) * m_camera.parameters().distanceToTarget();
+		const float right = -left;
+		const float bottom = -tan(m_camera.parameters().fovY() / 2) * m_camera.parameters().distanceToTarget() / a;
+		const float top = -bottom;
+		const float near = -m_camera.parameters().nearDistance();
+		const float far = -m_camera.parameters().farDistance();
+		const float tx = -(right+left)/(right-left);
+		const float ty = -(top+bottom)/(top-bottom);
+		const float tz = -(far+near)/(far-near);
+
+		pm.x[0][0] = 2.0f / (right-left) ; pm.x[0][1] = 0                   ; pm.x[0][2] = 0                  ; pm.x[0][3] = tx ;
+		pm.x[1][0] = 0                   ; pm.x[1][1] = 2.0f / (top-bottom) ; pm.x[1][2] = 0                  ; pm.x[1][3] = ty ;
+		pm.x[2][0] = 0                   ; pm.x[2][1] = 0                   ; pm.x[2][2] = -2.0f / (far-near) ; pm.x[2][3] = tz ;
+		pm.x[3][0] = 0                   ; pm.x[3][1] = 0                   ; pm.x[3][2] = 0                  ; pm.x[3][3] = 1  ;
+
+	}
+	else
 	{ // gluPerspective
 		const float a = (float)m_renderSettings.m_imageResolution.x / m_renderSettings.m_imageResolution.y;
 		const float n = m_camera.parameters().nearDistance();
@@ -538,7 +559,7 @@ void Renderer::updateCamera()
 
     M44f invModelView = mvm.inverse();
     M44f invProj = pm.inverse();
-	
+
 	// Add Voxel shader
 
     glUseProgram(m_settingsAddVoxel.m_program);
@@ -617,15 +638,12 @@ void Renderer::updateCamera()
 						   GL_TRUE,
 						   &invProj.x[0][0]);
 
-		bool enableDOF = m_camera.parameters().lensModel() == CameraParameters::CLM_THIN_LENS; 
-		enableDOF &= (m_numberSamples > 0); // Disable DOF while tumbling around
-
 		// TODO the focal length can be extracted from the perspective matrix (FOV)
 		// so we should choose either method, but not both.
 		glUseProgram(integratorSettings.m_program);
 		glUniform1f(integratorSettings.m_uniformCameraFocalLength  , m_camera.parameters().focalLength());
 		glUniform1f(integratorSettings.m_uniformCameraLensRadius   , m_camera.parameters().lensRadius());
-		glUniform1i(integratorSettings.m_uniformEnableDOF          , enableDOF ? 1 : 0 );
+		glUniform1i(integratorSettings.m_uniformCameraLensModel    , (int)m_camera.parameters().lensModel());
 		glUniform2f(integratorSettings.m_uniformCameraFilmSize     , m_camera.parameters().filmSize().x, 
 																	   m_camera.parameters().filmSize().y);
 		
@@ -668,10 +686,10 @@ void Renderer::resizeFrame(int frameBufferWidth,
 
     glUseProgram(m_settingsTextured.m_program);
     glUniform4f(m_settingsTextured.m_uniformViewport,
-                m_renderSettings.m_viewport[0],
-                m_renderSettings.m_viewport[1],
-                m_renderSettings.m_viewport[2],
-                m_renderSettings.m_viewport[3]);
+                (float)m_renderSettings.m_viewport[0],
+                (float)m_renderSettings.m_viewport[1],
+                (float)m_renderSettings.m_viewport[2],
+                (float)m_renderSettings.m_viewport[3]);
 
     glUseProgram(m_settingsFocalDistance.m_program);
     glUniform4f(m_settingsFocalDistance.m_uniformViewport,
@@ -986,7 +1004,8 @@ void Renderer::createFramebuffer()
 	// create focal distance shader storage buffer object 
 	{
 		FocalDistanceData data;
-		data.focalDistance = 0;
+		const float Infinity = 99999999.0;	
+		data.focalDistance = Infinity;
 
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_focalDistanceSSBO);	
 		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(FocalDistanceData), &data, GL_DYNAMIC_COPY);	

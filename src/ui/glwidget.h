@@ -47,7 +47,7 @@ public slots:
 
     void cameraFStopChanged(QString fstop);
 	void cameraFocalLengthChanged(QString length);
-	void cameraLensModelChanged(bool dof);
+	void cameraLensModelChanged(int model);
     void cameraControllerChanged(QString mode);
     void onPathtracerMaxSamplesChanged(int);
     void onPathtracerMaxPathLengthChanged(int);

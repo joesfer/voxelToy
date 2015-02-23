@@ -13,9 +13,9 @@ CameraPropertiesUI::~CameraPropertiesUI()
     delete ui;
 }
 
-void CameraPropertiesUI::onLensModelChanged(bool changed)
+void CameraPropertiesUI::onLensModelChanged(int model)
 {
-    emit lensModelChanged(changed);
+    emit lensModelChanged(model);
 }
 void CameraPropertiesUI::onLensRadiusChanged(QString value)
 {
@@ -30,4 +30,10 @@ void CameraPropertiesUI::onFocalLengthChanged(QString value)
 void CameraPropertiesUI::onCameraControllerChanged(QString value)
 {
     emit cameraControllerChanged(value);
+}
+
+void CameraPropertiesUI::on_cameraLensModel_activated(int index)
+{
+   this->ui->cameraFStop->setEnabled(index == 1);  // thin lens
+   this->ui->cameraFocalLength->setEnabled(index != 2);  // != orthographic
 }

@@ -19,6 +19,7 @@ uniform mat4        cameraInverseModelView;
 uniform float       cameraFocalLength;
 uniform float       cameraLensRadius;
 uniform vec2        cameraFilmSize;
+uniform int         cameraLensModel;
 
 uniform vec3        backgroundColorTop = vec3(153.0 / 255, 187.0 / 255, 201.0 / 255) * 2;
 uniform vec3        backgroundColorBottom = vec3(77.0 / 255, 64.0 / 255, 50.0 / 255);
@@ -31,7 +32,6 @@ uniform float	    backgroundIntegral;
 uniform float	    backgroundRotationRadians;
 
 uniform int         sampleCount;
-uniform int         enableDOF;
 uniform int			pathtracerMaxPathLength;
 
 uniform float		wireframeOpacity = 0;
@@ -53,20 +53,6 @@ out vec4 outColor;
 #include <shared/lights.h>
 
 float ISECT_EPSILON = 0.01;
-
-void generateRay(inout ivec2 rngOffset, out vec3 wsRayOrigin, out vec3 wsRayDir)
-{
-	if (enableDOF != 0)
-		generateRay_Pinhole(gl_FragCoord.xyz, rngOffset, wsRayOrigin, wsRayDir);
-	{
-		generateRay_ThinLens(gl_FragCoord.xyz, rngOffset, wsRayOrigin, wsRayDir);
-	}
-	else
-	{
-		generateRay_Pinhole(gl_FragCoord.xyz, wsRayOrigin, wsRayDir);
-	}
-
-}
 
 vec3 directLighting(in vec3 albedo, 
 					in Basis wsHitBasis, 
@@ -123,7 +109,7 @@ void main()
 
 	vec3 wsRayOrigin;
 	vec3 wsRayDir;
-	generateRay(rngOffset, wsRayOrigin, wsRayDir);
+	generateRay(gl_FragCoord.xyz, rngOffset, wsRayOrigin, wsRayDir);
 
 	// test intersection with bounds to trivially discard rays before entering
 	// traversal.

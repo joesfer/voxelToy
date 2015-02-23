@@ -23,7 +23,8 @@ public:
 	enum CameraLensModel
 	{
 		CLM_PINHOLE,
-		CLM_THIN_LENS
+		CLM_THIN_LENS,
+		CLM_ORTHOGRAPHIC
 	};
 	
     // get eye position
@@ -36,6 +37,10 @@ public:
     float distanceToTarget() const;
 
 	// retrieve camera orthonormal basis
+	void getBasis(Imath::V3f& forwardUnitVector,
+				  Imath::V3f& rightUnitVector,
+				  Imath::V3f& upUnitVector) const;
+
 	Imath::V3f forwardUnitVector() const;
 	Imath::V3f rightUnitVector() const;
 	Imath::V3f upUnitVector() const;

@@ -232,9 +232,9 @@ void GLWidget::cameraFocalLengthChanged(QString length)
 	update();
 }
 
-void GLWidget::cameraLensModelChanged(bool dof)
+void GLWidget::cameraLensModelChanged(int model)
 {
-	m_renderer.camera().enableDOF( dof );
+	m_renderer.camera().setLensModel((CameraParameters::CameraLensModel)model);
     m_renderer.resetRender();
 	update();
 }
