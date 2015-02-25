@@ -973,10 +973,17 @@ bool Renderer::onKeyPress(int key)
 		m_numberSamples = 0;
 		return true;
 	}
-	if ( key == Qt::Key_Space )
+	if (key == Qt::Key_Space)
 	{
 		m_currentIntegrator = (Integrator)(!(int)m_currentIntegrator);
 		m_numberSamples = 0;
+		return true;
+	}
+	else if (key == Qt::Key_F)
+	{
+		m_camera.controller().focusOnBounds(this->m_volumeBounds);
+		m_numberSamples = 0;
+		updateCamera();
 		return true;
 	}
 	return false;

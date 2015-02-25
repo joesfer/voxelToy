@@ -13,3 +13,12 @@ void CameraController::setDistanceFromTarget(float distance)
 	m_parameters->setDistanceFromTarget(distance);
 }
 
+void CameraController::focusOnBounds(const Imath::Box3f& bounds)
+{
+	using namespace Imath;
+	V3f fwd = m_parameters->forwardUnitVector();
+	V3f center = bounds.center();
+	float distance = bounds.size().length() / (2.0f * tan(m_parameters->fovY() / 2));
+	m_parameters->setEyeTarget(center - fwd * distance, center);
+}
+

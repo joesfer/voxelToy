@@ -1,6 +1,7 @@
 #pragma once
 
 #include <OpenEXR/ImathVec.h>
+#include <OpenEXR/ImathBox.h>
 
 class CameraParameters;
 class CameraController
@@ -17,6 +18,8 @@ public:
     void lookAt(const Imath::V3f& target);
 
     void setDistanceFromTarget(float distance);
+
+	void focusOnBounds(const Imath::Box3f& bounds);
 
 protected:
 	CameraParameters* m_parameters;
