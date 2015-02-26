@@ -16,7 +16,6 @@ bool FlyCameraController::onMouseMove(float dx, float dy, int buttons)
 {
 	if ( m_parameters == NULL ) return false;
 
-    bool change = false;
     if (buttons & Qt::RightButton)
     {
         const float speed = 1.f;

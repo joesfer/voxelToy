@@ -35,7 +35,8 @@ SOURCES += ../../src/ui/mainwindow.cpp \
     ../../src/renderer/voxLoader.cpp \
     ../../src/tools/toolFocalDistance.cpp \
     ../../src/ui/colorpicker.cpp \
-    ../../src/tools/toolAddRemoveVoxel.cpp
+    ../../src/tools/toolAddRemoveVoxel.cpp \
+    ../../src/ui/logwindow.cpp
 
 HEADERS  += ../../src/ui/mainwindow.h \
     ../../src/camera/camera.h \
@@ -67,11 +68,13 @@ HEADERS  += ../../src/ui/mainwindow.h \
     ../../src/ui/colorpicker.h \
     ../../src/tools/toolFocalDistance.h \
     ../../src/tools/toolAddRemoveVoxel.h \
-    ../../src/tools/tool.h
+    ../../src/tools/tool.h \
+    ../../src/ui/logwindow.h
 
 FORMS    += ../../src/ui/mainwindow.ui \
     ../../src/ui/camerapropertiesui.ui \
-    ../../src/ui/renderpropertiesui.ui
+    ../../src/ui/renderpropertiesui.ui \
+    ../../src/ui/logwindow.ui
 
 LIBS += -lglut -lGLU -lGLEW -lboost_system -lboost_thread
 

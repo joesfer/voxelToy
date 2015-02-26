@@ -60,11 +60,18 @@ Renderer::Renderer()
 	m_currentBackgroundImage = "";
 	m_currentBackgroundRadianceIntegral = 0;
 
+	m_logger = NULL;
+
 	m_initialized = false;
 }
 
 Renderer::~Renderer()
 {
+}
+
+void Renderer::setLogger(Logger* logger)
+{
+	m_logger = logger;
 }
 
 void Renderer::initialize(const std::string& shaderPath)
@@ -108,6 +115,8 @@ void Renderer::initialize(const std::string& shaderPath)
 
 	m_frameTimer.init();
 
+	if (m_logger) (*m_logger)("Renderer initialized.");
+
 	m_initialized = true;
 }
 
@@ -126,7 +135,8 @@ bool Renderer::reloadFocalDistanceShader(const std::string& shaderPath)
 										shaderPath,
                                         vs, "#define PINHOLE\n",
                                         fs, "",
-                                        m_settingsFocalDistance.m_program) )
+                                        m_settingsFocalDistance.m_program,
+										m_logger) )
 	{
 		return false;
 	}
@@ -184,7 +194,8 @@ bool Renderer::reloadSelectActiveVoxelShader(const std::string& shaderPath)
 										shaderPath,
                                         vs, "#define PINHOLE\n",
                                         fs, "",
-                                        m_settingsSelectActiveVoxel.m_program) )
+                                        m_settingsSelectActiveVoxel.m_program,
+										m_logger) )
 	{
 		return false;
 	}
@@ -242,7 +253,8 @@ bool Renderer::reloadTexturedShader(const std::string& shaderPath)
 										shaderPath,
                                         vs, "",
                                         fs, "",
-                                        m_settingsTextured.m_program) )
+                                        m_settingsTextured.m_program,
+										m_logger) )
 	{
 		return false;
 	}
@@ -272,7 +284,8 @@ bool Renderer::reloadAverageShader(const std::string& shaderPath)
 										shaderPath,
                                         vs, "",
                                         fs, "",
-                                        m_settingsAverage.m_program) )
+                                        m_settingsAverage.m_program,
+										m_logger) )
 	{
 		return false;
 	}
@@ -304,7 +317,8 @@ bool Renderer::reloadIntegratorShader(const std::string& shaderPath,
 										shaderPath,
                                         vs, "",
                                         fs, "#define PINHOLE\n#define THINLENS\n",
-                                        settings.m_program) )
+                                        settings.m_program,
+										m_logger) )
 	{
 		return false;
 	}
@@ -392,7 +406,8 @@ bool Renderer::reloadVoxelizeShader(const std::string& shaderPath)
                                          vs, "",
                                          gs, "",
                                          fs, "",
-                                         m_settingsVoxelize.m_program) )
+                                         m_settingsVoxelize.m_program,
+										 m_logger) )
 	{
 		return false;
 	}
@@ -424,7 +439,8 @@ bool Renderer::reloadAddVoxelShader(const std::string& shaderPath)
 										 shaderPath,
                                          vs, "",
                                          fs, "",
-                                         m_settingsAddVoxel.m_program) )
+                                         m_settingsAddVoxel.m_program,
+										 m_logger) )
 	{
 		return false;
 	}
@@ -458,7 +474,8 @@ bool Renderer::reloadRemoveVoxelShader(const std::string& shaderPath)
 										 shaderPath,
                                          vs, "",
                                          fs, "",
-                                         m_settingsRemoveVoxel.m_program) )
+                                         m_settingsRemoveVoxel.m_program,
+										 m_logger) )
 	{
 		return false;
 	}

@@ -3,21 +3,26 @@
 #include "shaders/shader.h"
 #include <stdio.h>
 #include <iostream>
+#include <sstream>
 
-void log( const std::string& msg )
+void log(Logger* logger, const std::string& msg)
 {
-	std::cout << msg << std::endl;
+	if (logger == NULL) return;
+	(*logger)(msg);
 }
-void logWithLineNumbers( const std::string& msg )
+
+void logWithLineNumbers(Logger* logger, const std::string& msg)
 {
+	if (logger == NULL) return;
+
 	size_t lineNumber = 0;
 	std::string line;
 	std::string::size_type from = 0;
 	do
 	{
 		std::string::size_type to = msg.find('\n', from);
-		std::cout << (lineNumber++) << ": "; 
-		std::cout << msg.substr(from, to - from + 1) ;
+		std::stringstream ss; ss << (lineNumber++) << ": " << msg.substr(from, to - from + 1);
+		(*logger)(ss.str());
 		if ( to == std::string::npos ) break;
 		from = to + 1;
 	} while(true);
@@ -46,7 +51,9 @@ bool loadFile( const std::string& file, std::string& contents )
 
 // search for #include directives (not supported in GLSL, and emulate them
 // by pasting the header contents within the output stream
-bool includeHeaders( std::string& code, const std::string& includeBasePath )
+bool includeHeaders( std::string& code, 
+					 const std::string& includeBasePath,
+					 Logger* logger)
 {
 	using namespace std;	
 
@@ -67,7 +74,7 @@ bool includeHeaders( std::string& code, const std::string& includeBasePath )
 			if (openBracket == string::npos ||
 				closeBracket == string::npos)
 			{
-				log("Failed to parse include directive " + includeDirective);
+				log(logger, "Failed to parse include directive " + includeDirective);
 				return false;
 			}
             headerFile = includeDirective.substr(openBracket + 1, closeBracket - openBracket - 1);
@@ -77,7 +84,7 @@ bool includeHeaders( std::string& code, const std::string& includeBasePath )
 		string headerFilePath = includeBasePath + headerFile;
 		if ( !loadFile(includeBasePath + headerFile, headercode) )
 		{
-			log("Failed to load header " + headerFilePath);
+			log(logger, "Failed to load header " + headerFilePath);
 			return false;	
 		}
 		code.insert(includeStart, headercode);
@@ -88,13 +95,14 @@ bool includeHeaders( std::string& code, const std::string& includeBasePath )
 
 bool parseShader( const std::string& file, 
 				  const std::string& includeBasePath,
-				  std::string& contents )
+				  std::string& contents,
+				  Logger* logger)
 {
 	using namespace std;
 
 	if (!loadFile( file, contents )) return false;
 	
-	return includeHeaders(contents, includeBasePath);
+	return includeHeaders(contents, includeBasePath, logger);
 }
 
 bool Shader::compileProgramFromFile( const std::string& name, 
@@ -103,7 +111,8 @@ bool Shader::compileProgramFromFile( const std::string& name,
 									 const std::string &vertexShaderPreprocessor,
 									 const std::string &fragmentShaderFile,
 									 const std::string &fragmentShaderPreprocessor,
-									 GLuint& result )
+									 GLuint& result,
+									 Logger* logger)
 {
 	return compileProgramFromFile(name,
 								  includeBasePath,
@@ -112,7 +121,8 @@ bool Shader::compileProgramFromFile( const std::string& name,
 								  "", "",
 								  fragmentShaderFile,
 								  fragmentShaderPreprocessor,
-								  result);
+								  result, 
+								  logger);
 }
 
 bool Shader::compileProgramFromFile( const std::string& name, 
@@ -123,30 +133,31 @@ bool Shader::compileProgramFromFile( const std::string& name,
 									 const std::string &geometryShaderPreprocessor,
 									 const std::string &fragmentShaderFile,
 									 const std::string &fragmentShaderPreprocessor,
-									 GLuint& result )
+									 GLuint& result,
+									 Logger* logger)
 {
 	using namespace std;
 
 	string vs, gs, fs;
-	if (!parseShader( vertexShaderFile, includeBasePath, vs ))
+	if (!parseShader( vertexShaderFile, includeBasePath, vs, logger ))
 	{
-		log(std::string("error parsing file ") + vertexShaderFile);
-		logWithLineNumbers(vs);
+		log(logger, std::string("error parsing file ") + vertexShaderFile);
+		logWithLineNumbers(logger, vs);
 		return false;
 	}
-	if (!parseShader( fragmentShaderFile, includeBasePath, fs ))
+	if (!parseShader( fragmentShaderFile, includeBasePath, fs, logger))
 	{
-		log(std::string("error parsing file ") + fragmentShaderFile);
-		logWithLineNumbers(fs);
+		log(logger, std::string("error parsing file ") + fragmentShaderFile);
+		logWithLineNumbers(logger, fs);
 		return false;
 	}
 	
 	// Geometry shader is optional
 	if (!geometryShaderFile.empty() && 
-		!parseShader( geometryShaderFile, includeBasePath, gs ))
+		!parseShader( geometryShaderFile, includeBasePath, gs, logger))
 	{
-		log(std::string("error parsing file ") + geometryShaderFile);
-		logWithLineNumbers(gs);
+		log(logger, std::string("error parsing file ") + geometryShaderFile);
+		logWithLineNumbers(logger, gs);
 		return false;
 	}
 
@@ -154,7 +165,8 @@ bool Shader::compileProgramFromFile( const std::string& name,
 								   vs, vertexShaderPreprocessor,
 								   gs, geometryShaderPreprocessor,
 								   fs, fragmentShaderPreprocessor,
-								   result );
+								   result,
+								   logger);
 }
 
 GLuint createShader(const std::string& programName,
@@ -162,7 +174,8 @@ GLuint createShader(const std::string& programName,
 				    const std::string& shaderCode,
 				    const std::string& shaderPreprocessor,
 					char* infoLog, 
-                    GLsizei& logLength)
+                    GLsizei& logLength,
+				    Logger* logger)
 {
     GLuint shader = glCreateShader( shaderType );
 	const char* source[2] = { shaderPreprocessor.c_str(),
@@ -172,8 +185,8 @@ GLuint createShader(const std::string& programName,
 	glGetShaderInfoLog( shader, 512, &logLength, infoLog );
 	if ( logLength > 0 )
 	{
-        log( std::string("Program ") + programName + std::string(": Vertex shader compilation log:\n") + infoLog);
-		logWithLineNumbers( shaderPreprocessor + shaderCode );
+        log( logger, std::string("Program ") + programName + std::string(": Vertex shader compilation log:\n") + infoLog);
+		logWithLineNumbers( logger, shaderPreprocessor + shaderCode );
 	}
     return shader;
 }
@@ -185,7 +198,8 @@ bool Shader::compileProgramFromCode ( const std::string& name,
 									  const std::string &geometryShaderPreprocessor,
 									  const std::string &fragmentShaderCode,
 									  const std::string &fragmentShaderPreprocessor,
-									  GLuint& result )
+									  GLuint& result,
+									  Logger* logger)
 {
 	char infoLog[ 512 ];
 	GLsizei logLength = 0;
@@ -201,7 +215,8 @@ bool Shader::compileProgramFromCode ( const std::string& name,
 									  vertexShaderCode,
 									  vertexShaderPreprocessor,
 									  infoLog,
-									  logLength);
+									  logLength,
+									  logger );
 
 			glAttachShader( program, vs );
 			
@@ -217,7 +232,8 @@ bool Shader::compileProgramFromCode ( const std::string& name,
 									  fragmentShaderCode,
 									  fragmentShaderPreprocessor,
 									  infoLog,
-									  logLength);
+									  logLength,
+									  logger );
 
 			glAttachShader( program, fs );
 			
@@ -234,7 +250,8 @@ bool Shader::compileProgramFromCode ( const std::string& name,
 									  geometryShaderCode,
 									  geometryShaderPreprocessor,
 									  infoLog,
-									  logLength);
+									  logLength, 
+									  logger );
 
 			glAttachShader( program, gs );
 			
@@ -251,7 +268,7 @@ bool Shader::compileProgramFromCode ( const std::string& name,
 	glGetProgramInfoLog( program, 512, &logLength, infoLog );
 	if ( logLength > 0 )
 	{
-		log( std::string("Program ") + name + std::string(": Fragment shader compilation log:\n") + infoLog );
+		log( logger, std::string("Program ") + name + std::string(": Fragment shader compilation log:\n") + infoLog );
 	}
 	return linked == GL_TRUE;
 }

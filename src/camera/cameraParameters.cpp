@@ -139,7 +139,6 @@ float CameraParameters::focalLength() const
 void CameraParameters::setFocalLength(float focalLength)
 {
 	m_fovY = atan2(this->filmSize().y * 0.5f, focalLength) * 2.0f;
-	std::cout << "FOV " << m_fovY << std::endl;
 }
 
 float CameraParameters::focalDistance() const

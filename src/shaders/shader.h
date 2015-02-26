@@ -2,6 +2,7 @@
 
 #include <GL/gl.h>
 #include <string>
+#include <src/log/logger.h>
 
 class Shader
 {
@@ -13,7 +14,8 @@ public:
 										const std::string &vertexShaderPreprocessor,
 										const std::string &fragmentShaderFile,
 										const std::string &fragmentShaderPreprocessor,
-										GLuint& result );
+										GLuint& result,
+										Logger* logger = NULL);
 
 	static bool compileProgramFromFile( const std::string& name,
 										const std::string& includeBasePath,
@@ -23,8 +25,8 @@ public:
 										const std::string &geometryShaderPreprocessor,
 										const std::string &fragmentShaderFile,
 										const std::string &fragmentShaderPreprocessor,
-										GLuint& result );
-
+										GLuint& result,
+										Logger* logger = NULL);
 
 	static bool compileProgramFromCode( const std::string& name,
 										const std::string &vertexShaderCode,
@@ -33,7 +35,8 @@ public:
 										const std::string &geometryShaderPreprocessor,
 										const std::string &fragmentShaderCode,
 										const std::string &fragmentShaderPreprocessor,
-										GLuint& result );
+										GLuint& result,
+										Logger* logger = NULL);
 
 };
 

@@ -14,6 +14,7 @@
 #include "renderer/renderer.h"
 #include "ui/renderpropertiesui.h"
 #include "tools/tool.h"
+#include "log/logger.h"
 
 class GLWidget : public QGLWidget
 #ifdef QT5
@@ -37,6 +38,7 @@ public:
 signals:
 	void statusChanged(QString);
 	void currentToolActioned();
+	void logMessage(QString);
 
 public slots:
 	void onActionTriggered(int, bool);
@@ -59,6 +61,7 @@ public slots:
     void onBackgroundColorChangedGradientTo(QColor);
 	void onBackgroundColorChangedImage(QString);
 	void onBackgroundImageRotationChanged(int);
+	void onLogMessage(QString);
 
 protected:
 	void initializeGL();
@@ -76,6 +79,6 @@ private:
     RenderPropertiesUI::ResolutionMode m_resolutionMode;
     unsigned int                       m_resolutionLongestAxis;
 	Tool*                              m_activeTool;
-
+	QtLogger						   m_logger;
 
 };

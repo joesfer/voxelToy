@@ -3,6 +3,7 @@
 #include "camera/camera.h"
 #include "shaders/shader.h"
 #include "timer/gpuTimer.h"
+#include "src/log/logger.h"
 
 #include <GL/gl.h>
 
@@ -71,6 +72,8 @@ public:
 	void updateRenderSettings();
 
 	const std::string& getStatus() const { return m_status; }
+
+	void setLogger(Logger* logger);	
 
 	enum PICKING_ACTION
 	{
@@ -204,4 +207,6 @@ private:
 	Integrator m_currentIntegrator;
 	std::string m_currentBackgroundImage;
 	float		m_currentBackgroundRadianceIntegral;
+
+	Logger* m_logger;
 };

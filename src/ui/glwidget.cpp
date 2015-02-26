@@ -24,10 +24,12 @@ GLWidget::GLWidget(QWidget *parent)
     m_resolutionMode = RenderPropertiesUI::RM_MATCH_WINDOW;
 	m_resolutionLongestAxis = 1024;
 	m_activeTool = NULL;
+
+    connect(&m_logger, SIGNAL(logMessage(QString)), this, SLOT(onLogMessage(QString)));
 }
 
 GLWidget::~GLWidget()
-{
+{ 
 }
 
 QSize GLWidget::minimumSizeHint() const
@@ -51,6 +53,7 @@ void GLWidget::initializeGL()
 	std::string shaderPath(STRINGIFY(SHADER_DIR));
 	shaderPath += QDir::separator().toLatin1();
 
+	m_renderer.setLogger(&m_logger);
 	m_renderer.initialize(shaderPath);
 	m_renderer.updateRenderSettings();
 }
@@ -368,4 +371,8 @@ void GLWidget::onBackgroundImageRotationChanged(int rotation)
 	m_renderer.renderSettings().m_backgroundRotationDegrees = rotation;
 	m_renderer.updateRenderSettings();
 	update();
+}
+void GLWidget::onLogMessage(QString msg)
+{
+	emit logMessage(msg);
 }

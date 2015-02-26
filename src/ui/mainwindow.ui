@@ -476,16 +476,6 @@ QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout_2">
-    <item row="2" column="0">
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <property name="spacing">
-       <number>0</number>
-      </property>
-      <property name="sizeConstraint">
-       <enum>QLayout::SetMaximumSize</enum>
-      </property>
-     </layout>
-    </item>
     <item row="1" column="0">
      <widget class="GLWidget" name="glWidget" native="true">
       <property name="sizePolicy">
@@ -501,6 +491,16 @@ QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
        <enum>Qt::ClickFocus</enum>
       </property>
      </widget>
+    </item>
+    <item row="2" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <property name="sizeConstraint">
+       <enum>QLayout::SetMaximumSize</enum>
+      </property>
+     </layout>
     </item>
    </layout>
   </widget>
@@ -588,6 +588,12 @@ QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
    <addaction name="actionReload_Shaders"/>
    <addaction name="actionSelect_Focal_Point"/>
    <addaction name="actionAdd_Voxel"/>
+  </widget>
+  <widget class="QDockWidget" name="dockWidget">
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="LogWindow" name="logWindow"/>
   </widget>
   <action name="actionReload_Shaders">
    <property name="icon">
@@ -709,6 +715,12 @@ QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
    <class>RenderPropertiesUI</class>
    <extends>QWidget</extends>
    <header>ui/renderpropertiesui.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>LogWindow</class>
+   <extends>QWidget</extends>
+   <header>ui/logwindow.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
