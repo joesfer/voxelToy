@@ -22,7 +22,7 @@ void generateRay_Pinhole(in vec3 fragmentPos,
 
 	wsRayOrigin = (cameraInverseModelView * esOriginPos).xyz;
 	vec3 wsFragmentPos = (cameraInverseModelView * esFragmentPos).xyz;
-	wsRayDir =  normalize(wsFragmentPos - wsRayOrigin);
+	wsRayDir = normalize(cameraInverseModelView * vec4(normalize(esFragmentPos.xyz), 0)).xyz;
 }
 #endif
 
