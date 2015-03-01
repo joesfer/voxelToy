@@ -52,7 +52,7 @@ public slots:
 	void cameraLensModelChanged(int model);
     void cameraControllerChanged(QString mode);
     void onPathtracerMaxSamplesChanged(int);
-    void onPathtracerMaxPathLengthChanged(int);
+    void onPathtracerMaxPathBouncesChanged(int);
     void onResolutionSettingsChanged(RenderPropertiesUI::ResolutionMode mode, int axis1, int axis2);
     void onWireframeOpacityChanged(int);
     void onWireframeThicknessChanged(int);

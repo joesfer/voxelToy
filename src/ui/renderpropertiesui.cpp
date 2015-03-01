@@ -23,9 +23,9 @@ void RenderPropertiesUI::onPathtracerMaxSamplesChanged(int value)
     emit pathtracerMaxSamplesChanged(value);
 }
 
-void RenderPropertiesUI::onPathtracerMaxPathLengthChanged(int value)
+void RenderPropertiesUI::onPathtracerMaxPathBouncesChanged(int value)
 {
-    emit pathtracerMaxPathLengthChanged(value);
+    emit pathtracerMaxPathBouncesChanged(value);
 }
 
 void RenderPropertiesUI::onResolutionSettingsChanged()

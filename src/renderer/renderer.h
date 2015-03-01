@@ -19,7 +19,7 @@ struct RenderSettings
 {
 	// maximum path length allowed in the path tracer (1 = direct
 	// illumination only).
-	int m_pathtracerMaxPathLength;
+	int m_pathtracerMaxNumBounces;
 
     // Max number of accumulated samples before the render finishes
     int m_pathtracerMaxSamples;

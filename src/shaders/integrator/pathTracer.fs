@@ -32,7 +32,7 @@ uniform float	    backgroundIntegral;
 uniform float	    backgroundRotationRadians;
 
 uniform int         sampleCount;
-uniform int			pathtracerMaxPathLength;
+uniform int			pathtracerMaxNumBounces;
 
 uniform float		wireframeOpacity = 0;
 uniform float		wireframeThickness = 0.01;
@@ -144,10 +144,10 @@ void main()
 
 	vec3 radiance = vec3(0.0);
 
-	int pathLength = 1; // we've traced the primary ray already
+	int bounces = 0; 
 
 	// PBRT2 section 16.3
-	while(pathLength <= pathtracerMaxPathLength)
+	while(bounces < pathtracerMaxNumBounces)
 	{
 		// convert hit position from voxel space to world space. We also use the
 		// calculations to generate a world-space basis 
@@ -215,7 +215,7 @@ void main()
 			break;
 		}
 
-		pathLength++;
+		bounces++;
 	}
 
 	radiance = pow(radiance * tonemappingExposure, vec3(1.0 / tonemappingGamma));

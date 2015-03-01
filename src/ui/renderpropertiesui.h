@@ -32,7 +32,7 @@ public:
 
 signals:
 	void pathtracerMaxSamplesChanged(int);
-	void pathtracerMaxPathLengthChanged(int);
+	void pathtracerMaxPathBouncesChanged(int);
 	void resolutionSettingsChanged();
 	void wireframeOpacityChanged(int);
 	void wireframeThicknessChanged(int);
@@ -45,7 +45,7 @@ signals:
 
 public slots:
 	void onPathtracerMaxSamplesChanged(int);
-	void onPathtracerMaxPathLengthChanged(int);
+	void onPathtracerMaxPathBouncesChanged(int);
 	void onResolutionSettingsChanged();
 	void onWireframeOpacityChanged(int value);
 	void onWireframeThicknessChanged(int value);

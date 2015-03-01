@@ -51,7 +51,7 @@ Renderer::Renderer()
 
 	m_renderSettings.m_imageResolution.x = 512;
 	m_renderSettings.m_imageResolution.y = 512;
-    m_renderSettings.m_pathtracerMaxPathLength = 1;
+    m_renderSettings.m_pathtracerMaxNumBounces = 1;
     m_renderSettings.m_pathtracerMaxSamples = 128;
 	m_mesh = NULL;
 
@@ -343,7 +343,7 @@ bool Renderer::reloadIntegratorShader(const std::string& shaderPath,
 	settings.m_uniformCameraLensModel           = glGetUniformLocation(settings.m_program, "cameraLensModel");
 	settings.m_uniformLightDir                  = glGetUniformLocation(settings.m_program, "wsLightDir");
 	settings.m_uniformSampleCount               = glGetUniformLocation(settings.m_program, "sampleCount");
-	settings.m_uniformPathtracerMaxPathLength   = glGetUniformLocation(settings.m_program, "pathtracerMaxPathLength");
+	settings.m_uniformPathtracerMaxPathBounces   = glGetUniformLocation(settings.m_program, "pathtracerMaxNumBounces");
 	settings.m_uniformWireframeOpacity          = glGetUniformLocation(settings.m_program, "wireframeOpacity");
 	settings.m_uniformWireframeThickness        = glGetUniformLocation(settings.m_program, "wireframeThickness");
 	settings.m_uniformBackgroundColorTop        = glGetUniformLocation(settings.m_program, "backgroundColorTop");
@@ -1402,7 +1402,7 @@ void Renderer::updateRenderSettings()
 		const IntegratorShaderSettings& integratorSettings = m_settingsIntegrator[i];
 		glUseProgram(integratorSettings.m_program);
 
-		glUniform1i(integratorSettings.m_uniformPathtracerMaxPathLength , m_renderSettings.m_pathtracerMaxPathLength);
+		glUniform1i(integratorSettings.m_uniformPathtracerMaxPathBounces , m_renderSettings.m_pathtracerMaxNumBounces);
 		glUniform1f(integratorSettings.m_uniformWireframeOpacity        , m_renderSettings.m_wireframeOpacity);
 		glUniform1f(integratorSettings.m_uniformWireframeThickness      , m_renderSettings.m_wireframeThickness);
 

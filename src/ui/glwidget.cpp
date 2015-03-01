@@ -260,9 +260,9 @@ void GLWidget::onPathtracerMaxSamplesChanged(int value)
 	update();
 }
 
-void GLWidget::onPathtracerMaxPathLengthChanged(int value)
+void GLWidget::onPathtracerMaxPathBouncesChanged(int value)
 {
-	m_renderer.renderSettings().m_pathtracerMaxPathLength = value;
+	m_renderer.renderSettings().m_pathtracerMaxNumBounces = value;
 	m_renderer.updateRenderSettings();
 	update();
 }

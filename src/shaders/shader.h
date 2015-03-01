@@ -63,7 +63,7 @@ struct IntegratorShaderSettings
 	GLuint m_uniformLightDir;
 	GLuint m_uniformSampleCount;
 	GLuint m_uniformCameraLensModel;
-	GLuint m_uniformPathtracerMaxPathLength;
+	GLuint m_uniformPathtracerMaxPathBounces;
 	GLuint m_uniformWireframeOpacity;
 	GLuint m_uniformWireframeThickness;
 	GLuint m_uniformFocalDistanceSSBOStorageBlock;

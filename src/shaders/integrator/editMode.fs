@@ -32,7 +32,7 @@ uniform float	    backgroundIntegral;
 uniform float	    backgroundRotationRadians;
 
 uniform int         sampleCount;
-uniform int			pathtracerMaxPathLength;
+uniform int			pathtracerMaxNumBounces;
 
 uniform float		wireframeOpacity = 0;
 uniform float		wireframeThickness = 0.01;
