@@ -52,9 +52,14 @@ out vec4 outColor;
 #include <bsdf/lambertian.h>
 #include <bsdf/microfacet.h>
 #include <bsdf/bsdf.h>
+#include <materials/matte.h>
+#include <materials/metal.h>
+#include <materials/plastic.h>
+#include <materials/materials.h>
 #include <shared/lights.h>
 
 float ISECT_EPSILON = 0.01;
+int materialType = MATERIAL_MATTE;
 
 vec3 directLighting(in vec3 albedo, 
 					in Basis wsHitBasis, 
@@ -90,7 +95,7 @@ vec3 directLighting(in vec3 albedo,
 	// the BSDF
 	vec3 lsWo = worldToLocal(wsWo, wsHitBasis);
 	vec3 lsWi = worldToLocal(wsToLight_pdf.xyz, wsHitBasis);
-	vec4 bsdfF_pdf = evaluateBSDF(albedo, lsWo, lsWi);
+	vec4 bsdfF_pdf = evaluateMaterialBSDF(materialType, albedo, lsWo, lsWi);
 
 	float misWeight = powerHeuristic(wsToLight_pdf.w, bsdfF_pdf.w);
 	return bsdfF_pdf.xyz * lightRadiance * abs(dot(wsToLight_pdf.xyz, wsHitBasis.normal)) * misWeight / wsToLight_pdf.w;
@@ -194,7 +199,12 @@ void main()
 		
 		// Sample the BSDF to get the new path direction
 		vec4 bsdfF_pdf;
-		vec3 lsWi = sampleBSDF(albedo, lsWo, rngOffset, bsdfF_pdf); 
+		vec3 lsWi = sampleMaterialBSDF(materialType, 
+									   albedo, 
+									   lsWo, 
+									   rngOffset, 
+									   bsdfF_pdf); 
+
 		vec3 wsWi = localToWorld(lsWi, wsHitBasis);
 		
 		// update throughput

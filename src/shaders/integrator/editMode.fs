@@ -51,6 +51,10 @@ out vec4 outColor;
 #include <bsdf/lambertian.h>
 #include <bsdf/microfacet.h>
 #include <bsdf/bsdf.h>
+#include <materials/matte.h>
+#include <materials/metal.h>
+#include <materials/plastic.h>
+#include <materials/materials.h>
 #include <shared/lights.h>
 
 float ISECT_EPSILON = 0.01;
