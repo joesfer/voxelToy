@@ -48,7 +48,9 @@ out vec4 outColor;
 #include <shared/sampling.h>
 #include <shared/random.h>
 #include <shared/generateRay.h>
-#include <shared/bsdf.h>
+#include <bsdf/lambertian.h>
+#include <bsdf/microfacet.h>
+#include <bsdf/bsdf.h>
 #include <shared/lights.h>
 
 float ISECT_EPSILON = 0.01;

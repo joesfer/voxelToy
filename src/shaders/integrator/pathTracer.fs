@@ -49,7 +49,9 @@ out vec4 outColor;
 #include <shared/sampling.h>
 #include <shared/random.h>
 #include <shared/generateRay.h>
-#include <shared/bsdf.h>
+#include <bsdf/lambertian.h>
+#include <bsdf/microfacet.h>
+#include <bsdf/bsdf.h>
 #include <shared/lights.h>
 
 float ISECT_EPSILON = 0.01;
@@ -83,16 +85,12 @@ vec3 directLighting(in vec3 albedo,
 	}
 
 	// Apply MIS weight for the sampled direction. PBRT2 page 748/749.
-	//
-	// TODO: in this particular case (Lambertians + infinite area lights only) I
-	// don't think MIS is actually making any difference since both distributions
-	// are pretty much uniform.
 	
 	// transform sampled directions to local space, which we need to evaluate
 	// the BSDF
 	vec3 lsWo = worldToLocal(wsWo, wsHitBasis);
 	vec3 lsWi = worldToLocal(wsToLight_pdf.xyz, wsHitBasis);
-	vec4 bsdfF_pdf = evaluateBsdf(albedo, lsWo, lsWi);
+	vec4 bsdfF_pdf = evaluateBSDF(albedo, lsWo, lsWi);
 
 	float misWeight = powerHeuristic(wsToLight_pdf.w, bsdfF_pdf.w);
 	return bsdfF_pdf.xyz * lightRadiance * abs(dot(wsToLight_pdf.xyz, wsHitBasis.normal)) * misWeight / wsToLight_pdf.w;
