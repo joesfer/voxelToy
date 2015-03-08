@@ -13,7 +13,7 @@ struct GLResourceConfiguration;
 class RendererService
 {
 public:
-	RendererService(Renderer* renderer) : m_renderer(renderer) {}
+	virtual ~RendererService();
 
 	virtual bool reload(const std::string& shaderPath, Logger* logger) = 0;
 
@@ -50,7 +50,13 @@ public:
 	virtual void execute() = 0;
 
 protected:
-	Renderer* m_renderer;
+	// Utility function used to run the vertex shader associated to each
+	// service. This is a simple 1-vertex draw call with no rasterization.
+	void runVertexShader();
+
+protected:
+	// shader program
+	GLuint m_program;
 
 	// Normalized coordinates in screen space from where the requested picking
 	// action is originated (the actual pixel coordinates are calculated as

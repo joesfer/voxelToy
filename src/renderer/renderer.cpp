@@ -74,7 +74,7 @@ void Renderer::setLogger(Logger* logger)
 void Renderer::initialize(const std::string& shaderPath)
 {
 	m_shaderPath = shaderPath;
-	
+
 	glewExperimental = true;
 	glewInit();
 	glClearColor(0.1f, 0.1f, 0.1f, 0);
@@ -113,10 +113,10 @@ void Renderer::initialize(const std::string& shaderPath)
 			);
 
 	// init services
-	m_services[SERVICE_ADD_VOXEL]           = new RendererServiceAddVoxel(this);
-	m_services[SERVICE_REMOVE_VOXEL]        = new RendererServiceRemoveVoxel(this);
-	m_services[SERVICE_SELECT_ACTIVE_VOXEL] = new RendererServiceSelectActiveVoxel(this);
-	m_services[SERVICE_SET_FOCAL_DISTANCE]  = new RendererServiceSetFocalDistance(this);
+	m_services[SERVICE_ADD_VOXEL]           = new RendererServiceAddVoxel();
+	m_services[SERVICE_REMOVE_VOXEL]        = new RendererServiceRemoveVoxel();
+	m_services[SERVICE_SELECT_ACTIVE_VOXEL] = new RendererServiceSelectActiveVoxel();
+	m_services[SERVICE_SET_FOCAL_DISTANCE]  = new RendererServiceSetFocalDistance();
 
 	for( int i = 0; i < SERVICE_TOTAL; ++i)
 	{
@@ -639,18 +639,6 @@ void Renderer::drawFullscreenQuad()
 		glVertex3f( -1.0f, -1.0f, m_camera.parameters().nearDistance());
 		glVertex3f(  1.0f, -1.0f, m_camera.parameters().nearDistance());
 	glEnd();
-}
-
-void Renderer::drawSingleVertex()
-{
-	// disable rasterisation and issue a single vertex draw call. This is used
-	// with vertex shaders performing computations which are not meant to be
-	// drawn directly.
-	glEnable(GL_RASTERIZER_DISCARD);
-	glBegin(GL_POINTS);
-		glVertex3f(0,0,0);
-	glEnd();
-	glDisable(GL_RASTERIZER_DISCARD);
 }
 
 bool Renderer::onMouseMove(int dx, int dy, int buttons)

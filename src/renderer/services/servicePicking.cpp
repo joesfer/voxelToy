@@ -121,7 +121,7 @@ void RendererServicePicking::execute()
 	
 	glUniform2f(m_uniformSampledFragment, m_point.x, m_point.y);
 
-	m_renderer->drawSingleVertex();
+	runVertexShader();	
 
     glUseProgram(0);
 }

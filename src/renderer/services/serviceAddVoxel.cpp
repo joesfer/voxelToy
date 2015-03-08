@@ -73,7 +73,7 @@ void RendererServiceAddVoxel::execute()
 	glUniform2f(m_uniformScreenSpaceMotion,
 				m_velocity.x , -m_velocity.y ); 
 
-	m_renderer->drawSingleVertex();
+	runVertexShader();	
 
     glUseProgram(0);
 }

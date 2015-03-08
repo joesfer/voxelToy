@@ -47,7 +47,7 @@ void RendererServiceRemoveVoxel::execute()
 {
     glUseProgram(m_program);
 	
-	m_renderer->drawSingleVertex();
+	runVertexShader();
 
     glUseProgram(0);
 }

@@ -8,8 +8,6 @@
 class RendererServiceAddVoxel : public RendererService
 {
 public:
-	RendererServiceAddVoxel(Renderer* renderer) : RendererService(renderer) {}
-
 	virtual bool reload(const std::string& shaderPath, Logger* logger);
 
 	virtual void glResourcesCreated(const GLResourceConfiguration& glResources);
@@ -23,9 +21,6 @@ public:
 	virtual void execute();
 
 private:
-	// shader program
-	GLuint m_program;
-
 	// uniforms
 	GLuint m_uniformCameraInverseModelView;
 	GLuint m_uniformScreenSpaceMotion;

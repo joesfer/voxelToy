@@ -8,8 +8,6 @@
 class RendererServicePicking : public RendererService
 {
 public:
-	RendererServicePicking(Renderer* renderer) : RendererService(renderer) {}
-
 	virtual void cameraUpdated(const Imath::M44f& /*modelViewMatrix*/,
 							   const Imath::M44f& /*modelViewInverse*/,
 							   const Imath::M44f& /*projectionMatrix*/,
@@ -31,9 +29,6 @@ protected:
 							  const std::string& fragmentShaderName,
 							  Logger* logger);
 protected:
-	// shader program
-	GLuint m_program;
-	
 	// uniforms
 	GLuint m_uniformVoxelOccupancyTexture;
 	GLuint m_uniformVoxelDataResolution;
