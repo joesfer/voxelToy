@@ -7,6 +7,7 @@
 #include "renderer/renderSettings.h"
 #include "renderer/glResources.h"
 #include "renderer/services/service.h"
+#include "renderer/actions.h"
 
 #include <GL/gl.h>
 
@@ -53,20 +54,11 @@ public:
 
 	void setLogger(Logger* logger);	
 
-
-	enum PICKING_ACTION
-	{
-		PA_SELECT_FOCAL_POINT,
-		PA_SELECT_ACTIVE_VOXEL,
-		PA_ADD_VOXEL,
-		PA_REMOVE_VOXEL
-	};
-	
 	void requestAction(float x, 
 					   float y, 
 					   float dx,
 					   float dy,
-					   PICKING_ACTION action,
+					   Action::PICKING_ACTION action,
 					   bool restartAccumulation);
 
 	enum Integrator
@@ -123,18 +115,6 @@ private:
 
 	std::string m_status;
 
-	struct Action
-	{
-		PICKING_ACTION m_type;
-		// Normalized coordinates in screen space from where the requested picking
-		// action is originated (the actual pixel coordinates are calculated as
-		// m_pickingActionPoint * viewportSize;
-		Imath::V2f m_point;
-		// screen-space normalized movement 
-		Imath::V2f m_velocity;
-		bool m_invalidatesRender;
-	};
-	
 	std::vector<Action> m_scheduledActions;
 
 	Integrator m_currentIntegrator;
