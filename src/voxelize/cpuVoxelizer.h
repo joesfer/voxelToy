@@ -2,7 +2,7 @@
 
 #include <OpenEXR/ImathVec.h>
 
-class Voxelizer
+class CPUVoxelizer
 {
 public:
 	static void voxelizeMesh(const Imath::V3f* vertices,

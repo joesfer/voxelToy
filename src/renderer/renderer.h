@@ -3,7 +3,8 @@
 #include "camera/camera.h"
 #include "shaders/shader.h"
 #include "timer/gpuTimer.h"
-#include "src/log/logger.h"
+#include "log/logger.h"
+#include "renderer/renderSettings.h"
 
 #include <GL/gl.h>
 
@@ -14,32 +15,6 @@
 #include <string>
 
 class Mesh;
-
-struct RenderSettings
-{
-	// maximum path length allowed in the path tracer (1 = direct
-	// illumination only).
-	int m_pathtracerMaxNumBounces;
-
-    // Max number of accumulated samples before the render finishes
-    int m_pathtracerMaxSamples;
-
-	// rendered image resolution in pixels
-	Imath::V2i m_imageResolution;
-
-	// Viewport within which to render the image. This may not match the
-	// resolution of the rendered image, in which case stretching or squashing
-	// will occur.
-	int	m_viewport[4];
-
-	float m_wireframeOpacity;
-	float m_wireframeThickness;
-
-	std::string m_backgroundImage;
-	Imath::V3f m_backgroundColor[2]; // gradient (top/bottom)
-	int m_backgroundRotationDegrees;
-};
-
 
 class Renderer
 {
@@ -114,7 +89,6 @@ private:
 								const std::string& vsFile,
 								const std::string& fsFile,
 								IntegratorShaderSettings& settings);
-	bool reloadVoxelizeShader(const std::string& shaderPath);
 	bool reloadAddVoxelShader(const std::string& shaderPath);
 	bool reloadRemoveVoxelShader(const std::string& shaderPath);
 	bool loadBackgroundImage(float&);
@@ -123,10 +97,6 @@ private:
 	void createFramebuffer();
     Imath::V3f lightDirection() const;
 
-	void voxelizeCPU(const Imath::V3f* vertices, 
-				     const unsigned int* indices,
-				     unsigned int numTriangles);
-	void voxelizeGPU(const Mesh* mesh);
 	// clear out list of pending "actions" requested by the user, such as
 	// selecting the active voxel, prior to rendering the next visible frame.
 	// Each action results in a render pass.
@@ -163,7 +133,6 @@ private:
 	AccumulationShaderSettings      m_settingsAverage;
 	TexturedShaderSettings          m_settingsTextured;
 	FocalDistanceShaderSettings     m_settingsFocalDistance;
-	VoxelizeShaderSettings          m_settingsVoxelize;
 	SelectActiveVoxelShaderSettings m_settingsSelectActiveVoxel;
 	AddVoxelShaderSettings          m_settingsAddVoxel;
 	RemoveVoxelShaderSettings       m_settingsRemoveVoxel;
@@ -182,9 +151,7 @@ private:
     };
 	
 	RenderSettings m_renderSettings;
-
-	Imath::M44f m_meshTransform;
-    Mesh* m_mesh;
+	std::string m_shaderPath;
 
 	AveragedGpuTimer m_frameTimer;
 

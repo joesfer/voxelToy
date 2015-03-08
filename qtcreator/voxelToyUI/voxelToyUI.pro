@@ -26,7 +26,7 @@ SOURCES += ../../src/ui/mainwindow.cpp \
     ../../src/mesh/meshLoader.cpp \
     ../../src/thirdParty/tinyobjloader/tiny_obj_loader.cc \
     ../../src/renderer/renderer.cpp \
-    ../../src/svo/voxelizer.cpp \
+    ../../src/voxelize/cpuVoxelizer.cpp \
     ../../src/timer/gpuTimer.cpp \
     ../../src/camera/orbitCameraController.cpp \
     ../../src/camera/flyCameraController.cpp \
@@ -63,7 +63,7 @@ HEADERS  += ../../src/ui/mainwindow.h \
     ../../src/thirdParty/boost/threadpool/detail/worker_thread.hpp \
     ../../src/thirdParty/boost/threadpool/detail/future.hpp \
     ../../src/thirdParty/boost/threadpool/detail/scope_guard.hpp \
-    ../../src/svo/voxelizer.h \
+    ../../src/voxelize/cpuVoxelizer.h \
     ../../src/timer/gpuTimer.h \
     ../../src/ui/colorpicker.h \
     ../../src/tools/toolFocalDistance.h \

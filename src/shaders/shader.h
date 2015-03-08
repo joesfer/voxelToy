@@ -143,12 +143,3 @@ struct RemoveVoxelShaderSettings
 	GLuint m_uniformSelectedVoxelSSBOStorageBlock;
 };
 
-struct VoxelizeShaderSettings
-{
-	GLuint m_program;
-
-	GLuint m_uniformVoxelDataResolution;
-	GLuint m_uniformModelTransform;
-	GLuint m_uniformVoxelOccupancyTexture;
-};
-
