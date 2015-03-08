@@ -5,6 +5,8 @@
 #include "timer/gpuTimer.h"
 #include "log/logger.h"
 #include "renderer/renderSettings.h"
+#include "renderer/glResources.h"
+#include "renderer/services/service.h"
 
 #include <GL/gl.h>
 
@@ -38,6 +40,7 @@ public:
     void loadVoxFile(const std::string& file);
     void saveImage(const std::string& file);
     void resetRender();
+	void drawSingleVertex();
 
 	bool onMouseMove(int dx, int dy, int buttons);
 	bool onKeyPress(int key);
@@ -49,6 +52,7 @@ public:
 	const std::string& getStatus() const { return m_status; }
 
 	void setLogger(Logger* logger);	
+
 
 	enum PICKING_ACTION
 	{
@@ -72,7 +76,6 @@ public:
 		INTEGRATOR_TOTAL,
 	};
 
-
 private:
 	struct IntegratorSetup;
 
@@ -80,8 +83,6 @@ private:
 	void createVoxelDataTexture (const Imath::V3i& resolution,
 								 const GLubyte* occupancyTexels = NULL,
 								 const GLubyte* colorTexels = NULL);
-	bool reloadFocalDistanceShader(const std::string& shaderPath);
-	bool reloadSelectActiveVoxelShader(const std::string& shaderPath);
 	bool reloadTexturedShader(const std::string& shaderPath);
 	bool reloadAverageShader(const std::string& shaderPath);
 	bool reloadIntegratorShader(const std::string& shaderPath, 
@@ -89,11 +90,8 @@ private:
 								const std::string& vsFile,
 								const std::string& fsFile,
 								IntegratorShaderSettings& settings);
-	bool reloadAddVoxelShader(const std::string& shaderPath);
-	bool reloadRemoveVoxelShader(const std::string& shaderPath);
 	bool loadBackgroundImage(float&);
 	void drawFullscreenQuad();
-	void drawSingleVertex();
 	void createFramebuffer();
     Imath::V3f lightDirection() const;
 
@@ -106,50 +104,18 @@ private:
 	bool m_initialized;
 
 	Imath::Box3f m_volumeBounds;
-	Imath::V3i	 m_volumeResolution;
 
 	int m_activeSampleTexture;
 	int m_numberSamples;
 
 	Camera m_camera;
 
-	GLuint m_mainFBO;
-	GLuint m_mainRBO;
-    GLuint m_sampleTexture;
-    GLuint m_averageTexture[2];
-    GLuint m_noiseTexture;
-	GLint m_textureDimensions[2];
-
-    GLuint m_focalDistanceSSBO;
-    GLuint m_selectedVoxelSSBO;
-
-    GLuint m_occupancyTexture;
-    GLuint m_voxelColorTexture;
-	GLuint m_backgroundTexture;
-	GLuint m_backgroundCDFUTexture;
-	GLuint m_backgroundCDFVTexture;
-
 	IntegratorShaderSettings        m_settingsIntegrator[INTEGRATOR_TOTAL];
 	AccumulationShaderSettings      m_settingsAverage;
 	TexturedShaderSettings          m_settingsTextured;
-	FocalDistanceShaderSettings     m_settingsFocalDistance;
-	SelectActiveVoxelShaderSettings m_settingsSelectActiveVoxel;
-	AddVoxelShaderSettings          m_settingsAddVoxel;
-	RemoveVoxelShaderSettings       m_settingsRemoveVoxel;
 
-	enum TextureUnits
-	{
-		TEXTURE_UNIT_OCCUPANCY = 0,
-		TEXTURE_UNIT_COLOR,
-		TEXTURE_UNIT_SAMPLE,
-		TEXTURE_UNIT_AVERAGE0,
-		TEXTURE_UNIT_AVERAGE1,
-		TEXTURE_UNIT_NOISE,
-		TEXTURE_UNIT_BACKGROUND,
-		TEXTURE_UNIT_BACKGROUND_CDF_U,
-		TEXTURE_UNIT_BACKGROUND_CDF_V
-    };
-	
+	GLResourceConfiguration m_glResources;
+
 	RenderSettings m_renderSettings;
 	std::string m_shaderPath;
 
@@ -176,4 +142,6 @@ private:
 	float		m_currentBackgroundRadianceIntegral;
 
 	Logger* m_logger;
+
+	RendererService* m_services[SERVICE_TOTAL];	
 };

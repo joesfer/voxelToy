@@ -15,22 +15,22 @@ GPUVoxelizer::GPUVoxelizer(const std::string& shaderPath,
 	std::string gs = shaderPath + std::string("shared/voxelize.gs");
 	std::string fs = shaderPath + std::string("shared/trivial.fs");
 
-    if ( !Shader::compileProgramFromFile("Voxelize",
+	if ( !Shader::compileProgramFromFile("Voxelize",
 										 shaderPath,
-                                         vs, "",
-                                         gs, "",
-                                         fs, "",
-                                         m_program,
+										 vs, "",
+										 gs, "",
+										 fs, "",
+										 m_program,
 										 logger) )
 	{
 		return;
 	}
-    
+	
 	glUseProgram(m_program);
 
 	m_uniformVoxelOccupancyTexture   = glGetUniformLocation(m_program, "occupancyTexture");
-	m_uniformVoxelDataResolution     = glGetUniformLocation(m_program, "voxelResolution");
-	m_uniformModelTransform          = glGetUniformLocation(m_program, "modelTransform");
+	m_uniformVoxelDataResolution	 = glGetUniformLocation(m_program, "voxelResolution");
+	m_uniformModelTransform		  = glGetUniformLocation(m_program, "modelTransform");
 
 	glUseProgram(0);
 
@@ -44,8 +44,8 @@ GPUVoxelizer::~GPUVoxelizer()
 }
 
 bool GPUVoxelizer::voxelizeMesh(const Mesh* mesh,
-							    const Imath::M44f& meshTransform,
-							    const Imath::V3i& resolution,
+								const Imath::M44f& meshTransform,
+								const Imath::V3i& resolution,
 								GLuint textureUnit)
 {
 	if (!m_initialized) return false;
