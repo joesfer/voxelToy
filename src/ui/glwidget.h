@@ -63,6 +63,9 @@ public slots:
 	void onBackgroundImageRotationChanged(int);
 	void onLogMessage(QString);
 
+	void onBeginUserInteraction();
+	void onEndUserInteraction();
+
 protected:
 	void initializeGL();
 	void paintGL();
@@ -73,6 +76,7 @@ protected:
 	void keyPressEvent(QKeyEvent *);
 	void resizeRender(int renderW, int renderH, int windowW, int windowH);
 private:
+	unsigned int                       m_activeUserDialogs;
     QPoint                             m_lastPos;
     Qt::MouseButtons                   m_lastMouseButtons;
     Renderer                           m_renderer;

@@ -11,6 +11,19 @@ RenderPropertiesUI::RenderPropertiesUI(QWidget *parent) :
     ui->constantFrame->setEnabled(ui->backgroundConstant->isChecked());
     ui->gradientFrame->setEnabled(ui->backgroundGradient->isChecked());
     ui->imageFrame->setEnabled(ui->backgroundImage->isChecked());
+
+	connect(ui->backgroundConstantButton, SIGNAL(beginUserInteraction(void)), 
+			this, SLOT(onBeginUserInteraction(void)));
+	connect(ui->backgroundGradientFromButton, SIGNAL(beginUserInteraction(void)), 
+			this, SLOT(onBeginUserInteraction(void)));
+	connect(ui->backgroundGradientToButton, SIGNAL(beginUserInteraction(void)), 
+			this, SLOT(onBeginUserInteraction(void)));
+	connect(ui->backgroundConstantButton, SIGNAL(endUserInteraction(void)), 
+			this, SLOT(onEndUserInteraction(void)));
+	connect(ui->backgroundGradientFromButton, SIGNAL(endUserInteraction(void)), 
+			this, SLOT(onEndUserInteraction(void)));
+	connect(ui->backgroundGradientToButton, SIGNAL(endUserInteraction(void)), 
+			this, SLOT(onEndUserInteraction(void)));
 }
 
 RenderPropertiesUI::~RenderPropertiesUI()
@@ -119,7 +132,10 @@ void RenderPropertiesUI::onBackgroundColorImage()
 
 void RenderPropertiesUI::onBackgroundImageBrowseClicked()
 {
+	emit beginUserInteraction();
+
     QFileDialog dialog(QApplication::activeWindow());
+
     dialog.setFileMode(QFileDialog::ExistingFile);
     dialog.setNameFilter(tr("Image files (*.jpg *.png *.exr *.hdr *.tiff)"));
     dialog.setViewMode(QFileDialog::Detail);
@@ -129,4 +145,20 @@ void RenderPropertiesUI::onBackgroundImageBrowseClicked()
         ui->backgroundImagePath->setText(file);
 		emit backgroundColorChangedImage(file);
     }
+
+	emit endUserInteraction();
 }
+#include <iostream>
+void RenderPropertiesUI::onBeginUserInteraction()
+{
+	// propagate signal to parent widget
+	emit beginUserInteraction();
+}
+
+void RenderPropertiesUI::onEndUserInteraction()
+{
+	// propagate signal to parent widget
+	emit endUserInteraction();
+}
+
+

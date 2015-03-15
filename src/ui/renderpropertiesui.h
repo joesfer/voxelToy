@@ -42,6 +42,8 @@ signals:
     void backgroundColorChangedImage(QString);
     void backgroundImageRotation(int);
     void backgroundImageRotationChanged(int);
+	void beginUserInteraction();
+	void endUserInteraction();
 
 public slots:
 	void onPathtracerMaxSamplesChanged(int);
@@ -58,6 +60,8 @@ public slots:
     void onBackgroundColorImage();
 	void onBackgroundImageBrowseClicked();
     void onBackgroundImageRotationChanged(int);
+	void onBeginUserInteraction();
+	void onEndUserInteraction();
 
 private:
     Ui::RenderPropertiesUI *ui;
