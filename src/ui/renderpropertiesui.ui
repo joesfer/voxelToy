@@ -235,17 +235,17 @@
       <item row="1" column="0">
        <widget class="QLabel" name="label">
         <property name="text">
-         <string>Maximum path length</string>
+         <string>Maximum num. bounces</string>
         </property>
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QSpinBox" name="pathtracerMaxPathLengthSpinBox">
+       <widget class="QSpinBox" name="pathtracerMaxPathBouncesSpinBox">
         <property name="minimum">
          <number>1</number>
         </property>
         <property name="maximum">
-         <number>4</number>
+         <number>10</number>
         </property>
        </widget>
       </item>
@@ -517,7 +517,7 @@
   <tabstop>resolutionMatchWindowRadioButton</tabstop>
   <tabstop>wireframeOpacitySlider</tabstop>
   <tabstop>wireframeThicknessSlider</tabstop>
-  <tabstop>pathtracerMaxPathLengthSpinBox</tabstop>
+  <tabstop>pathtracerMaxPathBouncesSpinBox</tabstop>
   <tabstop>pathtracerMaxStepsSlider</tabstop>
  </tabstops>
  <resources/>
@@ -763,10 +763,10 @@
    </hints>
   </connection>
   <connection>
-   <sender>pathtracerMaxPathLengthSpinBox</sender>
+   <sender>pathtracerMaxPathBouncesSpinBox</sender>
    <signal>valueChanged(int)</signal>
    <receiver>RenderPropertiesUI</receiver>
-   <slot>onPathtracerMaxPathLengthChanged(int)</slot>
+   <slot>onPathtracerMaxPathBouncesChanged(int)</slot>
    <hints>
     <hint type="sourcelabel">
      <x>355</x>
@@ -1004,13 +1004,13 @@
   </connection>
  </connections>
  <slots>
-  <signal>pathtracerMaxPathLengthChanged(int)</signal>
+  <signal>pathtracerMaxPathBouncesChanged(int)</signal>
   <signal>resolutionSettingsChanged()</signal>
   <signal>pathtracerMaxSamplesChanged(int)</signal>
   <signal>wireframeThicknessChanged(int)</signal>
   <signal>wireframeOpacityChanged(int)</signal>
   <signal>backgroundImageRotationChanged(int)</signal>
-  <slot>onPathtracerMaxPathLengthChanged(int)</slot>
+  <slot>onPathtracerMaxPathBouncesChanged(int)</slot>
   <slot>onResolutionSettingsChanged()</slot>
   <slot>onPathtracerMaxSamplesChanged(int)</slot>
   <slot>onWireframeOpacityChanged(int)</slot>

@@ -3,8 +3,8 @@
 #include <focalDistance/focalDistanceDevice.h>
 #include <editVoxels/selectVoxelDevice.h>
 
-uniform sampler3D   occupancyTexture;
-uniform sampler3D   voxelColorTexture;
+uniform isampler3D  materialOffsetTexture;
+uniform sampler1D   materialDataTexture;
 uniform sampler2D   noiseTexture;
 uniform ivec3       voxelResolution;
 uniform vec3        volumeBoundsMin;
@@ -32,7 +32,7 @@ uniform float	    backgroundIntegral;
 uniform float	    backgroundRotationRadians;
 
 uniform int         sampleCount;
-uniform int			pathtracerMaxPathLength;
+uniform int			pathtracerMaxNumBounces;
 
 uniform float		wireframeOpacity = 0;
 uniform float		wireframeThickness = 0.01;
@@ -48,7 +48,13 @@ out vec4 outColor;
 #include <shared/sampling.h>
 #include <shared/random.h>
 #include <shared/generateRay.h>
-#include <shared/bsdf.h>
+#include <bsdf/lambertian.h>
+#include <bsdf/microfacet.h>
+#include <bsdf/bsdf.h>
+#include <materials/matte.h>
+#include <materials/metal.h>
+#include <materials/plastic.h>
+#include <materials/materials.h>
 #include <shared/lights.h>
 
 float ISECT_EPSILON = 0.01;
@@ -96,12 +102,20 @@ void main()
 						   wsRayOrigin, wsRayDir,
 						   wsHitBasis);
 	
-	vec3 albedo = hitGround ? 
-				groundColor :
-				texelFetch(voxelColorTexture,
-							 ivec3(vsHitPos.x, vsHitPos.y, vsHitPos.z), 0).xyz;
+	//vec3 albedo = hitGround ? 
+	//			groundColor :
+	//			texelFetch(voxelColorTexture,
+	//						 ivec3(vsHitPos.x, vsHitPos.y, vsHitPos.z), 0).xyz;
+
+	if ( ivec3(vsHitPos) == SelectVoxelData.index.xyz )
+	{
+		// Draw selected voxel as red
+		outColor = vec4(1,0,0,1);
+		return;
+	}
 
 	// Wireframe overlay
+	vec3 albedo = vec3(1,1,1); // TODO -- extract albedo from material parameters
 	if (wireframeOpacity > 0)
 	{
 		vec3 vsVoxelCenter = (wsHitBasis.position - volumeBoundsMin) / (volumeBoundsMax - volumeBoundsMin) * voxelResolution;
@@ -114,11 +128,6 @@ void main()
 		albedo *= vec3(wireframe);
 	}
 
-	if ( ivec3(vsHitPos) == SelectVoxelData.index.xyz )
-	{
-		// Draw selected voxel as red
-		albedo = vec3(1,0,0); 
-	}
 
 	// dot normal lighting
 	float lighting = max(0, dot(-wsRayDir, wsHitBasis.normal));

@@ -10,6 +10,11 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+	connect(this, SIGNAL(beginUserInteraction(void)), 
+			ui->glWidget, SLOT(onBeginUserInteraction(void)));
+	connect(this, SIGNAL(endUserInteraction(void)), 
+			ui->glWidget, SLOT(onEndUserInteraction(void)));
+
     // Camera properties widget
 
     connect(ui->cameraProperties, SIGNAL(lensModelChanged(int)),
@@ -25,8 +30,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->renderProperties, SIGNAL(pathtracerMaxSamplesChanged(int)),
             ui->glWidget, SLOT(onPathtracerMaxSamplesChanged(int)));
-    connect(ui->renderProperties, SIGNAL(pathtracerMaxPathLengthChanged(int)),
-            ui->glWidget, SLOT(onPathtracerMaxPathLengthChanged(int)));
+    connect(ui->renderProperties, SIGNAL(pathtracerMaxPathBouncesChanged(int)),
+            ui->glWidget, SLOT(onPathtracerMaxPathBouncesChanged(int)));
     connect(ui->renderProperties, SIGNAL(resolutionSettingsChanged(void)),
             this, SLOT(onResolutionSettingsChanged(void)));
     connect(ui->renderProperties, SIGNAL(wireframeOpacityChanged(int)),
@@ -43,7 +48,13 @@ MainWindow::MainWindow(QWidget *parent) :
             ui->glWidget, SLOT(onBackgroundColorChangedImage(QString)));
     connect(ui->renderProperties, SIGNAL(backgroundImageRotationChanged(int)),
             ui->glWidget, SLOT(onBackgroundImageRotationChanged(int)));
+	connect(ui->renderProperties, SIGNAL(beginUserInteraction(void)), 
+			ui->glWidget, SLOT(onBeginUserInteraction(void)));
+	connect(ui->renderProperties, SIGNAL(endUserInteraction(void)), 
+			ui->glWidget, SLOT(onEndUserInteraction(void)));
 
+
+	// log window
     connect(ui->glWidget, SIGNAL(logMessage(QString)),
             ui->logWindow, SLOT(onLogMessage(QString)));
 
@@ -63,6 +74,8 @@ void MainWindow::on_actionReload_Shaders_triggered()
 
 void MainWindow::on_actionLoad_Mesh_triggered()
 {
+	emit beginUserInteraction();
+
     QFileDialog dialog(this);
     dialog.setFileMode(QFileDialog::ExistingFile);
     dialog.setNameFilter(tr("OBJ files (*.obj)"));
@@ -72,6 +85,8 @@ void MainWindow::on_actionLoad_Mesh_triggered()
         QString file = dialog.selectedFiles()[0];
         ui->glWidget->loadMesh(file);
     }
+
+	emit endUserInteraction();
 }
 
 void MainWindow::onResolutionSettingsChanged()
@@ -84,6 +99,8 @@ void MainWindow::onResolutionSettingsChanged()
 
 void MainWindow::on_actionLoad_VOX_file_triggered()
 {
+	emit beginUserInteraction();
+
     QFileDialog dialog(this);
     dialog.setFileMode(QFileDialog::ExistingFile);
     dialog.setNameFilter(tr("VOX files (*.vox)"));
@@ -93,6 +110,8 @@ void MainWindow::on_actionLoad_VOX_file_triggered()
         QString file = dialog.selectedFiles()[0];
         ui->glWidget->loadVoxFile(file);
     }
+
+	emit endUserInteraction();
 }
 
 void MainWindow::on_actionSelect_Focal_Point_toggled(bool triggered)

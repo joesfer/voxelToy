@@ -2,7 +2,7 @@
 
 #include <editVoxels/selectVoxelDevice.h>
 
-uniform sampler3D   occupancyTexture;
+uniform isampler3D  materialOffsetTexture;
 uniform sampler2D   noiseTexture;
 uniform ivec3       voxelResolution;
 uniform vec3        volumeBoundsMin;

@@ -45,8 +45,8 @@ struct IntegratorShaderSettings
 	GLuint m_program;
 
 	// uniforms
-	GLuint m_uniformVoxelOccupancyTexture;
-	GLuint m_uniformVoxelColorTexture;
+	GLuint m_uniformMaterialOffsetTexture;
+	GLuint m_uniformMaterialDataTexture;
 	GLuint m_uniformNoiseTexture;
 	GLuint m_uniformVoxelDataResolution;
 	GLuint m_uniformVolumeBoundsMin;
@@ -63,7 +63,7 @@ struct IntegratorShaderSettings
 	GLuint m_uniformLightDir;
 	GLuint m_uniformSampleCount;
 	GLuint m_uniformCameraLensModel;
-	GLuint m_uniformPathtracerMaxPathLength;
+	GLuint m_uniformPathtracerMaxPathBounces;
 	GLuint m_uniformWireframeOpacity;
 	GLuint m_uniformWireframeThickness;
 	GLuint m_uniformFocalDistanceSSBOStorageBlock;
@@ -98,57 +98,4 @@ struct TexturedShaderSettings
     GLuint m_uniformViewport;
 };
 
-struct PickingShaderSettings
-{
-	GLuint m_program;
-	
-	// uniforms
-	GLuint m_uniformVoxelOccupancyTexture;
-	GLuint m_uniformVoxelDataResolution;
-	GLuint m_uniformVolumeBoundsMin;
-	GLuint m_uniformVolumeBoundsMax;
-	GLuint m_uniformViewport;
-	GLuint m_uniformCameraNear;
-	GLuint m_uniformCameraFar;
-	GLuint m_uniformCameraProj;
-	GLuint m_uniformCameraInverseProj;
-	GLuint m_uniformCameraInverseModelView;
-	GLuint m_uniformCameraFocalLength;
-	GLuint m_uniformSampledFragment;
-	GLuint m_uniformSSBOStorageBlock;
-};
-
-typedef PickingShaderSettings FocalDistanceShaderSettings;
-typedef PickingShaderSettings SelectActiveVoxelShaderSettings;
-
-struct AddVoxelShaderSettings
-{
-	GLuint m_program;
-
-	// uniforms
-	GLuint m_uniformCameraInverseModelView;
-	GLuint m_uniformScreenSpaceMotion;
-	GLuint m_uniformVoxelOccupancyTexture;
-	GLuint m_uniformVoxelColorTexture;
-	GLuint m_uniformSelectedVoxelSSBOStorageBlock;
-	GLuint m_uniformNewVoxelColor;
-};
-
-struct RemoveVoxelShaderSettings
-{
-	GLuint m_program;
-
-	// uniforms
-	GLuint m_uniformVoxelOccupancyTexture;
-	GLuint m_uniformSelectedVoxelSSBOStorageBlock;
-};
-
-struct VoxelizeShaderSettings
-{
-	GLuint m_program;
-
-	GLuint m_uniformVoxelDataResolution;
-	GLuint m_uniformModelTransform;
-	GLuint m_uniformVoxelOccupancyTexture;
-};
 

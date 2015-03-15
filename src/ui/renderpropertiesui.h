@@ -32,7 +32,7 @@ public:
 
 signals:
 	void pathtracerMaxSamplesChanged(int);
-	void pathtracerMaxPathLengthChanged(int);
+	void pathtracerMaxPathBouncesChanged(int);
 	void resolutionSettingsChanged();
 	void wireframeOpacityChanged(int);
 	void wireframeThicknessChanged(int);
@@ -42,10 +42,12 @@ signals:
     void backgroundColorChangedImage(QString);
     void backgroundImageRotation(int);
     void backgroundImageRotationChanged(int);
+	void beginUserInteraction();
+	void endUserInteraction();
 
 public slots:
 	void onPathtracerMaxSamplesChanged(int);
-	void onPathtracerMaxPathLengthChanged(int);
+	void onPathtracerMaxPathBouncesChanged(int);
 	void onResolutionSettingsChanged();
 	void onWireframeOpacityChanged(int value);
 	void onWireframeThicknessChanged(int value);
@@ -58,6 +60,8 @@ public slots:
     void onBackgroundColorImage();
 	void onBackgroundImageBrowseClicked();
     void onBackgroundImageRotationChanged(int);
+	void onBeginUserInteraction();
+	void onEndUserInteraction();
 
 private:
     Ui::RenderPropertiesUI *ui;

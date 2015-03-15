@@ -1,4 +1,4 @@
-#include "svo/voxelizer.h"
+#include "voxelize/cpuVoxelizer.h"
 #include <OpenEXR/ImathMatrix.h>
 #include <OpenEXR/ImathFun.h>
 
@@ -278,7 +278,7 @@ void voxelizeTriangleTask(const Imath::V3f* vertices,
 }
 
 
-/*static*/ void Voxelizer::voxelizeMesh(const Imath::V3f* vertices,
+/*static*/ void CPUVoxelizer::voxelizeMesh(const Imath::V3f* vertices,
 										const unsigned int* indices,
 										unsigned int numTriangles,
 										const Imath::V3i& voxelDimensions,

@@ -16,6 +16,8 @@ public:
     ~MainWindow();
 signals:
 	void actionTriggered(int, bool);
+	void beginUserInteraction();
+	void endUserInteraction();
 
 private slots:
     void on_actionReload_Shaders_triggered();

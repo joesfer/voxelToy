@@ -24,6 +24,7 @@ GLWidget::GLWidget(QWidget *parent)
     m_resolutionMode = RenderPropertiesUI::RM_MATCH_WINDOW;
 	m_resolutionLongestAxis = 1024;
 	m_activeTool = NULL;
+	m_activeUserDialogs = 0U;
 
     connect(&m_logger, SIGNAL(logMessage(QString)), this, SLOT(onLogMessage(QString)));
 }
@@ -149,7 +150,8 @@ void GLWidget::resizeGL(int width, int height)
 
 void GLWidget::paintGL()
 {
-	if (m_renderer.render() == Renderer::RR_SAMPLES_PENDING)
+	const bool pauseRendering = m_activeUserDialogs > 0;
+	if (!pauseRendering && m_renderer.render() == Renderer::RR_SAMPLES_PENDING)
 	{
 		update();
 	}
@@ -260,9 +262,9 @@ void GLWidget::onPathtracerMaxSamplesChanged(int value)
 	update();
 }
 
-void GLWidget::onPathtracerMaxPathLengthChanged(int value)
+void GLWidget::onPathtracerMaxPathBouncesChanged(int value)
 {
-	m_renderer.renderSettings().m_pathtracerMaxPathLength = value;
+	m_renderer.renderSettings().m_pathtracerMaxNumBounces = value;
 	m_renderer.updateRenderSettings();
 	update();
 }
@@ -375,4 +377,14 @@ void GLWidget::onBackgroundImageRotationChanged(int rotation)
 void GLWidget::onLogMessage(QString msg)
 {
 	emit logMessage(msg);
+}
+
+void GLWidget::onBeginUserInteraction()
+{
+	m_activeUserDialogs++;
+}
+
+void GLWidget::onEndUserInteraction()
+{
+	m_activeUserDialogs = std::max(1U, m_activeUserDialogs) - 1;
 }

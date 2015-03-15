@@ -52,7 +52,7 @@ public slots:
 	void cameraLensModelChanged(int model);
     void cameraControllerChanged(QString mode);
     void onPathtracerMaxSamplesChanged(int);
-    void onPathtracerMaxPathLengthChanged(int);
+    void onPathtracerMaxPathBouncesChanged(int);
     void onResolutionSettingsChanged(RenderPropertiesUI::ResolutionMode mode, int axis1, int axis2);
     void onWireframeOpacityChanged(int);
     void onWireframeThicknessChanged(int);
@@ -62,6 +62,9 @@ public slots:
 	void onBackgroundColorChangedImage(QString);
 	void onBackgroundImageRotationChanged(int);
 	void onLogMessage(QString);
+
+	void onBeginUserInteraction();
+	void onEndUserInteraction();
 
 protected:
 	void initializeGL();
@@ -73,6 +76,7 @@ protected:
 	void keyPressEvent(QKeyEvent *);
 	void resizeRender(int renderW, int renderH, int windowW, int windowH);
 private:
+	unsigned int                       m_activeUserDialogs;
     QPoint                             m_lastPos;
     Qt::MouseButtons                   m_lastMouseButtons;
     Renderer                           m_renderer;

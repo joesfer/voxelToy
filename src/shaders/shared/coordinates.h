@@ -43,8 +43,8 @@ struct Basis
 vec3 localToWorld(in vec3 lsV, 
 				  in Basis basis)
 {
-	return lsV.x * basis.tangent + 
-		   lsV.y * basis.normal + 
+	return lsV.x * basis.tangent   +
+		   lsV.y * basis.normal    +
 		   lsV.z * basis.binormal;
 }
 
@@ -87,6 +87,12 @@ vec3 sphericalToCartesian(float phi, float theta)
 {
 	float sinTheta = sin(theta);
 	return vec3( sinTheta * cos(phi), cos(theta), sinTheta * sin(phi) );
+}
+
+// pole at +Y (theta = 0)
+vec3 sphericalToCartesian(float phi, float cosTheta, float sinTheta)
+{
+	return vec3( sinTheta * cos(phi), cosTheta, sinTheta * sin(phi) );
 }
 
 vec2 uvCoordFromVector(in vec3 vec, float rotation)

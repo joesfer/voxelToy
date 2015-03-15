@@ -10,6 +10,8 @@ public:
 	void setColor(QColor);
 signals:
 	void colorChanged(QColor);
+	void beginUserInteraction();
+	void endUserInteraction();
 public slots:
 	void onClicked();
 };

@@ -1,5 +1,6 @@
 #include "ui/colorpicker.h"
 #include <QColorDialog>
+#include <QApplication>
 #include <iostream>
 ColorPickerButton::ColorPickerButton(QWidget* parent)
 	: QPushButton(parent)
@@ -10,11 +11,15 @@ ColorPickerButton::ColorPickerButton(QWidget* parent)
 
 void ColorPickerButton::onClicked()
 {
-	QColor col = QColorDialog::getColor(this->getColor()); 
+	emit beginUserInteraction();
+
+	QColor col = QColorDialog::getColor(this->getColor(), QApplication::activeWindow()); 
 	if (col.isValid())
 	{
 		setColor(col);
 	}
+
+	emit endUserInteraction();
 }
 
 QColor ColorPickerButton::getColor() const

@@ -1,49 +1,9 @@
-#include "voxLoader.h"
 #include <stdio.h>
 #include <memory.h>
 #include <stdlib.h>
 #include <iostream>
 
-bool VoxSlapLoader::load(const std::string& filePath,
-						 GLubyte*& occupancyTexels, GLubyte*& colorTexels,
-						 Imath::V3i& voxelResolution)
-{
-	// Vox format description:
-	// long xsiz, ysiz, zsiz; //Variable declarations
-	// char voxel[xsiz][ysiz][zsiz];
-	// char palette[256][3];
-
-	FILE* fd = fopen(filePath.c_str(), "rb"); if (!fd) return false;
-	if (fread(&(voxelResolution.x), sizeof(int), 3, fd) != 3) return false;
-	size_t numVoxels = voxelResolution.x * voxelResolution.y * voxelResolution.z;
-	occupancyTexels = (GLubyte*)malloc(numVoxels * sizeof(GLubyte));
-	if (!occupancyTexels) return false;
-	if(fread(occupancyTexels, sizeof(GLubyte), numVoxels, fd) != numVoxels) return false;
-
-	size_t paletteSize = 256 * 3 * sizeof(char);
-	char* palette = (char*)malloc(paletteSize);
-	if (!palette) return false;
-	if(fread(palette, 3 * sizeof(char), paletteSize, fd) != 256) return false;
-	fclose(fd);
-
-	colorTexels = (GLubyte*)malloc(numVoxels * 4 * sizeof(GLubyte));
-	const unsigned char noVoxel = 255; 
-	for(size_t i = 0; i < numVoxels; ++i)
-	{
-		if(occupancyTexels[i] == noVoxel)
-		{
-			occupancyTexels[i] = 0;
-			continue;
-		}
-		const char paletteIndex = occupancyTexels[i];
-		occupancyTexels[i] = 255;
-		memcpy(&colorTexels[4*i], &palette[3*paletteIndex], 3 * sizeof(GLuint));
-		colorTexels[4*i+3] = 0;
-	}
-	free(palette);
-	return true;
-}
-
+#include "renderer/loaders/magicaVoxel.h"
 
 // This namespace contains the functions to load a VOX file according to
 // MagicaVoxel's specifications, based on the sample code from		
@@ -304,7 +264,8 @@ namespace MagicaVoxel
 } // namespace MagicaVoxel
 
 bool MagicaVoxelLoader::load(const std::string& filePath,
-							 GLubyte*& occupancyTexels, GLubyte*& colorTexels,
+							 std::vector<GLint>& voxelMaterials, 
+							 std::vector<float>& materialData,
 							 Imath::V3i& voxelResolution)
 {
 	using namespace MagicaVoxel;
@@ -317,15 +278,14 @@ bool MagicaVoxelLoader::load(const std::string& filePath,
 	voxelResolution.z = model.sizey;
 
 	size_t numVoxels = voxelResolution.x * voxelResolution.y * voxelResolution.z;
-	occupancyTexels = (GLubyte*)malloc(numVoxels * sizeof(GLubyte));
-	if (!occupancyTexels) return false;
-	memset(occupancyTexels, 0, numVoxels * sizeof(GLubyte));
-	colorTexels = (GLubyte*)malloc(numVoxels * 4 * sizeof(GLubyte));
-	if (!colorTexels) return false;
+	voxelMaterials.resize(numVoxels, -1);
 
 	const unsigned char* palette = model.isCustomPalette ? 
 		reinterpret_cast<const unsigned char*>(model.palette) :
 		reinterpret_cast<const unsigned char*>(MagicaVoxel::defaultPalette);
+
+	GLint materialDataOffset[256];
+	for(int i = 0; i < 256; ++i ) materialDataOffset[i] = -1;
 
 	for( int i = 0; i < model.numVoxels; ++i )
 	{
@@ -333,12 +293,30 @@ bool MagicaVoxelLoader::load(const std::string& filePath,
 		size_t voxelOffset = v.x + 
 							 v.z * voxelResolution.x + 
 							 v.y * voxelResolution.x * voxelResolution.y;
-		if (v.colorIndex == 254) continue;
-		occupancyTexels[voxelOffset] = 255;
-		colorTexels[4*voxelOffset+0] = palette[4*v.colorIndex+0];
-		colorTexels[4*voxelOffset+1] = palette[4*v.colorIndex+1];
-		colorTexels[4*voxelOffset+2] = palette[4*v.colorIndex+2];
-		colorTexels[4*voxelOffset+3] = palette[4*v.colorIndex+3];
+
+		if (v.colorIndex == 254) continue; // empty voxel
+
+		// index material
+		voxelMaterials[voxelOffset] = materialDataOffset[v.colorIndex]; 
+		if ( voxelMaterials[voxelOffset] >= 0 )
+		{
+			// we've inserted this material already, continue
+			continue;
+		}
+
+		// New material -- append data
+		// With the information available we can only generate Lambertian materials
+		GLint materialOffset = (GLint)materialData.size();
+		materialDataOffset[v.colorIndex] = materialOffset;
+		voxelMaterials[voxelOffset] = materialOffset; 
+
+		Imath::V3f emission(0,0,0);
+		Imath::V3f albedo((float)palette[4*v.colorIndex+0] / 255,
+						  (float)palette[4*v.colorIndex+1] / 255,
+						  (float)palette[4*v.colorIndex+2] / 255);
+
+		generateMaterialLambert(emission, albedo, materialData);
 	}
 	return true;
 }
+

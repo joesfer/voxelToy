@@ -16,14 +16,14 @@ bool ToolAddRemoveVoxel::mousePressEvent(QMouseEvent* event, QSize widgetDimensi
 		{
 			m_renderer.requestAction(fx, fy,
 									 fdx, fdy,
-									 Renderer::PA_REMOVE_VOXEL,
+									 Action::PA_REMOVE_VOXEL,
 									 true);
 		}
 		else
 		{
 			m_renderer.requestAction(fx, fy,
 									 fdx, fdy,
-									 Renderer::PA_ADD_VOXEL,
+									 Action::PA_ADD_VOXEL,
 									 true);
 		}
 		res = true;	
@@ -46,7 +46,7 @@ bool ToolAddRemoveVoxel::mouseMoveEvent(QMouseEvent *event, QSize widgetDimensio
 
 	m_renderer.requestAction(fx, fy,
 							 fdx, fdy,
-							 Renderer::PA_SELECT_ACTIVE_VOXEL, 
+							 Action::PA_SELECT_ACTIVE_VOXEL, 
 							 true);
 
 	if ( event->buttons() & Qt::LeftButton ) 
@@ -55,14 +55,14 @@ bool ToolAddRemoveVoxel::mouseMoveEvent(QMouseEvent *event, QSize widgetDimensio
 		{
 			m_renderer.requestAction(fx, fy,
 									 fdx, fdy,
-									 Renderer::PA_REMOVE_VOXEL,
+									 Action::PA_REMOVE_VOXEL,
 									 true);
 		}
 		else
 		{
 			m_renderer.requestAction(fx, fy,
 									 fdx, fdy,
-									 Renderer::PA_ADD_VOXEL,
+									 Action::PA_ADD_VOXEL,
 									 true);
 		}
 	}
