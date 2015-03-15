@@ -737,7 +737,7 @@ void Renderer::createFramebuffer()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexImage2D(GL_TEXTURE_2D,
 					 0,
-					 GL_RGBA,
+					 GL_RGBA32F,
 					 1024, 
 					 1024,
 					 0,
@@ -773,7 +773,7 @@ void Renderer::createFramebuffer()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 		glTexImage2D(GL_TEXTURE_2D,
 					 0,
-					 GL_RGBA,
+					 GL_RGBA32F,
 					 m_renderSettings.m_imageResolution.x,
 					 m_renderSettings.m_imageResolution.y,
 					 0,
