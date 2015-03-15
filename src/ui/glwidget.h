@@ -12,6 +12,7 @@
 #include <OpenEXR/ImathVec.h>
 
 #include "renderer/renderer.h"
+#include "renderer/material/material.h"
 #include "ui/renderpropertiesui.h"
 #include "tools/tool.h"
 #include "log/logger.h"
@@ -39,6 +40,7 @@ signals:
 	void statusChanged(QString);
 	void currentToolActioned();
 	void logMessage(QString);
+	void materialCreated(Material::SerializedData&);
 
 public slots:
 	void onActionTriggered(int, bool);
@@ -62,6 +64,8 @@ public slots:
 	void onBackgroundColorChangedImage(QString);
 	void onBackgroundImageRotationChanged(int);
 	void onLogMessage(QString);
+	void onMaterialColorChanged(unsigned int dataOffset, QColor col);
+	void onMaterialValueChanged(unsigned int dataOffset, float value);
 
 	void onBeginUserInteraction();
 	void onEndUserInteraction();

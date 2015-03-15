@@ -49,7 +49,7 @@ Renderer::Renderer()
 	m_renderSettings.m_imageResolution.x = 512;
 	m_renderSettings.m_imageResolution.y = 512;
 	m_renderSettings.m_pathtracerMaxNumBounces = 1;
-	m_renderSettings.m_pathtracerMaxSamples = 128;
+	m_renderSettings.m_pathtracerMaxSamples = 2048 * 2048;
 
 	m_currentIntegrator = INTEGRATOR_PATHTRACER;
 
@@ -1103,5 +1103,100 @@ void Renderer::saveImage(const std::string& file)
 	delete[] pixels;
 	out->close();
 	delete out;
-	
 }
+
+std::vector<Material::SerializedData> Renderer::getMaterials() const
+{
+	using namespace std;
+	vector<Material::SerializedData> result;
+
+	glActiveTexture(GL_TEXTURE0 + GLResourceConfiguration::TEXTURE_UNIT_MATERIAL_DATA); 
+	glBindTexture(GL_TEXTURE_1D, m_glResources.m_materialDataTexture);
+	GLint width;
+	glGetTexLevelParameteriv(GL_TEXTURE_1D, 0, GL_TEXTURE_WIDTH, &width); // get width of GL texture
+	glPixelStorei(GL_PACK_ALIGNMENT,4);
+	glPixelStorei(GL_UNPACK_ALIGNMENT,4);
+
+	float* storage = new float[width];
+
+	glGetTexImage(GL_TEXTURE_1D,
+				  0,
+				  GL_RED,
+				  GL_FLOAT,
+				  storage);
+	
+	size_t offset = 0;
+	while(offset < (size_t)width)
+	{
+		Material::MaterialType mt = (Material::MaterialType)(storage[offset]);
+
+		size_t dataSize = 0;
+		switch(mt)
+		{
+			case Material::MT_LAMBERT:
+			{
+				const Material::LambertMaterialData* materialData = reinterpret_cast<const Material::LambertMaterialData*>(storage + offset + 1);
+				result.push_back(Material::serializeLambert(*materialData, offset));
+				dataSize = sizeof(Material::LambertMaterialData) / sizeof(float);
+			} break;
+
+			case Material::MT_METAL:
+			{
+				const Material::MetalMaterialData* materialData = reinterpret_cast<const Material::MetalMaterialData*>(storage + offset + 1);
+				result.push_back(Material::serializeMetal(*materialData, offset));
+				dataSize = sizeof(Material::MetalMaterialData) / sizeof(float);
+			} break;
+
+			case Material::MT_PLASTIC:
+			{
+				const Material::PlasticMaterialData* materialData = reinterpret_cast<const Material::PlasticMaterialData*>(storage + offset + 1);
+				result.push_back(Material::serializePlastic(*materialData, offset));
+				dataSize = sizeof(Material::PlasticMaterialData) / sizeof(float);
+			} break;
+
+			default: 
+			{
+				offset = width;
+				if (m_logger) (*m_logger)("Unrecognized material type. Aborting.");
+				break;
+			}
+		}
+		offset += 1 + dataSize; // Type (1) + dataSize
+	};
+
+	delete storage;
+	return result;
+}
+
+void Renderer::updateMaterialColor(unsigned int dataOffset, const float color[3])
+{
+	if (!m_initialized) return;
+
+	glActiveTexture(GL_TEXTURE0 + GLResourceConfiguration::TEXTURE_UNIT_MATERIAL_DATA); 
+	glBindTexture(GL_TEXTURE_1D, m_glResources.m_materialDataTexture);
+
+	glTexSubImage1D(GL_TEXTURE_1D,
+					0, // GLint level,
+					dataOffset, // GLint xoffset,
+					3, // GLsizei width,
+					GL_RED, // GLenum format,
+					GL_FLOAT, // GLenum type,
+					color); // const GLvoid * pixels
+}
+
+void Renderer::updateMaterialValue(unsigned int dataOffset, float value)
+{
+	if (!m_initialized) return;
+
+	glActiveTexture(GL_TEXTURE0 + GLResourceConfiguration::TEXTURE_UNIT_MATERIAL_DATA); 
+	glBindTexture(GL_TEXTURE_1D, m_glResources.m_materialDataTexture);
+
+	glTexSubImage1D(GL_TEXTURE_1D,
+					0, // GLint level,
+					dataOffset, // GLint xoffset,
+					1, // GLsizei width,
+					GL_RED, // GLenum format,
+					GL_FLOAT, // GLenum type,
+					&value ); // const GLvoid * pixels
+}
+

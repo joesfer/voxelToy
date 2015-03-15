@@ -74,7 +74,8 @@ HEADERS  += ../../src/ui/mainwindow.h \
 FORMS    += ../../src/ui/mainwindow.ui \
     ../../src/ui/camerapropertiesui.ui \
     ../../src/ui/renderpropertiesui.ui \
-    ../../src/ui/logwindow.ui
+    ../../src/ui/logwindow.ui \
+    ../../src/ui/materialpreview.ui
 
 LIBS += -lglut -lGLU -lGLEW -lboost_system -lboost_thread
 

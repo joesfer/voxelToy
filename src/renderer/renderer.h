@@ -8,6 +8,7 @@
 #include "renderer/glResources.h"
 #include "renderer/services/service.h"
 #include "renderer/actions.h"
+#include "renderer/material/material.h"
 
 #include <GL/gl.h>
 
@@ -108,6 +109,10 @@ public:
 		INTEGRATOR_EDIT_MODE,
 		INTEGRATOR_TOTAL,
 	};
+
+	std::vector<Material::SerializedData> getMaterials() const;
+	void updateMaterialColor(unsigned int dataOffset, const float color[3]);
+	void updateMaterialValue(unsigned int dataOffset, float value);
 
 private:
 	// Synchronize camera data with the shaders.

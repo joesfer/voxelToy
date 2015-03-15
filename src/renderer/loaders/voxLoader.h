@@ -4,7 +4,7 @@
 #include <OpenEXR/ImathVec.h>
 #include <vector>
 
-#include "renderer/material.h"
+#include "renderer/material/material.h"
 
 class VoxLoader
 {

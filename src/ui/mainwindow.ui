@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>972</width>
-    <height>657</height>
+    <width>1230</width>
+    <height>761</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -537,7 +537,7 @@ QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>972</width>
+     <width>1230</width>
      <height>25</height>
     </rect>
    </property>
@@ -566,6 +566,7 @@ QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
      <string>Edit</string>
     </property>
     <addaction name="actionAdd_Voxel"/>
+    <addaction name="actionMaterials"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit_2"/>
@@ -594,6 +595,44 @@ QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
     <number>8</number>
    </attribute>
    <widget class="LogWindow" name="logWindow"/>
+  </widget>
+  <widget class="QDockWidget" name="materialsDockingWidget">
+   <property name="windowTitle">
+    <string>Materials</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents">
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <widget class="QTreeWidget" name="materialsTreeWidgets">
+       <property name="indentation">
+        <number>10</number>
+       </property>
+       <property name="columnCount">
+        <number>2</number>
+       </property>
+       <attribute name="headerVisible">
+        <bool>false</bool>
+       </attribute>
+       <attribute name="headerDefaultSectionSize">
+        <number>150</number>
+       </attribute>
+       <column>
+        <property name="text">
+         <string notr="true">1</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string notr="true">2</string>
+        </property>
+       </column>
+      </widget>
+     </item>
+    </layout>
+   </widget>
   </widget>
   <action name="actionReload_Shaders">
    <property name="icon">
@@ -680,6 +719,11 @@ QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionMaterials">
+   <property name="text">
+    <string>Materials</string>
    </property>
   </action>
  </widget>

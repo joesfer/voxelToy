@@ -291,6 +291,12 @@ void GLWidget::loadMesh(QString file)
 void GLWidget::loadVoxFile(QString file)
 {
     m_renderer.loadVoxFile(file.toStdString());
+	glFinish(); // ensure all resources have been created
+	std::vector<Material::SerializedData> materialData = m_renderer.getMaterials();
+	for( size_t i = 0; i < materialData.size(); ++i )
+	{
+		emit materialCreated(materialData[i]);
+	}
 }
 
 void GLWidget::saveImage(QString file)
@@ -388,3 +394,19 @@ void GLWidget::onEndUserInteraction()
 {
 	m_activeUserDialogs = std::max(1U, m_activeUserDialogs) - 1;
 }
+
+
+void GLWidget::onMaterialColorChanged(unsigned int dataOffset, QColor col)
+{
+	float rgb[3] = {col.redF(), col.greenF(), col.blueF()};
+	m_renderer.updateMaterialColor(dataOffset, rgb);
+	m_renderer.resetRender();
+	update();
+}
+void GLWidget::onMaterialValueChanged(unsigned int dataOffset, float value)
+{
+	m_renderer.updateMaterialValue(dataOffset, value);
+	m_renderer.resetRender();
+	update();
+}
+

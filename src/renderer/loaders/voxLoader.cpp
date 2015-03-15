@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <iostream>
 
-#include "renderer/material.h"
+#include "renderer/material/material.h"
 void VoxLoader::generateMaterialLambert(Imath::V3f emission,
 									    Imath::V3f albedo,
 									    std::vector<float>& materialData)
