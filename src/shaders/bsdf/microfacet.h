@@ -1,6 +1,5 @@
 
 float indexOfRefraction = 7.3; 
-float exponent = 100; 
 
 // Geometry term. Masking function based on V cavities model.
 float G(in vec3 lsWo,
@@ -18,6 +17,7 @@ float G(in vec3 lsWo,
 // Blinn-Phong microfacet distribution
 // return vec2(f,pdf)
 vec4 D(in vec3 reflectance,
+	   in float exponent,
 	   in vec3 lsWo,
 	   in vec3 lsWh)
 {
@@ -39,6 +39,7 @@ vec4 D(in vec3 reflectance,
 // Sample the Blinn microfacet distribution. Return f_pdf = vec4(f, pdf) and 
 // sampled direction by value
 vec3 sampleD(in vec3 reflectance,
+			 in float exponent,
 			 in vec3 lsWo, 
 			 in vec2 uniformRandomSample, 
 			 out vec4 f_pdf)
@@ -53,7 +54,7 @@ vec3 sampleD(in vec3 reflectance,
 	vec3 lsWi = -lsWo + 2.0 * dot(lsWo, lsWh) * lsWh;
 
 	// Evaluate 
-	f_pdf = D(reflectance, lsWo, lsWh);
+	f_pdf = D(reflectance, exponent, lsWo, lsWh);
 
 	// Return direction
 	return lsWi;
@@ -69,7 +70,8 @@ float F(float cosThetaH)
 
 // Calculate the BSDF value and pdf for a pair of local (tangent) space directions.
 // returns vec4(f.xyz, pdf)
-vec4 evaluateBSDF_Microfacet(in vec3 albedo, 
+vec4 evaluateBSDF_Microfacet(in vec3 reflectance, 
+							 in float exponent,
 							 in vec3 lsWo, 
 							 in vec3 lsWi)
 {
@@ -83,7 +85,7 @@ vec4 evaluateBSDF_Microfacet(in vec3 albedo,
 	// D = microfacet distribution
 	// G = geometric term (self shadowing)
 	// F = Fresnel term
-	vec4 f_pdf = D(albedo, lsWo, lsWh);
+	vec4 f_pdf = D(reflectance, exponent, lsWo, lsWh);
 	f_pdf.xyz *= G(lsWo, lsWi, lsWh) * F(cosThetaH) / (4.0 * cosThetaWo * cosThetaWi);
 	return f_pdf;
 }
@@ -97,20 +99,21 @@ vec4 evaluateBSDF_Microfacet(in vec3 albedo,
 // Returns the sampled direction in local space, lsWi, and a vec4 f_pdf
 // containing the value of the bsdf and corresponding pdf for the sampled 
 // directions.
-vec3 sampleBSDF_Microfacet(in vec3 albedo,
+vec3 sampleBSDF_Microfacet(in vec3 reflectance,
+						   in float exponent,
 						   in vec3 lsWo,
 						   inout ivec2 rngOffset,
 						   out vec4 f_pdf)
 {
 	vec2 uniformRandomSample = rand(rngOffset).xy;
-	vec3 lsWi = sampleD(albedo, lsWo, uniformRandomSample, f_pdf);
+	vec3 lsWi = sampleD(reflectance, exponent, lsWo, uniformRandomSample, f_pdf);
 
 	float cosThetaWi = lsWi.y; // angle between normal and Wi
 	float cosThetaWo = lsWo.y; // angle between normal and Wo
 	vec3 lsWh = normalize(lsWi + lsWo);
 	float cosThetaH = dot(lsWi, lsWh); // angle between Wh and Wi
 
-	f_pdf.xyz = albedo 
+	f_pdf.xyz = reflectance 
 				* f_pdf.xyz
 				* G(lsWo, lsWi, lsWh)
 				* F(cosThetaH)

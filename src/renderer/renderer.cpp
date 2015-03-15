@@ -20,6 +20,7 @@
 #include "renderer/services/serviceSetFocalDistance.h"
 
 #include <memory.h>
+#include <algorithm>
 
 #include <Qt> // FIXME used for Qt::Key codes
 
@@ -81,35 +82,36 @@ void Renderer::initialize(const std::string& shaderPath)
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
+	glEnable(GL_TEXTURE_1D);
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_TEXTURE_3D);
-	if (glIsTexture(m_glResources.m_occupancyTexture)) glDeleteTextures(1, &m_glResources.m_occupancyTexture);
-	glGenTextures(1, &m_glResources.m_occupancyTexture);
-	if (glIsTexture(m_glResources.m_voxelColorTexture)) glDeleteTextures(1, &m_glResources.m_voxelColorTexture);
-	glGenTextures(1, &m_glResources.m_voxelColorTexture);
+	if (glIsTexture(m_glResources.m_materialOffsetTexture)) glDeleteTextures(1, &m_glResources.m_materialOffsetTexture);
+	glGenTextures(1, &m_glResources.m_materialOffsetTexture);
+	if (glIsTexture(m_glResources.m_materialDataTexture)) glDeleteTextures(1, &m_glResources.m_materialDataTexture);
+	glGenTextures(1, &m_glResources.m_materialDataTexture);
 
 	createFramebuffer();
 	reloadShaders(shaderPath);
-	createVoxelDataTexture(Imath::V3i(16));
+	createVoxelDataTexture(Imath::V3i(16), NULL, 0, NULL);
 	updateCamera();
 	updateRenderSettings();
 
-	glBindImageTexture(0,                                // image unit
-					   m_glResources.m_occupancyTexture, // texture
-					   0,                                // level
-					   GL_TRUE,                          // layered
-					   0,                                // layer
-					   GL_WRITE_ONLY,                    // access
-					   GL_R8UI                           // format
+	glBindImageTexture(0,                                     // image unit
+					   m_glResources.m_materialOffsetTexture, // texture
+					   0,                                     // level
+					   GL_TRUE,                               // layered
+					   0,                                     // layer
+					   GL_WRITE_ONLY,                         // access
+					   GL_R32UI                               // format
 			);
 
-	glBindImageTexture(1,                                 // image unit
-					   m_glResources.m_voxelColorTexture, // texture
-					   0,                                 // level
-					   GL_TRUE,                           // layered
-					   0,                                 // layer
-					   GL_WRITE_ONLY,                     // access
-					   GL_RGBA8                           // format
+	glBindImageTexture(1,                                   // image unit
+					   m_glResources.m_materialDataTexture, // texture
+					   0,                                   // level
+					   GL_TRUE,                             // layered
+					   0,                                   // layer
+					   GL_WRITE_ONLY,                       // access
+					   GL_R32F                              // format
 			);
 
 	// init services
@@ -227,8 +229,8 @@ bool Renderer::reloadIntegratorShader(const std::string& shaderPath,
 	
 	glUseProgram(settings.m_program);
 
-	settings.m_uniformVoxelOccupancyTexture     = glGetUniformLocation(settings.m_program, "occupancyTexture");
-	settings.m_uniformVoxelColorTexture         = glGetUniformLocation(settings.m_program, "voxelColorTexture");
+	settings.m_uniformMaterialOffsetTexture     = glGetUniformLocation(settings.m_program, "materialOffsetTexture");
+	settings.m_uniformMaterialDataTexture       = glGetUniformLocation(settings.m_program, "materialDataTexture");
 	settings.m_uniformNoiseTexture              = glGetUniformLocation(settings.m_program, "noiseTexture");
 	settings.m_uniformVoxelDataResolution       = glGetUniformLocation(settings.m_program, "voxelResolution");
 	settings.m_uniformVolumeBoundsMin           = glGetUniformLocation(settings.m_program, "volumeBoundsMin");
@@ -271,8 +273,8 @@ bool Renderer::reloadIntegratorShader(const std::string& shaderPath,
 	Imath::V3f lightDir = lightDirection();
 	glUniform3f(settings.m_uniformLightDir, lightDir.x, lightDir.y, -lightDir.z);
 
-	glUniform1i(settings.m_uniformVoxelOccupancyTexture, GLResourceConfiguration::TEXTURE_UNIT_OCCUPANCY);
-	glUniform1i(settings.m_uniformVoxelColorTexture, GLResourceConfiguration::TEXTURE_UNIT_COLOR);
+	glUniform1i(settings.m_uniformMaterialOffsetTexture, GLResourceConfiguration::TEXTURE_UNIT_MATERIAL_OFFSET);
+	glUniform1i(settings.m_uniformMaterialDataTexture, GLResourceConfiguration::TEXTURE_UNIT_MATERIAL_DATA);
 	glUniform1i(settings.m_uniformNoiseTexture, GLResourceConfiguration::TEXTURE_UNIT_NOISE);
 	
 	glUniform3i(settings.m_uniformVoxelDataResolution, 
@@ -724,15 +726,15 @@ void Renderer::createFramebuffer()
 	
 	// create noise texture
 	{
-		const unsigned int noiseTextureSize = 1024;
+		const unsigned int noiseTextureSize = 2048;
 		float* noise = (float*)malloc(noiseTextureSize * noiseTextureSize * 4 * sizeof(float));
 		for( unsigned int i = 0; i < 4 * noiseTextureSize * noiseTextureSize; ++i ) noise[i] = (float)rand()/RAND_MAX;
 		glActiveTexture(GL_TEXTURE0 + GLResourceConfiguration::TEXTURE_UNIT_NOISE);
 		glBindTexture(GL_TEXTURE_2D, m_glResources.m_noiseTexture);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexImage2D(GL_TEXTURE_2D,
 					 0,
 					 GL_RGBA,
@@ -817,15 +819,14 @@ void Renderer::createFramebuffer()
 }
 
 void Renderer::createVoxelDataTexture(const Imath::V3i& resolution,
-									  const GLubyte* occupancyTexels,
-									  const GLubyte* colorTexels)
+									  const GLint* voxelMaterials,
+									  size_t materialDataSize,
+									  const void* materialData)
 {
 	using namespace Imath;
 	
 	// Texture resolution 
 	m_glResources.m_volumeResolution = resolution;
-
-	const size_t numVoxels = (size_t)(m_glResources.m_volumeResolution.x * m_glResources.m_volumeResolution.y * m_glResources.m_volumeResolution.z);
 
 	float sizeMultiplier = 1000;
 	float voxelSize = sizeMultiplier / std::max(m_glResources.m_volumeResolution.x, std::max(m_glResources.m_volumeResolution.y, m_glResources.m_volumeResolution.z));
@@ -834,20 +835,12 @@ void Renderer::createVoxelDataTexture(const Imath::V3i& resolution,
 	               voxelSize * m_glResources.m_volumeResolution.z);
 	m_volumeBounds = Box3f( -boundsSize * 0.5f, boundsSize * 0.5f);
 
-	GLubyte* occupancyStorage = occupancyTexels != NULL ? NULL : new GLubyte[numVoxels];
-	GLubyte* colorStorage = colorTexels != NULL ? NULL : new GLubyte[4*numVoxels];
-	if (occupancyStorage != NULL) memset(occupancyStorage, 0, numVoxels * sizeof(GLubyte));
-	if (colorStorage != NULL) memset(colorStorage, 0, 4 * numVoxels * sizeof(GLubyte));
-
-	const GLubyte* occupancy = occupancyTexels != NULL ? occupancyTexels : occupancyStorage;
-	const GLubyte* color = colorTexels != NULL ? colorTexels : colorStorage;
-
 	// Upload texture data to card
 
-	glActiveTexture( GL_TEXTURE0 + GLResourceConfiguration::TEXTURE_UNIT_OCCUPANCY);
-	glBindTexture(GL_TEXTURE_3D, m_glResources.m_occupancyTexture);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glActiveTexture( GL_TEXTURE0 + GLResourceConfiguration::TEXTURE_UNIT_MATERIAL_OFFSET);
+	glBindTexture(GL_TEXTURE_3D, m_glResources.m_materialOffsetTexture);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP);
@@ -855,37 +848,29 @@ void Renderer::createVoxelDataTexture(const Imath::V3i& resolution,
 	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
 	glTexImage3D(GL_TEXTURE_3D,
 	             0,
-	             GL_R8,
+	             GL_R32I,
 	             m_glResources.m_volumeResolution.x,
 	             m_glResources.m_volumeResolution.y,
 	             m_glResources.m_volumeResolution.z,
+	             0,
+	             GL_RED_INTEGER,
+	             GL_INT,
+	             voxelMaterials);
+
+	glActiveTexture( GL_TEXTURE0 + GLResourceConfiguration::TEXTURE_UNIT_MATERIAL_DATA);
+	glBindTexture(GL_TEXTURE_1D, m_glResources.m_materialDataTexture);
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glPixelStorei(GL_PACK_ALIGNMENT,1);
+	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
+	glTexImage1D(GL_TEXTURE_1D,
+	             0,
+	             GL_R32F,
+				 std::max(size_t(1), materialDataSize),
 	             0,
 	             GL_RED,
-	             GL_UNSIGNED_BYTE,
-	             occupancy);
-
-	glActiveTexture( GL_TEXTURE0 + GLResourceConfiguration::TEXTURE_UNIT_COLOR);
-	glBindTexture(GL_TEXTURE_3D, m_glResources.m_voxelColorTexture);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP);
-	glPixelStorei(GL_PACK_ALIGNMENT,1);
-	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
-	glTexImage3D(GL_TEXTURE_3D,
-	             0,
-	             GL_RGBA8,
-	             m_glResources.m_volumeResolution.x,
-	             m_glResources.m_volumeResolution.y,
-	             m_glResources.m_volumeResolution.z,
-	             0,
-	             GL_RGBA,
-	             GL_UNSIGNED_BYTE,
-	             color);
-
-	delete[] occupancyStorage;
-	delete[] colorStorage;
+	             GL_FLOAT,
+	             materialData);
 
 	// Set new resolution and volume bounds in all shaders
 

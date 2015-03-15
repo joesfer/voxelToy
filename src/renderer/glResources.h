@@ -8,8 +8,8 @@ struct GLResourceConfiguration
 {
 	enum TextureUnits
 	{
-		TEXTURE_UNIT_OCCUPANCY = 0,
-		TEXTURE_UNIT_COLOR,
+		TEXTURE_UNIT_MATERIAL_OFFSET = 0,
+		TEXTURE_UNIT_MATERIAL_DATA,
 		TEXTURE_UNIT_SAMPLE,
 		TEXTURE_UNIT_AVERAGE0,
 		TEXTURE_UNIT_AVERAGE1,
@@ -32,8 +32,8 @@ struct GLResourceConfiguration
 	GLuint m_focalDistanceSSBO;
 	GLuint m_selectedVoxelSSBO;
 
-	GLuint m_occupancyTexture;
-	GLuint m_voxelColorTexture;
+	GLuint m_materialOffsetTexture;
+	GLuint m_materialDataTexture;
 	GLuint m_backgroundTexture;
 	GLuint m_backgroundCDFUTexture;
 	GLuint m_backgroundCDFVTexture;

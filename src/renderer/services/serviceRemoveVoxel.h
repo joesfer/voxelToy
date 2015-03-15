@@ -16,7 +16,7 @@ public:
 
 private:
 	// uniforms
-	GLuint m_uniformVoxelOccupancyTexture;
+	GLuint m_uniformMaterialOffsetTexture;
 	GLuint m_uniformSelectedVoxelSSBOStorageBlock;
 };
 

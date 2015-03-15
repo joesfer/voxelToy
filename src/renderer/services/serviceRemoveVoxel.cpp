@@ -23,9 +23,9 @@ bool RendererServiceRemoveVoxel::reload(const std::string& shaderPath, Logger* l
     
 	glUseProgram(m_program);
 
-	m_uniformVoxelOccupancyTexture   = glGetUniformLocation(m_program, "voxelOccupancy");
+	m_uniformMaterialOffsetTexture   = glGetUniformLocation(m_program, "materialOffsetTexture");
 	
-	glUniform1i(m_uniformVoxelOccupancyTexture, GLResourceConfiguration::TEXTURE_UNIT_OCCUPANCY);
+	glUniform1i(m_uniformMaterialOffsetTexture, GLResourceConfiguration::TEXTURE_UNIT_MATERIAL_OFFSET);
 
 	glUseProgram(0);
 

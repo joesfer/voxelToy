@@ -21,5 +21,5 @@ private:
 	GLuint m_program;
 	GLuint m_uniformVoxelDataResolution;
 	GLuint m_uniformModelTransform;
-	GLuint m_uniformVoxelOccupancyTexture;
+	GLuint m_uniformMaterialOffsetTexture;
 };

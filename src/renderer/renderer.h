@@ -115,8 +115,9 @@ private:
 
 	// Declare voxel resources
 	void createVoxelDataTexture (const Imath::V3i& resolution,
-								 const GLubyte* occupancyTexels = NULL,
-								 const GLubyte* colorTexels = NULL);
+								 const GLint* voxelMaterials,
+								 size_t materialDataSize,
+								 const void* materialData);
 
 	// reload shader and resources for the screen-space texture drawing shader.
 	bool reloadTexturedShader(const std::string& shaderPath);

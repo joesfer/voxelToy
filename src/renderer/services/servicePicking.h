@@ -30,7 +30,7 @@ protected:
 							  Logger* logger);
 protected:
 	// uniforms
-	GLuint m_uniformVoxelOccupancyTexture;
+	GLuint m_uniformMaterialOffsetTexture;
 	GLuint m_uniformVoxelDataResolution;
 	GLuint m_uniformVolumeBoundsMin;
 	GLuint m_uniformVolumeBoundsMax;

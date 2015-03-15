@@ -28,9 +28,9 @@ GPUVoxelizer::GPUVoxelizer(const std::string& shaderPath,
 	
 	glUseProgram(m_program);
 
-	m_uniformVoxelOccupancyTexture   = glGetUniformLocation(m_program, "occupancyTexture");
-	m_uniformVoxelDataResolution	 = glGetUniformLocation(m_program, "voxelResolution");
-	m_uniformModelTransform		  = glGetUniformLocation(m_program, "modelTransform");
+	m_uniformMaterialOffsetTexture = glGetUniformLocation(m_program, "materialOffsetTexture");
+	m_uniformVoxelDataResolution   = glGetUniformLocation(m_program, "voxelResolution");
+	m_uniformModelTransform        = glGetUniformLocation(m_program, "modelTransform");
 
 	glUseProgram(0);
 
@@ -52,7 +52,7 @@ bool GPUVoxelizer::voxelizeMesh(const Mesh* mesh,
 
 	glUseProgram(m_program);
 
-	glUniform1i(m_uniformVoxelOccupancyTexture, textureUnit);
+	glUniform1i(m_uniformMaterialOffsetTexture, textureUnit);
 	
 	glUniform3i(m_uniformVoxelDataResolution, 
 				resolution.x, 

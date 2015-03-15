@@ -10,23 +10,23 @@
 
 void Renderer::loadVoxFile(const std::string& file)
 {
-	GLubyte* occupancyTexels = NULL;
-	GLubyte* colorTexels = NULL;
+	std::vector<GLint> voxelMaterials;
+	std::vector<float> materialData;
 	MagicaVoxelLoader loader;
 
 	if (!loader.load(file, 
-					 occupancyTexels, 
-					 colorTexels, 
+					 voxelMaterials, 
+					 materialData, 
 					 m_glResources.m_volumeResolution))
 	{
 		return;
 	}
 							
-	createVoxelDataTexture(m_glResources.m_volumeResolution, occupancyTexels, colorTexels);
+	createVoxelDataTexture(m_glResources.m_volumeResolution, 
+						   &voxelMaterials[0], 
+						   materialData.size(),
+						   &materialData[0]);
 	m_camera.controller().setDistanceFromTarget(m_volumeBounds.size().length() * 0.5f);
-
-	free(occupancyTexels);
-	free(colorTexels);
 
 	resetRender();
 }
@@ -60,11 +60,14 @@ void Renderer::loadMesh(const std::string& file)
 
 	if (mesh == NULL) return;
 
-	createVoxelDataTexture(Imath::V3i(64));
+	createVoxelDataTexture(Imath::V3i(64), NULL, 0, NULL);
 
 	meshTransform = computeMeshTransform(mesh->bounds(), m_glResources.m_volumeResolution);
 	GPUVoxelizer voxelizer(m_shaderPath, m_logger);
-	voxelizer.voxelizeMesh(mesh, meshTransform, m_glResources.m_volumeResolution, GLResourceConfiguration::TEXTURE_UNIT_OCCUPANCY); 	
+	voxelizer.voxelizeMesh(mesh, 
+						   meshTransform, 
+						   m_glResources.m_volumeResolution, 
+						   GLResourceConfiguration::TEXTURE_UNIT_MATERIAL_OFFSET); 	
 
 	delete(mesh);
 
@@ -92,24 +95,24 @@ void Renderer::loadMesh(const std::string& file)
 
 	const size_t numVoxels = (size_t)(m_glResources.m_volumeResolution.x * m_glResources.m_volumeResolution.y * m_glResources.m_volumeResolution.z);
 	const size_t numTriangles = indices.size() / 3;
-	GLubyte* occupancyTexels = (GLubyte*)malloc(numVoxels * sizeof(GLubyte));
-	memset(occupancyTexels, 0, numVoxels * sizeof(GLubyte));
+	GLint* materialOffsetTexels = (GLint*)malloc(numVoxels * sizeof(GLint));
+	for(size_t i = 0; i < numVoxels; ++i) materialOffsetTexels[i] = -1;
 
-	CPUVoxelizer::voxelizeMesh(verts, &indices[0], numTriangles, m_glResources.m_volumeResolution, occupancyTexels);
+	CPUVoxelizer::voxelizeMesh(verts, &indices[0], numTriangles, m_glResources.m_volumeResolution, materialOffsetTexels);
 
 	createVoxelDataTexture(m_glResources.m_volumeResolution);
-	glBindTexture(GL_TEXTURE_3D, m_glResources.m_occupancyTexture);
+	glBindTexture(GL_TEXTURE_3D, m_glResources.m_materialOffsetTexture);
 	glTexImage3D(GL_TEXTURE_3D,
 				 0,
-				 GL_R8,
+				 GL_R32UI,
 				 m_glResources.m_volumeResolution.x,
 				 m_glResources.m_volumeResolution.y,
 				 m_glResources.m_volumeResolution.z,
 				 0,
 				 GL_RED,
-				 GL_UNSIGNED_BYTE,
-				 occupancyTexels);
-	free(occupancyTexels);
+				 GL_INT,
+				 materialOffsetTexels);
+	free(materialOffsetTexels);
 #endif
 
 	resetRender();

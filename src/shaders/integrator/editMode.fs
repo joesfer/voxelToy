@@ -3,8 +3,8 @@
 #include <focalDistance/focalDistanceDevice.h>
 #include <editVoxels/selectVoxelDevice.h>
 
-uniform sampler3D   occupancyTexture;
-uniform sampler3D   voxelColorTexture;
+uniform isampler3D  materialOffsetTexture;
+uniform sampler1D   materialDataTexture;
 uniform sampler2D   noiseTexture;
 uniform ivec3       voxelResolution;
 uniform vec3        volumeBoundsMin;
@@ -102,12 +102,20 @@ void main()
 						   wsRayOrigin, wsRayDir,
 						   wsHitBasis);
 	
-	vec3 albedo = hitGround ? 
-				groundColor :
-				texelFetch(voxelColorTexture,
-							 ivec3(vsHitPos.x, vsHitPos.y, vsHitPos.z), 0).xyz;
+	//vec3 albedo = hitGround ? 
+	//			groundColor :
+	//			texelFetch(voxelColorTexture,
+	//						 ivec3(vsHitPos.x, vsHitPos.y, vsHitPos.z), 0).xyz;
+
+	if ( ivec3(vsHitPos) == SelectVoxelData.index.xyz )
+	{
+		// Draw selected voxel as red
+		outColor = vec4(1,0,0,1);
+		return;
+	}
 
 	// Wireframe overlay
+	vec3 albedo = vec3(1,1,1); // TODO -- extract albedo from material parameters
 	if (wireframeOpacity > 0)
 	{
 		vec3 vsVoxelCenter = (wsHitBasis.position - volumeBoundsMin) / (volumeBoundsMax - volumeBoundsMin) * voxelResolution;
@@ -120,11 +128,6 @@ void main()
 		albedo *= vec3(wireframe);
 	}
 
-	if ( ivec3(vsHitPos) == SelectVoxelData.index.xyz )
-	{
-		// Draw selected voxel as red
-		albedo = vec3(1,0,0); 
-	}
 
 	// dot normal lighting
 	float lighting = max(0, dot(-wsRayDir, wsHitBasis.normal));

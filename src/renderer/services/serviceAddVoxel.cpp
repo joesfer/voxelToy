@@ -25,12 +25,12 @@ bool RendererServiceAddVoxel::reload(const std::string& shaderPath, Logger* logg
 
 	m_uniformCameraInverseModelView  = glGetUniformLocation(m_program, "cameraInverseModelView");
 	m_uniformScreenSpaceMotion       = glGetUniformLocation(m_program, "screenSpaceMotion");
-	m_uniformVoxelOccupancyTexture   = glGetUniformLocation(m_program, "voxelOccupancy");
-	m_uniformVoxelColorTexture       = glGetUniformLocation(m_program, "voxelColor");
+	m_uniformMaterialOffsetTexture   = glGetUniformLocation(m_program, "materialOffsetTexture");
+	m_uniformMaterialDataTexture     = glGetUniformLocation(m_program, "materialDataTexture");
 	m_uniformNewVoxelColor           = glGetUniformLocation(m_program, "newVoxelColor");
 	
-	glUniform1i(m_uniformVoxelOccupancyTexture, GLResourceConfiguration::TEXTURE_UNIT_OCCUPANCY);
-	glUniform1i(m_uniformVoxelColorTexture, GLResourceConfiguration::TEXTURE_UNIT_COLOR);
+	glUniform1i(m_uniformMaterialOffsetTexture, GLResourceConfiguration::TEXTURE_UNIT_MATERIAL_OFFSET);
+	glUniform1i(m_uniformMaterialDataTexture, GLResourceConfiguration::TEXTURE_UNIT_MATERIAL_DATA);
 
 	glUseProgram(0);
 

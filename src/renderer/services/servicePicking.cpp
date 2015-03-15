@@ -28,7 +28,7 @@ bool RendererServicePicking::reloadShader(const std::string& shaderPath,
     
 	glUseProgram(m_program);
 
-	m_uniformVoxelOccupancyTexture  = glGetUniformLocation(m_program, "occupancyTexture");
+	m_uniformMaterialOffsetTexture  = glGetUniformLocation(m_program, "materialOffsetTexture");
 	m_uniformVoxelDataResolution    = glGetUniformLocation(m_program, "voxelResolution");
 	m_uniformVolumeBoundsMin        = glGetUniformLocation(m_program, "volumeBoundsMin");
 	m_uniformVolumeBoundsMax        = glGetUniformLocation(m_program, "volumeBoundsMax");
@@ -41,7 +41,7 @@ bool RendererServicePicking::reloadShader(const std::string& shaderPath,
 	m_uniformCameraFocalLength      = glGetUniformLocation(m_program, "cameraFocalLength");             
 	m_uniformSampledFragment        = glGetUniformLocation(m_program, "sampledFragment");             
 
-	glUniform1i(m_uniformVoxelOccupancyTexture, GLResourceConfiguration::TEXTURE_UNIT_OCCUPANCY);
+	glUniform1i(m_uniformMaterialOffsetTexture, GLResourceConfiguration::TEXTURE_UNIT_MATERIAL_OFFSET);
 	
 	glUseProgram(0);
 

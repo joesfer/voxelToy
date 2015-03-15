@@ -24,8 +24,8 @@ private:
 	// uniforms
 	GLuint m_uniformCameraInverseModelView;
 	GLuint m_uniformScreenSpaceMotion;
-	GLuint m_uniformVoxelOccupancyTexture;
-	GLuint m_uniformVoxelColorTexture;
+	GLuint m_uniformMaterialOffsetTexture;
+	GLuint m_uniformMaterialDataTexture;
 	GLuint m_uniformSelectedVoxelSSBOStorageBlock;
 	GLuint m_uniformNewVoxelColor;
 };

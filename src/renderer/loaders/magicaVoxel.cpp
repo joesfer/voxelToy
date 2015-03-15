@@ -263,3 +263,60 @@ namespace MagicaVoxel
 	};
 } // namespace MagicaVoxel
 
+bool MagicaVoxelLoader::load(const std::string& filePath,
+							 std::vector<GLint>& voxelMaterials, 
+							 std::vector<float>& materialData,
+							 Imath::V3i& voxelResolution)
+{
+	using namespace MagicaVoxel;
+	MV_Model model;
+	if (!model.LoadModel(filePath.c_str())) return false;
+	
+	// extract model data. Do axis conversion (z<->y)
+	voxelResolution.x = model.sizex;
+	voxelResolution.y = model.sizez;
+	voxelResolution.z = model.sizey;
+
+	size_t numVoxels = voxelResolution.x * voxelResolution.y * voxelResolution.z;
+	voxelMaterials.resize(numVoxels, -1);
+
+	const unsigned char* palette = model.isCustomPalette ? 
+		reinterpret_cast<const unsigned char*>(model.palette) :
+		reinterpret_cast<const unsigned char*>(MagicaVoxel::defaultPalette);
+
+	GLint materialDataOffset[256];
+	for(int i = 0; i < 256; ++i ) materialDataOffset[i] = -1;
+
+	for( int i = 0; i < model.numVoxels; ++i )
+	{
+		const MV_Voxel& v = model.voxels[i];
+		size_t voxelOffset = v.x + 
+							 v.z * voxelResolution.x + 
+							 v.y * voxelResolution.x * voxelResolution.y;
+
+		if (v.colorIndex == 254) continue; // empty voxel
+
+		// index material
+		voxelMaterials[voxelOffset] = materialDataOffset[v.colorIndex]; 
+		if ( voxelMaterials[voxelOffset] >= 0 )
+		{
+			// we've inserted this material already, continue
+			continue;
+		}
+
+		// New material -- append data
+		// With the information available we can only generate Lambertian materials
+		GLint materialOffset = (GLint)materialData.size();
+		materialDataOffset[v.colorIndex] = materialOffset;
+		voxelMaterials[voxelOffset] = materialOffset; 
+
+		Imath::V3f emission(0,0,0);
+		Imath::V3f albedo((float)palette[4*v.colorIndex+0] / 255,
+						  (float)palette[4*v.colorIndex+1] / 255,
+						  (float)palette[4*v.colorIndex+2] / 255);
+
+		generateMaterialLambert(emission, albedo, materialData);
+	}
+	return true;
+}
+

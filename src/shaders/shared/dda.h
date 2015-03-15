@@ -29,8 +29,8 @@ bool raymarch(in vec3 wsRayOrigin,
 	int steps = 0;
 	while(steps < maxSteps) 
 	{
-		bool hit = (texelFetch(occupancyTexture, 
-							   ivec3(voxelPos), 0).r > 0);
+		bool hit = texelFetch(materialOffsetTexture, 
+							  ivec3(voxelPos), 0).r >= 0;
 		if (hit)
 		{
 			isect = true;
