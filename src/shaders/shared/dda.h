@@ -2,6 +2,8 @@
 // ws = world space
 // vs = voxel space (texture)
 
+float ISECT_EPSILON = 0.001;
+
 bool raymarch(in vec3 wsRayOrigin, 
 			  in vec3 wsRayDir,
 			  in int maxSteps,
@@ -12,9 +14,15 @@ bool raymarch(in vec3 wsRayOrigin,
 
 	bool isect = false;
 	vec3 voxelExtent = vec3(1.0) / (volumeBoundsMax - volumeBoundsMin);
+	// move the ray intersection point slightly towards the ray direction to
+	// avoid self-intersections
+	wsRayOrigin += sign(wsRayDir) * ISECT_EPSILON;
 	vec3 voxelOrigin = (wsRayOrigin - volumeBoundsMin) * voxelExtent * voxelResolution;
 
-	vec3 voxelPos = floor(voxelOrigin);
+	vec3 voxelPos = floor(voxelOrigin);//clamp(floor(voxelOrigin), vec3(0), voxelResolution - vec3(1));
+
+	if (any(lessThan(voxelPos, vec3(0.0))) || 
+		any(greaterThanEqual(voxelPos,voxelResolution))) return false;
 	
 	// prevent div by 0 in denominator. 
 	// this is equivalent to if(abs(wsRayDir.#) < 1e-5) wsRayDir.# = 1e-5;
@@ -29,6 +37,10 @@ bool raymarch(in vec3 wsRayOrigin,
 	int steps = 0;
 	while(steps < maxSteps) 
 	{
+		// break from the traversal if we've gone out of bounds 
+		if (any(lessThan(voxelPos, vec3(0.0))) || 
+			any(greaterThanEqual(voxelPos,voxelResolution))) break;
+
 		bool hit = texelFetch(materialOffsetTexture, 
 							  ivec3(voxelPos), 0).r >= 0;
 		if (hit)
@@ -40,15 +52,11 @@ bool raymarch(in vec3 wsRayOrigin,
 		dis += mask * wsRayDirSign * wsRayDirIncrement;
 		voxelPos += mask * wsRayDirSign;
 		
-		// break from the traversal if we've gone out of bounds 
-		if (any(lessThan(voxelPos, vec3(0.0))) || 
-			any(greaterThanEqual(voxelPos,voxelResolution))) break;
-
 		steps++;
 
 	}
-	vsHitPos = voxelPos;
 
+	vsHitPos = voxelPos;
 	return isect;
 }
 

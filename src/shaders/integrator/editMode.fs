@@ -57,7 +57,6 @@ out vec4 outColor;
 #include <materials/materials.h>
 #include <shared/lights.h>
 
-float ISECT_EPSILON = 0.01;
 
 void main()
 {
@@ -80,14 +79,7 @@ void main()
 		return;
 	}
 
-	float rayLength = aabbIsectDist;
-
-	// push the intersection slightly inside the hit voxel so that when we cast 
-	// to a voxel index we don't mistakenly take an adjacent voxel. This is 
-	// important to ensure the traversal starts inside of the volume bounds.
-	vec3 halfVoxellDist = sign(wsRayDir) * 0.5 / voxelResolution; 
-	vec3 wsRayEntryPoint = wsRayOrigin + rayLength * wsRayDir + halfVoxellDist;
-
+	vec3 wsRayEntryPoint = wsRayOrigin + aabbIsectDist * wsRayDir;
 	vec3 vsHitPos;
 
 	// Cast primary ray
@@ -138,7 +130,7 @@ void main()
 	lighting = sqrt(lighting);
 
 	// trace shadow ray
-	if ( traverse(wsHitBasis.position -lightDirection * ISECT_EPSILON, -lightDirection, vsHitPos, hitGround) )
+	if ( traverse(wsHitBasis.position, -lightDirection, vsHitPos, hitGround) )
 	{
 		lighting *= ambientLight;
 	}

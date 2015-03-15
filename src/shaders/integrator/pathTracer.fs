@@ -58,8 +58,6 @@ out vec4 outColor;
 #include <materials/materials.h>
 #include <shared/lights.h>
 
-float ISECT_EPSILON = 0.01;
-
 vec3 directLighting(in int materialDataOffset, 
 					in Basis wsHitBasis, 
 					in vec3 wsWo, 
@@ -81,9 +79,7 @@ vec3 directLighting(in int materialDataOffset,
 	// point.
 	vec3 vsShadowHitPos;
 	bool hitGround;
-	if( traverse(wsHitBasis.position + ISECT_EPSILON * wsToLight_pdf.xyz, 
-	//if( traverse(wsHitBasis.position + ISECT_EPSILON * wsHitBasis.normal, 
-				 wsToLight_pdf.xyz, vsShadowHitPos, hitGround) )
+	if( traverse(wsHitBasis.position, wsToLight_pdf.xyz, vsShadowHitPos, hitGround) )
 	{
 		// light is not visible. Evaluate possible emission from hit blocker.
 		
@@ -155,13 +151,7 @@ void main()
 		return;
 	}
 
-	float rayLength = aabbIsectDist;
-
-	// push the intersection slightly inside the hit voxel so that when we cast 
-	// to a voxel index we don't mistakenly take an adjacent voxel. This is 
-	// important to ensure the traversal starts inside of the volume bounds.
-	vec3 halfVoxellDist = sign(wsRayDir) * 0.5 / voxelResolution; 
-	vec3 wsRayEntryPoint = wsRayOrigin + rayLength * wsRayDir + halfVoxellDist;
+	vec3 wsRayEntryPoint = wsRayOrigin + aabbIsectDist * wsRayDir;
 
 	vec3 vsHitPos;
 
@@ -189,12 +179,10 @@ void main()
 							   wsRayOrigin, wsRayDir,
 							   wsHitBasis);
 		
-		int materialDataOffset = texelFetch(materialOffsetTexture,
-														   ivec3(vsHitPos.x, 
-															     vsHitPos.y, 
-															     vsHitPos.z), 0).r;
+		ivec3 iVsHitPos = ivec3(vsHitPos);
+		int materialDataOffset = texelFetch(materialOffsetTexture, iVsHitPos, 0).r;
 
-		if ( ivec3(vsHitPos) == SelectVoxelData.index.xyz )
+		if ( iVsHitPos == SelectVoxelData.index.xyz )
 		{
 			// Draw selected voxel as red
 			radiance += vec3(1,0,0); 
@@ -248,8 +236,7 @@ void main()
 		wsRayDir = wsWi;
 
 		// find new vertex of path 
-		if ( !traverse(wsRayOrigin + wsRayDir * ISECT_EPSILON, wsRayDir, vsHitPos, hitGround) )
-		//if ( !traverse(wsRayOrigin + wsHitBasis.normal * ISECT_EPSILON, wsRayDir, vsHitPos, hitGround) )
+		if ( !traverse(wsRayOrigin, wsRayDir, vsHitPos, hitGround) )
 		{
 			// the ray missed the scene. Handle the environment light here.
 			vec4 lightL_pdf = evaluateEnvironmentRadiance(wsRayDir);
