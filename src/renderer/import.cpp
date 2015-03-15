@@ -1,5 +1,5 @@
 #include "renderer/renderer.h"
-#include "renderer/voxLoader.h"
+#include "renderer/loaders/magicaVoxel.h"
 #include "mesh/meshLoader.h"
 #include "mesh/mesh.h"
 #include "voxelize/cpuVoxelizer.h"

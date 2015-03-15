@@ -32,7 +32,7 @@ SOURCES += ../../src/ui/mainwindow.cpp \
     ../../src/camera/flyCameraController.cpp \
     ../../src/camera/cameraParameters.cpp \
     ../../src/camera/cameraController.cpp \
-    ../../src/renderer/voxLoader.cpp \
+    ../../src/renderer/loaders/voxLoader.cpp \
     ../../src/tools/toolFocalDistance.cpp \
     ../../src/ui/colorpicker.cpp \
     ../../src/tools/toolAddRemoveVoxel.cpp \
