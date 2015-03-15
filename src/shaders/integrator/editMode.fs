@@ -82,7 +82,11 @@ void main()
 
 	float rayLength = aabbIsectDist;
 
-	vec3 wsRayEntryPoint = wsRayOrigin + rayLength * wsRayDir;
+	// push the intersection slightly inside the hit voxel so that when we cast 
+	// to a voxel index we don't mistakenly take an adjacent voxel. This is 
+	// important to ensure the traversal starts inside of the volume bounds.
+	vec3 halfVoxellDist = sign(wsRayDir) * 0.5 / voxelResolution; 
+	vec3 wsRayEntryPoint = wsRayOrigin + rayLength * wsRayDir + halfVoxellDist;
 
 	vec3 vsHitPos;
 
