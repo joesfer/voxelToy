@@ -20,9 +20,12 @@ public:
 	// where the size of [properties] depends on each material type. The offset
 	// from the voxelMaterials array elements always points to the [Type] block
 	// of each material.
+	// emissiveVoxelIndices contains the index of each voxel which material can
+	// emit light. This is used on the renderer to randomly sample lights.
 	virtual bool load(const std::string& filePath,
 					  std::vector<GLint>& voxelMaterials, 
 					  std::vector<float>& materialData,
+					  std::vector<GLint>& emissiveVoxelIndices,
 					  Imath::V3i& voxelResolution) = 0;
 protected:
 	// Append material data into opaque array
@@ -37,9 +40,13 @@ protected:
 							     Imath::V3f diffuseAlbedo,
 								 float roughness,
 							     std::vector<float>& materialData);
+
+	float getMaterialEmisiveness(const float* materialData);
+
 private:
 	void storeMaterialData(Material::MaterialType type,
 						   const float* data,
 						   size_t dataSize,
 						   std::vector<float>& storage);
+
 };

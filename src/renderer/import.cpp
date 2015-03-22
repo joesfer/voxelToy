@@ -12,20 +12,32 @@ void Renderer::loadVoxFile(const std::string& file)
 {
 	std::vector<GLint> voxelMaterials;
 	std::vector<float> materialData;
+	std::vector<GLint> emissiveVoxelIndices;
 	MagicaVoxelLoader loader;
 
 	if (!loader.load(file, 
 					 voxelMaterials, 
 					 materialData, 
+					 emissiveVoxelIndices,
 					 m_glResources.m_volumeResolution))
 	{
 		return;
 	}
+
+	// as a variance-reduction technique, we eliminate all those voxels which
+	// are completely surrounded by other voxels from the list of emissive
+	// voxels. These would otherwise be randomly sampled, but never contribute
+	// to the image.
+	pruneInteriorEmissiveVoxels(voxelMaterials, 
+								m_glResources.m_volumeResolution, 
+								emissiveVoxelIndices);
 							
 	createVoxelDataTexture(m_glResources.m_volumeResolution, 
 						   &voxelMaterials[0], 
+						   &materialData[0],
 						   materialData.size(),
-						   &materialData[0]);
+						   &emissiveVoxelIndices[0],
+						   emissiveVoxelIndices.size());
 	m_camera.controller().setDistanceFromTarget(m_volumeBounds.size().length() * 0.5f);
 
 	resetRender();
@@ -60,7 +72,7 @@ void Renderer::loadMesh(const std::string& file)
 
 	if (mesh == NULL) return;
 
-	createVoxelDataTexture(Imath::V3i(64), NULL, 0, NULL);
+	createVoxelDataTexture(Imath::V3i(64));
 
 	meshTransform = computeMeshTransform(mesh->bounds(), m_glResources.m_volumeResolution);
 	GPUVoxelizer voxelizer(m_shaderPath, m_logger);
@@ -104,7 +116,7 @@ void Renderer::loadMesh(const std::string& file)
 	glBindTexture(GL_TEXTURE_3D, m_glResources.m_materialOffsetTexture);
 	glTexImage3D(GL_TEXTURE_3D,
 				 0,
-				 GL_R32UI,
+				 GL_R32I,
 				 m_glResources.m_volumeResolution.x,
 				 m_glResources.m_volumeResolution.y,
 				 m_glResources.m_volumeResolution.z,
@@ -118,4 +130,75 @@ void Renderer::loadMesh(const std::string& file)
 	resetRender();
 }
 
+Imath::V3i voxelCoordinate(GLint voxel, const Imath::V3i& volumeResolution)
+{
+	Imath::V3i c;
+	c.z = voxel / (volumeResolution.x * volumeResolution.y);
+	voxel -= c.z * volumeResolution.x * volumeResolution.y;
+	c.y = voxel / volumeResolution.x;
+	c.x = voxel - c.y * volumeResolution.x;
+	return c;
+}
+						
+inline GLint voxelIndex(const Imath::V3i& voxel, const Imath::V3i& volumeResolution)
+{
+	return voxel.x + voxel.y * volumeResolution.x + voxel.z * volumeResolution.x * volumeResolution.y;
+}
+
+inline bool occupiedNeightbour(GLint voxel,
+							  const Imath::V3i& neighbourOffset,
+							  const std::vector<GLint>& voxelMaterials,
+							  Imath::V3i& volumeResolution)
+{
+	Imath::V3i neighbour = voxelCoordinate(voxel, volumeResolution) + neighbourOffset;
+	const float outOfBounds = neighbour.x < 0 || neighbour.x >= volumeResolution.x ||
+							  neighbour.y < 0 || neighbour.y >= volumeResolution.y ||
+							  neighbour.z < 0 || neighbour.z >= volumeResolution.z;
+	if (outOfBounds) return false;
+	return voxelMaterials[voxelIndex(neighbour, volumeResolution)] >= 0;
+}
+
+const Imath::V3i neighbours[6] = { Imath::V3i(1,0,0),
+								   Imath::V3i(-1,0,0),
+								   Imath::V3i(0,1,0),
+								   Imath::V3i(0,-1,0),
+								   Imath::V3i(0,0,1),
+								   Imath::V3i(0,0,-1) };
+
+inline bool anyVisibleFace(GLint voxel, 
+						   const std::vector<GLint>& voxelMaterials,
+						   Imath::V3i& volumeResolution)
+{
+	return !occupiedNeightbour(voxel, neighbours[0], voxelMaterials, volumeResolution) ||
+		   !occupiedNeightbour(voxel, neighbours[1], voxelMaterials, volumeResolution) ||
+		   !occupiedNeightbour(voxel, neighbours[2], voxelMaterials, volumeResolution) ||
+		   !occupiedNeightbour(voxel, neighbours[3], voxelMaterials, volumeResolution) ||
+		   !occupiedNeightbour(voxel, neighbours[4], voxelMaterials, volumeResolution) ||
+		   !occupiedNeightbour(voxel, neighbours[5], voxelMaterials, volumeResolution);
+}
+
+void Renderer::pruneInteriorEmissiveVoxels(const std::vector<GLint>& voxelMaterials, 
+										   Imath::V3i& volumeResolution, 
+										   std::vector<GLint>& emissiveVoxelIndices)
+{
+	size_t numInputVoxels = emissiveVoxelIndices.size();
+	if (numInputVoxels == 0) return;
+
+	size_t numPruned = 0;
+	// TODO there's probably much smarter ways of doing this rather than brute
+	// force (i.e. there's a lot of redundancy on the adjacency checks)
+	for(int i = 0; i < (int)emissiveVoxelIndices.size(); ++i)
+	{
+		if(!anyVisibleFace(emissiveVoxelIndices[i], voxelMaterials, volumeResolution))
+		{
+			// prune this emissive voxel
+			emissiveVoxelIndices[i] = emissiveVoxelIndices[emissiveVoxelIndices.size() - 1];
+			emissiveVoxelIndices.resize(emissiveVoxelIndices.size()-1);
+			i--;
+			numPruned++;
+		}
+	}
+	std::cout << "Pruned emissive voxels: " << numPruned << "/" << numInputVoxels 
+			  << " (" << (float)numPruned/numInputVoxels*100 << "%)" << std::endl;
+}
 

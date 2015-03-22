@@ -65,3 +65,28 @@ void VoxLoader::storeMaterialData(Material::MaterialType type,
 	memcpy(&storage[offset + 1], data, dataSize * sizeof(float)); 
 }
 
+float VoxLoader::getMaterialEmisiveness(const float* materialData)
+{
+	using namespace Material;
+	MaterialType type = (MaterialType)*materialData;
+	switch(type)
+	{
+		case MT_LAMBERT:
+		{
+			const LambertMaterialData* data = reinterpret_cast<const LambertMaterialData*>(materialData);	
+			return (data->emission[0] + data->emission[1] + data->emission[2])/3;
+		} 
+		case MT_METAL:
+		{
+			const MetalMaterialData* data = reinterpret_cast<const MetalMaterialData*>(materialData);	
+			return (data->emission[0] + data->emission[1] + data->emission[2])/3;
+		} 
+		case MT_PLASTIC:
+		{
+			const PlasticMaterialData* data = reinterpret_cast<const PlasticMaterialData*>(materialData);	
+			return (data->emission[0] + data->emission[1] + data->emission[2])/3;
+		} 
+		default: return 0.0f;
+	}
+}
+

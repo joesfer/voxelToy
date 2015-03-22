@@ -13,6 +13,7 @@
 #include "renderer/image.h"
 #include "shaders/focalDistance/focalDistanceHost.h"
 #include "shaders/editVoxels/selectVoxelHost.h"
+#include "shaders/shared/constants.h"
 
 #include "renderer/services/serviceAddVoxel.h"
 #include "renderer/services/serviceRemoveVoxel.h"
@@ -89,10 +90,12 @@ void Renderer::initialize(const std::string& shaderPath)
 	glGenTextures(1, &m_glResources.m_materialOffsetTexture);
 	if (glIsTexture(m_glResources.m_materialDataTexture)) glDeleteTextures(1, &m_glResources.m_materialDataTexture);
 	glGenTextures(1, &m_glResources.m_materialDataTexture);
+	if (glIsTexture(m_glResources.m_emissiveVoxelIndicesTexture)) glDeleteTextures(1, &m_glResources.m_emissiveVoxelIndicesTexture);
+	glGenTextures(1, &m_glResources.m_emissiveVoxelIndicesTexture);
 
 	createFramebuffer();
 	reloadShaders(shaderPath);
-	createVoxelDataTexture(Imath::V3i(16), NULL, 0, NULL);
+	createVoxelDataTexture(Imath::V3i(16));
 	updateCamera();
 	updateRenderSettings();
 
@@ -102,7 +105,7 @@ void Renderer::initialize(const std::string& shaderPath)
 					   GL_TRUE,                               // layered
 					   0,                                     // layer
 					   GL_WRITE_ONLY,                         // access
-					   GL_R32UI                               // format
+					   GL_R32I                               // format
 			);
 
 	glBindImageTexture(1,                                   // image unit
@@ -113,6 +116,7 @@ void Renderer::initialize(const std::string& shaderPath)
 					   GL_WRITE_ONLY,                       // access
 					   GL_R32F                              // format
 			);
+
 
 	// init services
 	m_services[SERVICE_ADD_VOXEL]           = new RendererServiceAddVoxel();
@@ -231,10 +235,12 @@ bool Renderer::reloadIntegratorShader(const std::string& shaderPath,
 
 	settings.m_uniformMaterialOffsetTexture     = glGetUniformLocation(settings.m_program, "materialOffsetTexture");
 	settings.m_uniformMaterialDataTexture       = glGetUniformLocation(settings.m_program, "materialDataTexture");
+	settings.m_emissiveVoxelIndicesTexture      = glGetUniformLocation(settings.m_program, "emissiveVoxelIndicesTexture");
 	settings.m_uniformNoiseTexture              = glGetUniformLocation(settings.m_program, "noiseTexture");
 	settings.m_uniformVoxelDataResolution       = glGetUniformLocation(settings.m_program, "voxelResolution");
 	settings.m_uniformVolumeBoundsMin           = glGetUniformLocation(settings.m_program, "volumeBoundsMin");
 	settings.m_uniformVolumeBoundsMax           = glGetUniformLocation(settings.m_program, "volumeBoundsMax");
+	settings.m_uniformVoxelSize                 = glGetUniformLocation(settings.m_program, "wsVoxelSize");
 	settings.m_uniformViewport                  = glGetUniformLocation(settings.m_program, "viewport");
 	settings.m_uniformCameraNear                = glGetUniformLocation(settings.m_program, "cameraNear");
 	settings.m_uniformCameraFar                 = glGetUniformLocation(settings.m_program, "cameraFar");
@@ -276,6 +282,7 @@ bool Renderer::reloadIntegratorShader(const std::string& shaderPath,
 	glUniform1i(settings.m_uniformMaterialOffsetTexture, GLResourceConfiguration::TEXTURE_UNIT_MATERIAL_OFFSET);
 	glUniform1i(settings.m_uniformMaterialDataTexture, GLResourceConfiguration::TEXTURE_UNIT_MATERIAL_DATA);
 	glUniform1i(settings.m_uniformNoiseTexture, GLResourceConfiguration::TEXTURE_UNIT_NOISE);
+	glUniform1i(settings.m_emissiveVoxelIndicesTexture, GLResourceConfiguration::TEXTURE_UNIT_EMISSIVE_VOXEL_INDICES);
 	
 	glUniform3i(settings.m_uniformVoxelDataResolution, 
 				m_glResources.m_volumeResolution.x, 
@@ -291,6 +298,11 @@ bool Renderer::reloadIntegratorShader(const std::string& shaderPath,
 				m_volumeBounds.max.x,
 				m_volumeBounds.max.y,
 				m_volumeBounds.max.z);
+
+	glUniform3f(settings.m_uniformVoxelSize,
+				(m_volumeBounds.max.x-m_volumeBounds.min.x) / m_glResources.m_volumeResolution.x,
+				(m_volumeBounds.max.y-m_volumeBounds.min.y) / m_glResources.m_volumeResolution.y,
+				(m_volumeBounds.max.z-m_volumeBounds.min.z) / m_glResources.m_volumeResolution.z);
 
 	updateCamera();
 
@@ -820,8 +832,10 @@ void Renderer::createFramebuffer()
 
 void Renderer::createVoxelDataTexture(const Imath::V3i& resolution,
 									  const GLint* voxelMaterials,
+									  const float* materialData,
 									  size_t materialDataSize,
-									  const void* materialData)
+									  const GLint* emissiveVoxelIndices,
+									  size_t numEmissiveVoxels)
 {
 	using namespace Imath;
 	
@@ -872,6 +886,21 @@ void Renderer::createVoxelDataTexture(const Imath::V3i& resolution,
 	             GL_FLOAT,
 	             materialData);
 
+	glActiveTexture( GL_TEXTURE0 + GLResourceConfiguration::TEXTURE_UNIT_EMISSIVE_VOXEL_INDICES);
+	glBindTexture(GL_TEXTURE_1D, m_glResources.m_emissiveVoxelIndicesTexture);
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glPixelStorei(GL_PACK_ALIGNMENT,1);
+	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
+	glTexImage1D(GL_TEXTURE_1D,
+	             0,
+	             GL_R32I,
+				 numEmissiveVoxels, 
+	             0,
+	             GL_RED_INTEGER,
+	             GL_INT,
+	             emissiveVoxelIndices); 
+
 	// Set new resolution and volume bounds in all shaders
 
 	for( int i = 0; i < INTEGRATOR_TOTAL; ++i )
@@ -892,6 +921,11 @@ void Renderer::createVoxelDataTexture(const Imath::V3i& resolution,
 		            m_volumeBounds.max.x,
 		            m_volumeBounds.max.y,
 		            m_volumeBounds.max.z);
+
+		glUniform3f(integratorSettings.m_uniformVoxelSize,
+					(m_volumeBounds.max.x-m_volumeBounds.min.x) / m_glResources.m_volumeResolution.x,
+					(m_volumeBounds.max.y-m_volumeBounds.min.y) / m_glResources.m_volumeResolution.y,
+					(m_volumeBounds.max.z-m_volumeBounds.min.z) / m_glResources.m_volumeResolution.z);
 	}
 
 	glUseProgram(0);

@@ -47,10 +47,12 @@ struct IntegratorShaderSettings
 	// uniforms
 	GLuint m_uniformMaterialOffsetTexture;
 	GLuint m_uniformMaterialDataTexture;
+	GLuint m_emissiveVoxelIndicesTexture;
 	GLuint m_uniformNoiseTexture;
 	GLuint m_uniformVoxelDataResolution;
 	GLuint m_uniformVolumeBoundsMin;
 	GLuint m_uniformVolumeBoundsMax;
+	GLuint m_uniformVoxelSize;
 	GLuint m_uniformViewport;
 	GLuint m_uniformCameraNear;
 	GLuint m_uniformCameraFar;

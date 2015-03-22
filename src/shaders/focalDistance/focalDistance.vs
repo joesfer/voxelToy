@@ -7,6 +7,7 @@ uniform sampler2D   noiseTexture;
 uniform ivec3       voxelResolution;
 uniform vec3        volumeBoundsMin;
 uniform vec3        volumeBoundsMax;
+uniform vec3        wsVoxelSize; // (boundsMax-boundsMin)/resolution
 
 uniform vec4        viewport;
 uniform float       cameraNear;
@@ -72,7 +73,6 @@ void main()
 
 	// vsHitPos marks the lower-left corner of the voxel. Calculate the
 	// precise ray/voxel intersection in world-space
-	vec3 wsVoxelSize = (volumeBoundsMax - volumeBoundsMin) / voxelResolution;
 	vec3 wsVoxelMin = vsHitPos * wsVoxelSize + volumeBoundsMin; 
 	vec3 wsVoxelMax = wsVoxelMin + wsVoxelSize; 
 	float voxelHitDistance = rayAABBIntersection(wsRayOrigin, wsRayDir, wsVoxelMin, wsVoxelMax);

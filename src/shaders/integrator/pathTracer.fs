@@ -9,6 +9,7 @@ uniform sampler2D   noiseTexture;
 uniform ivec3       voxelResolution;
 uniform vec3        volumeBoundsMin;
 uniform vec3        volumeBoundsMax;
+uniform vec3        wsVoxelSize; // (boundsMax-boundsMin)/resolution
 
 uniform vec4        viewport;
 uniform float       cameraNear;
@@ -30,6 +31,8 @@ uniform sampler2D   backgroundCDFUTexture;
 uniform sampler1D   backgroundCDFVTexture;
 uniform float	    backgroundIntegral;
 uniform float	    backgroundRotationRadians;
+
+uniform isampler1D  emissiveVoxelIndicesTexture; // for light sampling
 
 uniform int         sampleCount;
 uniform int			pathtracerMaxNumBounces;
@@ -63,15 +66,62 @@ vec3 directLighting(in int materialDataOffset,
 					in vec3 wsWo, 
 					inout ivec2 rngOffset)
 {
-	// for now we only sample the environment light. See TODO below.
-	
-	vec4 wsToLight_pdf;
-	vec3 lightRadiance = sampleEnvironmentRadiance(wsHitBasis, rngOffset, wsToLight_pdf);
-	if ( wsToLight_pdf.w < 1e-9 )
+	vec4 wsToLight_pdf = vec4(0);
+	vec3 lightRadiance;
+
+	// We have stored every emissive voxel (that is, each voxel which assigned 
+	// material contains non-zero emision) into an array. These, along with the
+	// environment map make up for all the lights in the scene. Thus we'll
+	// sample unformly amongst N+1 positions (the +1 being the environment
+	// light)
+	vec4 u = rand(rngOffset);
+	int numLights = textureSize(emissiveVoxelIndicesTexture, 0) + 1;
+	int lightIndex = int(u.x * numLights); // rand should span across [0,1) thus we need +1
+	ivec3 vsEmissiveVoxelPos;
+	const bool samplingEmissiveVoxel = lightIndex < numLights - 1; 
+	if (samplingEmissiveVoxel)
 	{
-		// don't bother with the visibility test, and early out.
-		return vec3(0);
+		// sample light from an emissive voxel
+		int emissiveVoxelIndex = texelFetch(emissiveVoxelIndicesTexture, lightIndex, 0);
+		vsEmissiveVoxelPos = voxelIndexToVoxelPos(emissiveVoxelIndex, voxelResolution);
+		int emissiveVoxelMaterialDataOffset = texelFetch(materialOffsetTexture, vsEmissiveVoxelPos, 0).r;
+		lightRadiance = vec3(10) * emissionBSDF(emissiveVoxelMaterialDataOffset); // FIXME
+
+		vec3 wsEmissiveVoxelPos = (vec3(vsEmissiveVoxelPos)/voxelResolution) * (volumeBoundsMax-volumeBoundsMin) + volumeBoundsMin;
+		// jitter hit within voxel (as an approximation of jittering on the hit surface)
+		wsEmissiveVoxelPos += u.yzw * wsVoxelSize; 
+
+		vec3 toLight = wsEmissiveVoxelPos - wsHitBasis.position; 
+		const float r = length(toLight);
+		wsToLight_pdf.xyz = toLight / r; 
+
+		// Need to obtain the normal of the hit on the light. This is a bit
+		// wasteful because we've already calculated wsEmissivePosition (which
+		// we in turn needed to work out the direction towards the light in the
+		// first place, wsToLight_pdf.xyz.
+		Basis wsLightHitBasis;
+		voxelSpaceToWorldSpace(vsEmissiveVoxelPos, 
+							   wsHitBasis.position, 
+							   wsToLight_pdf.xyz,
+							   wsLightHitBasis);
+
+
+		// Calculate the area PDF, and then apply the jacobian to express that
+		// same PDF in terms of solid angle (which is what we're integrating) 
+		//
+		// cubic voxels, all sides are the same length
+		const float voxelArea = 6.0 * wsVoxelSize.x * wsVoxelSize.y; // TODO: precompute
+		const float jacobian = (r*r) / abs(dot(-wsToLight_pdf.xyz, wsLightHitBasis.normal));
+		wsToLight_pdf.w = jacobian / voxelArea ; 
 	}
+	else
+	{
+		// sample from environment
+		lightRadiance = sampleEnvironmentRadiance(wsHitBasis, u.yz, wsToLight_pdf);
+	}
+
+	// PDF is so far expressed in terms of one light. Account for all lights.
+	wsToLight_pdf.w /= numLights;
 
 	// Sample light with MIS
 	
@@ -79,38 +129,27 @@ vec3 directLighting(in int materialDataOffset,
 	// point.
 	vec3 vsShadowHitPos;
 	bool hitGround;
-	if( traverse(wsHitBasis.position, wsToLight_pdf.xyz, vsShadowHitPos, hitGround) )
+
+	const bool shadowRayMissed = !traverse(wsHitBasis.position, wsToLight_pdf.xyz, vsShadowHitPos, hitGround);
+	if(samplingEmissiveVoxel)
 	{
-		// light is not visible. Evaluate possible emission from hit blocker.
-		
-		// ground is always considered non-emisive. 
-		if (hitGround) return vec3(0);
-
-		// TODO: this sampling scheme is inefficient for glowing materials
-		// because we're only really sampling the environment light. 
-		//
-		// We should, on top of this, randomly sample the emissive
-		// blocks (which are considered lights), by keeping them in a list of
-		// lights or similar. Currently we just happen to evaluate the radiance
-		// in the sampled direction in case the light we were actually trying to
-		// sample is blocked.
-		//
-		// In the case of constant colors this will resort to a uniform sample, 
-		// this is probably not too bad, but environment maps will be heavily 
-		// biased towards the bright spots and thus emissive objects may be
-		// heavily undersampled.
-		//
-		int materialDataOffset = texelFetch(materialOffsetTexture,
-														   ivec3(vsShadowHitPos.x, 
-															     vsShadowHitPos.y, 
-															     vsShadowHitPos.z), 0).r;
-		lightRadiance = emissionBSDF(materialDataOffset);
-
-		// Adjust PDF factor now we're not hitting the environment but a block.
-		// We'll disregard the block's material, pretend it's Lambertian and 
-		// thus consider all directions equally probable in the hemisphere 
-		// (uniform hemisphere sampling)
-		wsToLight_pdf.w = 1.0 / (2.0 * PI);
+		// when samplign an emissive voxel, we want the shadow ray not to miss,
+		// and to hit that same voxel.
+		if ( shadowRayMissed || (vsShadowHitPos != vsEmissiveVoxelPos))
+		{
+			// light is not visible. Evaluate possible emission from hit blocker.
+			return vec3(0);
+		}
+	}
+	else
+	{
+		// for the environment light we want the shadow ray not to hit anything
+		// in the scene.
+		if (!shadowRayMissed)
+		{
+			// light is not visible. Evaluate possible emission from hit blocker.
+			return vec3(0);
+		}
 	}
 
 	// Apply MIS weight for the sampled direction. PBRT2 page 748/749);
@@ -133,6 +172,7 @@ vec3 directLighting(in int materialDataOffset,
 void main()
 {
 	ivec2 rngOffset = randomNumberGeneratorOffset(ivec4(gl_FragCoord), sampleCount);
+	vec3 radiance = vec3(0.0);
 
 	vec3 wsRayOrigin;
 	vec3 wsRayDir;
@@ -147,7 +187,9 @@ void main()
 	if (aabbIsectDist < 0)
 	{
 		// we're not even hitting the volume's bounding box. Early out.
-		outColor = vec4(getBackgroundColor(wsRayDir), 0);
+		radiance = getBackgroundColor(wsRayDir);
+		vec3 tonemappedRadiance = pow(radiance * tonemappingExposure, vec3(1.0 / tonemappingGamma));
+		outColor = vec4(tonemappedRadiance,1);
 		return;
 	}
 
@@ -159,11 +201,12 @@ void main()
 	vec3 throughput = vec3(1.0);
 	if ( !traverse(wsRayEntryPoint, wsRayDir, vsHitPos, hitGround) )
 	{
-		outColor = vec4(getBackgroundColor(wsRayDir), 0);
+		radiance = getBackgroundColor(wsRayDir);
+		vec3 tonemappedRadiance = pow(radiance * tonemappingExposure, vec3(1.0 / tonemappingGamma));
+		outColor = vec4(tonemappedRadiance,1);
 		return;
 	}
 
-	vec3 radiance = vec3(0.0);
 
 	int bounces = 0; 
 
@@ -248,8 +291,8 @@ void main()
 		bounces++;
 	}
 
-	radiance = pow(radiance * tonemappingExposure, vec3(1.0 / tonemappingGamma));
-	outColor = vec4(radiance,1);
+	vec3 tonemappedRadiance = pow(radiance * tonemappingExposure, vec3(1.0 / tonemappingGamma));
+	outColor = vec4(tonemappedRadiance,1);
 }
 
 

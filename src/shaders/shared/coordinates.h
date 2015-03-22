@@ -62,7 +62,6 @@ void voxelSpaceToWorldSpace(in vec3 vsP,
 {
 	// vsP marks the lower-left corner of the voxel. Calculate the
 	// precise ray/voxel intersection in world-space
-	vec3 wsVoxelSize = (volumeBoundsMax - volumeBoundsMin) / voxelResolution;
 	vec3 wsVoxelMin = vsP * wsVoxelSize + volumeBoundsMin; 
 	vec3 wsVoxelMax = wsVoxelMin + wsVoxelSize; 
 	float voxelHitDistance = rayAABBIntersection(wsRayOrigin, wsRayDir, wsVoxelMin, wsVoxelMax);
@@ -116,3 +115,14 @@ vec3 directionFromUVCoord(in vec2 uv, float rotation)
 	return sphericalToCartesian(phi, theta);
 }
 
+ivec3 voxelIndexToVoxelPos(int voxelIndex, in ivec3 voxelResolution)
+{
+	const int dz = voxelResolution.x * voxelResolution.y; 
+	const int dy = voxelResolution.x; 
+	const int z = voxelIndex / dz;
+	voxelIndex -= z * dz;
+	const int y = voxelIndex / dy;
+	voxelIndex -= y * dy;
+	const int x = voxelIndex;
+	return ivec3(x,y,z);
+}

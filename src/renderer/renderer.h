@@ -60,6 +60,13 @@ public:
     void loadMesh(const std::string& file);
 	// Wipe the current voxel data and load a .vox file.
     void loadVoxFile(const std::string& file);
+	// As a variance-reduction technique, we eliminate all those voxels which
+	// are completely surrounded by other voxels from the list of emissive
+	// voxels. These would otherwise be randomly sampled, but never contribute
+	// to the image.
+	void pruneInteriorEmissiveVoxels(const std::vector<GLint>& voxelMaterials, 
+									 Imath::V3i& volumeResolution, 
+									 std::vector<GLint>& emissiveVoxelIndices);
 
 	// Save the current accumulated framebuffer to an image file.
     void saveImage(const std::string& file);
@@ -120,9 +127,11 @@ private:
 
 	// Declare voxel resources
 	void createVoxelDataTexture (const Imath::V3i& resolution,
-								 const GLint* voxelMaterials,
-								 size_t materialDataSize,
-								 const void* materialData);
+								 const GLint* voxelMaterials       = NULL,
+								 const float* materialData         = NULL,
+								 size_t materialDataSize           = 0,
+								 const GLint* emissiveVoxelIndices = NULL,
+								 size_t numEmissiveVoxels          = 0);
 
 	// reload shader and resources for the screen-space texture drawing shader.
 	bool reloadTexturedShader(const std::string& shaderPath);

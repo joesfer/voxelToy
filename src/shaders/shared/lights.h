@@ -34,12 +34,11 @@ vec4 evaluateEnvironmentRadiance(in vec3 wsWi)
 
 // returns radiance and wsW_pdf = vec4(wsW.xyz, pdf)
 vec3 sampleEnvironmentRadiance(in Basis surfaceBasis, 
-							   inout ivec2 rngOffset, 
+							   in vec2 uniformRandomSample, 
 							   out vec4 wsW_pdf)
 {
 	if (backgroundUseImage != 0)
 	{
-		const vec2 uniformRandomSample = rand(rngOffset).xy;
 		const vec2 uv = sampleEnvironmentTexture(uniformRandomSample);
 		const vec3 wsW = directionFromUVCoord(uv, backgroundRotationRadians);
 		const vec3 radiance = texture(backgroundTexture, uv).rgb;
@@ -49,7 +48,7 @@ vec3 sampleEnvironmentRadiance(in Basis surfaceBasis,
 	}
 	else
 	{
-		vec4 lsW_pdf = uniformlySampledHemisphere(rand(rngOffset).xy);
+		vec4 lsW_pdf = uniformlySampledHemisphere(uniformRandomSample);
 		wsW_pdf = vec4(localToWorld(lsW_pdf.xyz, surfaceBasis), lsW_pdf.w);
 		return getBackgroundColor(wsW_pdf.xyz);
 	}

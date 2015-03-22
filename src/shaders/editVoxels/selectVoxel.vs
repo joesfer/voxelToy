@@ -7,6 +7,7 @@ uniform sampler2D   noiseTexture;
 uniform ivec3       voxelResolution;
 uniform vec3        volumeBoundsMin;
 uniform vec3        volumeBoundsMax;
+uniform vec3        wsVoxelSize; // (boundsMax-boundsMin)/resolution
 
 uniform vec4        viewport;
 uniform float       cameraNear;

@@ -16,7 +16,8 @@ struct GLResourceConfiguration
 		TEXTURE_UNIT_NOISE,
 		TEXTURE_UNIT_BACKGROUND,
 		TEXTURE_UNIT_BACKGROUND_CDF_U,
-		TEXTURE_UNIT_BACKGROUND_CDF_V
+		TEXTURE_UNIT_BACKGROUND_CDF_V,
+		TEXTURE_UNIT_EMISSIVE_VOXEL_INDICES,
 	};
 
 	static const GLuint m_focalDistanceSSBOBindingPointIndex = 0;
@@ -37,6 +38,7 @@ struct GLResourceConfiguration
 	GLuint m_backgroundTexture;
 	GLuint m_backgroundCDFUTexture;
 	GLuint m_backgroundCDFVTexture;
+	GLuint m_emissiveVoxelIndicesTexture;
 
 	Imath::V3i	 m_volumeResolution;
 };

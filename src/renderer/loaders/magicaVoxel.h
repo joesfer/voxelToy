@@ -7,6 +7,7 @@ public:
 	virtual bool load(const std::string& filePath,
 					  std::vector<GLint>& voxelMaterials, 
 					  std::vector<float>& materialData,
+					  std::vector<GLint>& emissiveVoxelIndices,
 					  Imath::V3i& voxelResolution);
 };
 
