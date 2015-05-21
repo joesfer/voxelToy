@@ -34,6 +34,7 @@ protected:
 	GLuint m_uniformVoxelDataResolution;
 	GLuint m_uniformVolumeBoundsMin;
 	GLuint m_uniformVolumeBoundsMax;
+	GLuint m_uniformVoxelSize;
 	GLuint m_uniformViewport;
 	GLuint m_uniformCameraNear;
 	GLuint m_uniformCameraFar;

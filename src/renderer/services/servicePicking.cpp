@@ -32,6 +32,8 @@ bool RendererServicePicking::reloadShader(const std::string& shaderPath,
 	m_uniformVoxelDataResolution    = glGetUniformLocation(m_program, "voxelResolution");
 	m_uniformVolumeBoundsMin        = glGetUniformLocation(m_program, "volumeBoundsMin");
 	m_uniformVolumeBoundsMax        = glGetUniformLocation(m_program, "volumeBoundsMax");
+	m_uniformVolumeBoundsMax        = glGetUniformLocation(m_program, "volumeBoundsMax");
+	m_uniformVoxelSize              = glGetUniformLocation(m_program, "wsVoxelSize");
 	m_uniformViewport               = glGetUniformLocation(m_program, "viewport");
 	m_uniformCameraNear             = glGetUniformLocation(m_program, "cameraNear");
 	m_uniformCameraFar              = glGetUniformLocation(m_program, "cameraFar");
@@ -111,6 +113,11 @@ void RendererServicePicking::volumeReloaded(const Imath::V3i& volumeResolution,
 				volumeBounds.max.x,
 				volumeBounds.max.y,
 				volumeBounds.max.z);
+
+	glUniform3f(m_uniformVoxelSize,
+				(volumeBounds.max.x-volumeBounds.min.x) / volumeResolution.x,
+				(volumeBounds.max.y-volumeBounds.min.y) / volumeResolution.y,
+				(volumeBounds.max.z-volumeBounds.min.z) / volumeResolution.z);
 
     glUseProgram(0);
 }

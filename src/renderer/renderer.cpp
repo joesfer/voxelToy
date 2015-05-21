@@ -334,6 +334,8 @@ void Renderer::reloadShaders(const std::string& shaderPath)
 	{
 		if (m_services[i] == NULL) continue;
 		m_services[i]->reload(shaderPath, m_logger);
+		m_services[i]->volumeReloaded(m_glResources.m_volumeResolution,
+									  m_volumeBounds);
 	}
 
 	updateCamera();
