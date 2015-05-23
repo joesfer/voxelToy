@@ -862,16 +862,38 @@ void Renderer::createVoxelDataTexture(const Imath::V3i& resolution,
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP);
 	glPixelStorei(GL_PACK_ALIGNMENT,1);
 	glPixelStorei(GL_UNPACK_ALIGNMENT,1);
-	glTexImage3D(GL_TEXTURE_3D,
-	             0,
-	             GL_R32I,
-	             m_glResources.m_volumeResolution.x,
-	             m_glResources.m_volumeResolution.y,
-	             m_glResources.m_volumeResolution.z,
-	             0,
-	             GL_RED_INTEGER,
-	             GL_INT,
-	             voxelMaterials);
+	if (voxelMaterials != NULL)
+	{
+		glTexImage3D(GL_TEXTURE_3D,
+					 0,
+					 GL_R32I,
+					 m_glResources.m_volumeResolution.x,
+					 m_glResources.m_volumeResolution.y,
+					 m_glResources.m_volumeResolution.z,
+					 0,
+					 GL_RED_INTEGER,
+					 GL_INT,
+					 voxelMaterials);
+	}
+	else
+	{
+		// if no data supplied, clear out memory to avoid visual glitches
+		const unsigned int numVoxels = m_glResources.m_volumeResolution.x * m_glResources.m_volumeResolution.y * m_glResources.m_volumeResolution.z; 
+		size_t storage = sizeof(int) * numVoxels;
+		int* memory = (int*)malloc(storage);
+		memset(memory, -1, storage);
+		glTexImage3D(GL_TEXTURE_3D,
+					 0,
+					 GL_R32I,
+					 m_glResources.m_volumeResolution.x,
+					 m_glResources.m_volumeResolution.y,
+					 m_glResources.m_volumeResolution.z,
+					 0,
+					 GL_RED_INTEGER,
+					 GL_INT,
+					 memory);
+		free(memory);
+	}
 
 	glActiveTexture( GL_TEXTURE0 + GLResourceConfiguration::TEXTURE_UNIT_MATERIAL_DATA);
 	glBindTexture(GL_TEXTURE_1D, m_glResources.m_materialDataTexture);
