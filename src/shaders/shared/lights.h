@@ -1,6 +1,21 @@
 #include <shared/color.h>
 #include <envLight/envMapSample.h>
 
+vec3 getBackgroundAverageColor()
+{
+	if (backgroundUseImage != 0)
+	{
+		// can't calculate this
+		return vec3(0);
+	}
+	else
+	{
+		// use gradient colors
+		float bias = 0.5; 
+		return (backgroundColorBottom * (1.0 - bias) + backgroundColorTop * bias);
+	}
+}
+
 vec3 getBackgroundColor(in vec3 v)
 {
 	if (backgroundUseImage != 0)
@@ -54,4 +69,17 @@ vec3 sampleEnvironmentRadiance(in Basis surfaceBasis,
 	}
 }
 
-
+// Power is total amount of energy passing through a surface or region of space
+// per unit time.
+float getBackgroundLightPower()
+{
+	if (backgroundUseImage != 0)
+	{
+		return backgroundIntegral; 
+	}
+	else
+	{
+		const float sceneRadius = length(volumeBoundsMax - volumeBoundsMin) * 0.5;
+		return getBackgroundAverageColor() * (4.0 * PI * sceneRadius * sceneRadius);
+	}
+}

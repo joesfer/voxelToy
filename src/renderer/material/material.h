@@ -50,4 +50,6 @@ namespace Material
 	SerializedData serializeMetal(const MetalMaterialData&, size_t);
 	SerializedData serializePlastic(const PlasticMaterialData&, size_t);
 
+	void getMaterialEmission(const float* materialData, float emission[3]);
+
 } // namespace Material

@@ -13,23 +13,25 @@ bool raymarch(in vec3 wsRayOrigin,
 	// demo in Shadertoy at https://www.shadertoy.com/view/4dfGzs
 
 	bool isect = false;
-	vec3 voxelExtent = vec3(1.0) / (volumeBoundsMax - volumeBoundsMin);
-	// move the ray intersection point slightly towards the ray direction to
+	// move the ray origin slightly towards the ray direction to
 	// avoid self-intersections
-	wsRayOrigin += sign(wsRayDir) * ISECT_EPSILON;
-	vec3 voxelOrigin = (wsRayOrigin - volumeBoundsMin) * voxelExtent * voxelResolution;
+	vec3 wsRayDirSign = sign(wsRayDir);
+	wsRayOrigin += wsRayDirSign * ISECT_EPSILON;
+	vec3 voxelOrigin = (wsRayOrigin - volumeBoundsMin) / wsVoxelSize;
 
-	vec3 voxelPos = floor(voxelOrigin);//clamp(floor(voxelOrigin), vec3(0), voxelResolution - vec3(1));
+	vec3 voxelPos = floor(voxelOrigin);
 
 	if (any(lessThan(voxelPos, vec3(0.0))) || 
-		any(greaterThanEqual(voxelPos,voxelResolution))) return false;
+		any(greaterThanEqual(voxelPos,voxelResolution))) 
+	{
+		return false;
+	}
 	
 	// prevent div by 0 in denominator. 
 	// this is equivalent to if(abs(wsRayDir.#) < 1e-5) wsRayDir.# = 1e-5;
 	wsRayDir = mix(wsRayDir, vec3(1e-5), step(abs(wsRayDir), vec3(1e-5)));
 
 	vec3 wsRayDirIncrement = vec3(1.0f) / wsRayDir;
-	vec3 wsRayDirSign = sign(wsRayDir);
 
 	vec3 dis = (voxelPos-voxelOrigin + 0.5 + wsRayDirSign*0.5) * wsRayDirIncrement;
 	vec3 mask=vec3(0.0);

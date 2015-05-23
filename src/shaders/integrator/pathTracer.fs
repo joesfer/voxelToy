@@ -33,6 +33,7 @@ uniform float	    backgroundIntegral;
 uniform float	    backgroundRotationRadians;
 
 uniform isampler1D  emissiveVoxelIndicesTexture; // for light sampling
+uniform float		emissiveVoxelsTotalPower;
 
 uniform int         sampleCount;
 uniform int			pathtracerMaxNumBounces;
@@ -75,25 +76,29 @@ vec3 directLighting(in int materialDataOffset,
 	// sample unformly amongst N+1 positions (the +1 being the environment
 	// light)
 	vec4 u = rand(rngOffset);
-	int numLights = textureSize(emissiveVoxelIndicesTexture, 0) + 1;
-	int lightIndex = int(u.x * numLights); // rand should span across [0,1) thus we need +1
-	ivec3 vsEmissiveVoxelPos;
-	const bool samplingEmissiveVoxel = lightIndex < numLights - 1; 
+	const int numEmissiveVoxels = textureSize(emissiveVoxelIndicesTexture, 0);  
+	const int numLights = numEmissiveVoxels + 1;
+
+	const bool samplingEmissiveVoxel = u.x >= 1.0 - (float(numEmissiveVoxels) / numLights);
+
+	ivec3 vsEmissiveVoxelPos = ivec3(-1);
 	if (samplingEmissiveVoxel)
 	{
+		int voxelIndex = int(u.x * numEmissiveVoxels);
+
 		// sample light from an emissive voxel
-		int emissiveVoxelIndex = texelFetch(emissiveVoxelIndicesTexture, lightIndex, 0);
+		int emissiveVoxelIndex = texelFetch(emissiveVoxelIndicesTexture, voxelIndex, 0);
 		vsEmissiveVoxelPos = voxelIndexToVoxelPos(emissiveVoxelIndex, voxelResolution);
 		int emissiveVoxelMaterialDataOffset = texelFetch(materialOffsetTexture, vsEmissiveVoxelPos, 0).r;
-		lightRadiance = vec3(10) * emissionBSDF(emissiveVoxelMaterialDataOffset); // FIXME
+		lightRadiance = emissionBSDF(emissiveVoxelMaterialDataOffset); 
 
 		vec3 wsEmissiveVoxelPos = (vec3(vsEmissiveVoxelPos)/voxelResolution) * (volumeBoundsMax-volumeBoundsMin) + volumeBoundsMin;
 		// jitter hit within voxel (as an approximation of jittering on the hit surface)
 		wsEmissiveVoxelPos += u.yzw * wsVoxelSize; 
 
-		vec3 toLight = wsEmissiveVoxelPos - wsHitBasis.position; 
-		const float r = length(toLight);
-		wsToLight_pdf.xyz = toLight / r; 
+		vec3 wsToLight = wsEmissiveVoxelPos - wsHitBasis.position; 
+		const float wsR = length(wsToLight);
+		wsToLight_pdf.xyz = wsToLight / wsR; 
 
 		// Need to obtain the normal of the hit on the light. This is a bit
 		// wasteful because we've already calculated wsEmissivePosition (which
@@ -111,8 +116,8 @@ vec3 directLighting(in int materialDataOffset,
 		//
 		// cubic voxels, all sides are the same length
 		const float voxelArea = 6.0 * wsVoxelSize.x * wsVoxelSize.y; // TODO: precompute
-		const float jacobian = (r*r) / abs(dot(-wsToLight_pdf.xyz, wsLightHitBasis.normal));
-		wsToLight_pdf.w = jacobian / voxelArea ; 
+		const float jacobian = (wsR*wsR) / abs(dot(-wsToLight_pdf.xyz, wsLightHitBasis.normal));
+		wsToLight_pdf.w = jacobian / voxelArea; 
 	}
 	else
 	{
@@ -120,24 +125,34 @@ vec3 directLighting(in int materialDataOffset,
 		lightRadiance = sampleEnvironmentRadiance(wsHitBasis, u.yz, wsToLight_pdf);
 	}
 
-	// PDF is so far expressed in terms of one light. Account for all lights.
-	wsToLight_pdf.w /= numLights;
+	// Since we're sampling only one light at a time, we need to multiply the
+	// result by the total number of lights so that the expected value will be
+	// that of the sum of lights. PBRT2 p.746.
+	lightRadiance *= numLights;
 
 	// Sample light with MIS
-	
-	// trace shadow ray to determine whether the radiance reaches the sampled
-	// point.
-	vec3 vsShadowHitPos;
+	vec3 vsShadowRayHitPos;
 	bool hitGround;
 
-	const bool shadowRayMissed = !traverse(wsHitBasis.position, wsToLight_pdf.xyz, vsShadowHitPos, hitGround);
+	if (luminance(lightRadiance) < 1e-5f) 
+	{
+		// don't bother with visibility test
+		return vec3(0);
+	}
+
+	// trace shadow ray to determine whether the radiance reaches the sampled
+	// point.
+	const bool shadowRayHitSomething = traverse(wsHitBasis.position, 
+											    wsToLight_pdf.xyz, 
+											    vsShadowRayHitPos, 
+											    hitGround);
 	if(samplingEmissiveVoxel)
 	{
-		// when samplign an emissive voxel, we want the shadow ray not to miss,
-		// and to hit that same voxel.
-		if ( shadowRayMissed || (vsShadowHitPos != vsEmissiveVoxelPos))
+		// when sampling an emissive voxel, we want the shadow ray not to miss
+		// and to hit the sampled voxel.
+		if (ivec3(vsShadowRayHitPos) != vsEmissiveVoxelPos) 
 		{
-			// light is not visible. Evaluate possible emission from hit blocker.
+			// emissive voxel is not visible .
 			return vec3(0);
 		}
 	}
@@ -145,14 +160,14 @@ vec3 directLighting(in int materialDataOffset,
 	{
 		// for the environment light we want the shadow ray not to hit anything
 		// in the scene.
-		if (!shadowRayMissed)
+		if (shadowRayHitSomething)
 		{
-			// light is not visible. Evaluate possible emission from hit blocker.
+			// environment light is not visible. 
 			return vec3(0);
 		}
 	}
 
-	// Apply MIS weight for the sampled direction. PBRT2 page 748/749);
+	// Apply MIS weight for the sampled direction. PBRT2 page 748/749
 	
 	// transform sampled directions to local space, which we need to evaluate
 	// the BSDF
@@ -160,7 +175,7 @@ vec3 directLighting(in int materialDataOffset,
 	vec3 lsWi = worldToLocal(wsToLight_pdf.xyz, wsHitBasis);
 	vec4 bsdfF_pdf = evaluateMaterialBSDF(materialDataOffset, lsWo, lsWi);
 
-	float misWeight = powerHeuristic(wsToLight_pdf.w, bsdfF_pdf.w);
+	const float misWeight = powerHeuristic(wsToLight_pdf.w, bsdfF_pdf.w);
 	return bsdfF_pdf.xyz * lightRadiance * abs(dot(wsToLight_pdf.xyz, wsHitBasis.normal)) * misWeight / wsToLight_pdf.w;
 
 	// Note we do the second half, BSDF sampling, on the main integrator loop, 
@@ -243,6 +258,19 @@ void main()
 			vec3 Le = emissionBSDF(materialDataOffset);
 			radiance += throughput * Le;
 		}
+	
+		// Wireframe overlay
+		if (wireframeOpacity > 0)
+		{
+			vec3 vsVoxelCenter = (wsHitBasis.position - volumeBoundsMin) / (volumeBoundsMax - volumeBoundsMin) * voxelResolution;
+			vec3 uvw = vsHitPos - vsVoxelCenter;
+			vec2 uv = abs(vec2(dot(wsHitBasis.normal.yzx, uvw), dot( wsHitBasis.normal.zxy, uvw)));
+			float wireframe = step(wireframeThickness, uv.x) * step(uv.x, 1-wireframeThickness) *
+							  step(wireframeThickness, uv.y) * step(uv.y, 1-wireframeThickness);
+
+			wireframe = (1-wireframeOpacity) + wireframeOpacity * wireframe;	
+			throughput *= wireframe;
+		}
 
 		// Sample illumination from lights to find path contribution
 		radiance += throughput * directLighting(materialDataOffset, 
@@ -256,19 +284,6 @@ void main()
 									   lsWo, 
 									   rngOffset, 
 									   bsdfF_pdf); 
-		// Wireframe overlay
-		if (wireframeOpacity > 0)
-		{
-			vec3 vsVoxelCenter = (wsHitBasis.position - volumeBoundsMin) / (volumeBoundsMax - volumeBoundsMin) * voxelResolution;
-			vec3 uvw = vsHitPos - vsVoxelCenter;
-			vec2 uv = abs(vec2(dot(wsHitBasis.normal.yzx, uvw), dot( wsHitBasis.normal.zxy, uvw)));
-			float wireframe = step(wireframeThickness, uv.x) * step(uv.x, 1-wireframeThickness) *
-							  step(wireframeThickness, uv.y) * step(uv.y, 1-wireframeThickness);
-
-			wireframe = (1-wireframeOpacity) + wireframeOpacity * wireframe;	
-			bsdfF_pdf.xyz *= vec3(wireframe);
-		}
-
 
 		vec3 wsWi = localToWorld(lsWi, wsHitBasis);
 		

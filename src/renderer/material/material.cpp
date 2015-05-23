@@ -1,5 +1,7 @@
 #include "renderer/material/material.h"
 #include <sstream>
+#include <memory.h>
+
 using namespace Material;
 
 SerializedData serializeFloat(const char* name, 
@@ -80,3 +82,29 @@ SerializedData Material::serializePlastic(const PlasticMaterialData& material,
 	return data;
 }
 
+void Material::getMaterialEmission(const float* materialData, float emission[3])
+{
+	const MaterialType type = (Material::MaterialType)*materialData;
+	switch(type)
+	{
+		case MT_LAMBERT:
+		{
+			const LambertMaterialData* data = reinterpret_cast<const LambertMaterialData*>(materialData + 1);
+			memcpy(emission, data->emission, 3 * sizeof(float));
+			return;
+		}
+		case MT_METAL:
+		{
+			const MetalMaterialData* data = reinterpret_cast<const MetalMaterialData*>(materialData + 1);
+			memcpy(emission, data->emission, 3 * sizeof(float));
+			return;
+		}
+		case MT_PLASTIC:
+		{
+			const PlasticMaterialData* data = reinterpret_cast<const PlasticMaterialData*>(materialData + 1);
+			memcpy(emission, data->emission, 3 * sizeof(float));
+			return;
+		}
+		default: return;
+	}
+}

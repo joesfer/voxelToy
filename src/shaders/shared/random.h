@@ -13,7 +13,7 @@ int hash(int seed)
 ivec2 randomNumberGeneratorOffset(in ivec4 seed, in int sequence)
 {
 	ivec2 res = textureSize(noiseTexture,0);
-	int offset = hash(seed.x + seed.y * res.x) ^ hash(sequence);
+	int offset = hash(seed.x + int(seed.y * viewport.z)) ^ hash(sequence);
 	return ivec2(offset % res.x,  (offset / res.x) % res.y);
 }
 

@@ -233,37 +233,38 @@ bool Renderer::reloadIntegratorShader(const std::string& shaderPath,
 	
 	glUseProgram(settings.m_program);
 
-	settings.m_uniformMaterialOffsetTexture     = glGetUniformLocation(settings.m_program, "materialOffsetTexture");
-	settings.m_uniformMaterialDataTexture       = glGetUniformLocation(settings.m_program, "materialDataTexture");
-	settings.m_emissiveVoxelIndicesTexture      = glGetUniformLocation(settings.m_program, "emissiveVoxelIndicesTexture");
-	settings.m_uniformNoiseTexture              = glGetUniformLocation(settings.m_program, "noiseTexture");
-	settings.m_uniformVoxelDataResolution       = glGetUniformLocation(settings.m_program, "voxelResolution");
-	settings.m_uniformVolumeBoundsMin           = glGetUniformLocation(settings.m_program, "volumeBoundsMin");
-	settings.m_uniformVolumeBoundsMax           = glGetUniformLocation(settings.m_program, "volumeBoundsMax");
-	settings.m_uniformVoxelSize                 = glGetUniformLocation(settings.m_program, "wsVoxelSize");
-	settings.m_uniformViewport                  = glGetUniformLocation(settings.m_program, "viewport");
-	settings.m_uniformCameraNear                = glGetUniformLocation(settings.m_program, "cameraNear");
-	settings.m_uniformCameraFar                 = glGetUniformLocation(settings.m_program, "cameraFar");
-	settings.m_uniformCameraProj                = glGetUniformLocation(settings.m_program, "cameraProj");
-	settings.m_uniformCameraInverseProj         = glGetUniformLocation(settings.m_program, "cameraInverseProj");
-	settings.m_uniformCameraInverseModelView    = glGetUniformLocation(settings.m_program, "cameraInverseModelView");
-	settings.m_uniformCameraFocalLength         = glGetUniformLocation(settings.m_program, "cameraFocalLength");
-	settings.m_uniformCameraLensRadius          = glGetUniformLocation(settings.m_program, "cameraLensRadius");
-	settings.m_uniformCameraFilmSize            = glGetUniformLocation(settings.m_program, "cameraFilmSize");
-	settings.m_uniformCameraLensModel           = glGetUniformLocation(settings.m_program, "cameraLensModel");
-	settings.m_uniformLightDir                  = glGetUniformLocation(settings.m_program, "wsLightDir");
-	settings.m_uniformSampleCount               = glGetUniformLocation(settings.m_program, "sampleCount");
-	settings.m_uniformPathtracerMaxPathBounces  = glGetUniformLocation(settings.m_program, "pathtracerMaxNumBounces");
-	settings.m_uniformWireframeOpacity          = glGetUniformLocation(settings.m_program, "wireframeOpacity");
-	settings.m_uniformWireframeThickness        = glGetUniformLocation(settings.m_program, "wireframeThickness");
-	settings.m_uniformBackgroundColorTop        = glGetUniformLocation(settings.m_program, "backgroundColorTop");
-	settings.m_uniformBackgroundColorBottom     = glGetUniformLocation(settings.m_program, "backgroundColorBottom");
-	settings.m_uniformBackgroundUseImage        = glGetUniformLocation(settings.m_program, "backgroundUseImage");
-	settings.m_uniformBackgroundTexture         = glGetUniformLocation(settings.m_program, "backgroundTexture");
-	settings.m_uniformBackgroundCDFUTexture     = glGetUniformLocation(settings.m_program, "backgroundCDFUTexture");
-	settings.m_uniformBackgroundCDFVTexture     = glGetUniformLocation(settings.m_program, "backgroundCDFVTexture");
-	settings.m_uniformBackgroundIntegral        = glGetUniformLocation(settings.m_program, "backgroundIntegral");
-	settings.m_uniformBackgroundRotationRadians = glGetUniformLocation(settings.m_program, "backgroundRotationRadians");
+	settings.m_uniformMaterialOffsetTexture       = glGetUniformLocation(settings.m_program, "materialOffsetTexture");
+	settings.m_uniformMaterialDataTexture         = glGetUniformLocation(settings.m_program, "materialDataTexture");
+	settings.m_uniformEmissiveVoxelIndicesTexture = glGetUniformLocation(settings.m_program, "emissiveVoxelIndicesTexture");
+	settings.m_uniformEmissiveVoxelsTotalPower    = glGetUniformLocation(settings.m_program, "emissiveVoxelsTotalPower");
+	settings.m_uniformNoiseTexture                = glGetUniformLocation(settings.m_program, "noiseTexture");
+	settings.m_uniformVoxelDataResolution         = glGetUniformLocation(settings.m_program, "voxelResolution");
+	settings.m_uniformVolumeBoundsMin             = glGetUniformLocation(settings.m_program, "volumeBoundsMin");
+	settings.m_uniformVolumeBoundsMax             = glGetUniformLocation(settings.m_program, "volumeBoundsMax");
+	settings.m_uniformVoxelSize                   = glGetUniformLocation(settings.m_program, "wsVoxelSize");
+	settings.m_uniformViewport                    = glGetUniformLocation(settings.m_program, "viewport");
+	settings.m_uniformCameraNear                  = glGetUniformLocation(settings.m_program, "cameraNear");
+	settings.m_uniformCameraFar                   = glGetUniformLocation(settings.m_program, "cameraFar");
+	settings.m_uniformCameraProj                  = glGetUniformLocation(settings.m_program, "cameraProj");
+	settings.m_uniformCameraInverseProj           = glGetUniformLocation(settings.m_program, "cameraInverseProj");
+	settings.m_uniformCameraInverseModelView      = glGetUniformLocation(settings.m_program, "cameraInverseModelView");
+	settings.m_uniformCameraFocalLength           = glGetUniformLocation(settings.m_program, "cameraFocalLength");
+	settings.m_uniformCameraLensRadius            = glGetUniformLocation(settings.m_program, "cameraLensRadius");
+	settings.m_uniformCameraFilmSize              = glGetUniformLocation(settings.m_program, "cameraFilmSize");
+	settings.m_uniformCameraLensModel             = glGetUniformLocation(settings.m_program, "cameraLensModel");
+	settings.m_uniformLightDir                    = glGetUniformLocation(settings.m_program, "wsLightDir");
+	settings.m_uniformSampleCount                 = glGetUniformLocation(settings.m_program, "sampleCount");
+	settings.m_uniformPathtracerMaxPathBounces    = glGetUniformLocation(settings.m_program, "pathtracerMaxNumBounces");
+	settings.m_uniformWireframeOpacity            = glGetUniformLocation(settings.m_program, "wireframeOpacity");
+	settings.m_uniformWireframeThickness          = glGetUniformLocation(settings.m_program, "wireframeThickness");
+	settings.m_uniformBackgroundColorTop          = glGetUniformLocation(settings.m_program, "backgroundColorTop");
+	settings.m_uniformBackgroundColorBottom       = glGetUniformLocation(settings.m_program, "backgroundColorBottom");
+	settings.m_uniformBackgroundUseImage          = glGetUniformLocation(settings.m_program, "backgroundUseImage");
+	settings.m_uniformBackgroundTexture           = glGetUniformLocation(settings.m_program, "backgroundTexture");
+	settings.m_uniformBackgroundCDFUTexture       = glGetUniformLocation(settings.m_program, "backgroundCDFUTexture");
+	settings.m_uniformBackgroundCDFVTexture       = glGetUniformLocation(settings.m_program, "backgroundCDFVTexture");
+	settings.m_uniformBackgroundIntegral          = glGetUniformLocation(settings.m_program, "backgroundIntegral");
+	settings.m_uniformBackgroundRotationRadians   = glGetUniformLocation(settings.m_program, "backgroundRotationRadians");
 
 	settings.m_uniformFocalDistanceSSBOStorageBlock = glGetProgramResourceIndex(settings.m_program, GL_SHADER_STORAGE_BLOCK, "FocalDistanceData");
 	glShaderStorageBlockBinding(settings.m_program, settings.m_uniformFocalDistanceSSBOStorageBlock, GLResourceConfiguration::m_focalDistanceSSBOBindingPointIndex);
@@ -282,8 +283,8 @@ bool Renderer::reloadIntegratorShader(const std::string& shaderPath,
 	glUniform1i(settings.m_uniformMaterialOffsetTexture, GLResourceConfiguration::TEXTURE_UNIT_MATERIAL_OFFSET);
 	glUniform1i(settings.m_uniformMaterialDataTexture, GLResourceConfiguration::TEXTURE_UNIT_MATERIAL_DATA);
 	glUniform1i(settings.m_uniformNoiseTexture, GLResourceConfiguration::TEXTURE_UNIT_NOISE);
-	glUniform1i(settings.m_emissiveVoxelIndicesTexture, GLResourceConfiguration::TEXTURE_UNIT_EMISSIVE_VOXEL_INDICES);
-	
+	glUniform1i(settings.m_uniformEmissiveVoxelIndicesTexture, GLResourceConfiguration::TEXTURE_UNIT_EMISSIVE_VOXEL_INDICES);
+
 	glUniform3i(settings.m_uniformVoxelDataResolution, 
 				m_glResources.m_volumeResolution.x, 
 				m_glResources.m_volumeResolution.y, 
@@ -851,6 +852,23 @@ void Renderer::createVoxelDataTexture(const Imath::V3i& resolution,
 	               voxelSize * m_glResources.m_volumeResolution.z);
 	m_volumeBounds = Box3f( -boundsSize * 0.5f, boundsSize * 0.5f);
 
+	// calculate total power from emissive voxels. This is used to weight the
+	// light sampling probabilities
+	float emissiveVoxelsTotalPower = 0;
+	const float voxelArea = voxelSize * voxelSize * 6;
+	float materialEmision[3];
+	for( size_t i = 0; i < numEmissiveVoxels; ++i )
+	{
+		Material::getMaterialEmission(materialData + voxelMaterials[emissiveVoxelIndices[i]],
+									  materialEmision);
+		const float intensity = (materialEmision[0] + materialEmision[1] + materialEmision[2])/3;
+		emissiveVoxelsTotalPower += intensity * voxelArea;
+	}
+
+	std::cout << "emissiveVoxelsTotalPower " << emissiveVoxelsTotalPower << std::endl;
+	const float sceneRadius = boundsSize.length() * 0.5f;
+	const float backgroundPower = 4.0f * M_PI * sceneRadius * sceneRadius;
+	std::cout << "estimate for background " << backgroundPower << std::endl;
 	// Upload texture data to card
 
 	glActiveTexture( GL_TEXTURE0 + GLResourceConfiguration::TEXTURE_UNIT_MATERIAL_OFFSET);
@@ -950,6 +968,10 @@ void Renderer::createVoxelDataTexture(const Imath::V3i& resolution,
 					(m_volumeBounds.max.x-m_volumeBounds.min.x) / m_glResources.m_volumeResolution.x,
 					(m_volumeBounds.max.y-m_volumeBounds.min.y) / m_glResources.m_volumeResolution.y,
 					(m_volumeBounds.max.z-m_volumeBounds.min.z) / m_glResources.m_volumeResolution.z);
+
+		glUniform1f(integratorSettings.m_uniformEmissiveVoxelsTotalPower, 
+					emissiveVoxelsTotalPower);
+
 	}
 
 	glUseProgram(0);
@@ -972,7 +994,7 @@ bool Renderer::loadBackgroundImage( float& mapIntegralTimesSin )
 {
 	if ( m_renderSettings.m_backgroundImage.empty() ) 
 	{
-		// no background iamge set
+		// no background image set
 		mapIntegralTimesSin = 0;
 		return true;
 	}
@@ -1070,6 +1092,7 @@ bool Renderer::loadBackgroundImage( float& mapIntegralTimesSin )
 	             &cdfVData[0]);
 
 	mapIntegralTimesSin = integralTimesSin;
+	std::cout << "mapIntegralTimesSin " << mapIntegralTimesSin << std::endl;
 
 	// store the current settings
 	m_currentBackgroundImage			= m_renderSettings.m_backgroundImage;
