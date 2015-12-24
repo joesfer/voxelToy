@@ -17,8 +17,8 @@ VoxelToy is a simple Qt/OpenGL-based voxel renderer. The project is in early sta
 ![alt tag](https://github.com/joesfer/voxelToy/blob/master/resources/screenshot08.png)
 GPU voxelization. Head model (c) I-R Entertainment. Downloaded from http://graphics.cs.williams.edu/data/meshes.xml
 
-![alt tag](https://github.com/joesfer/voxelToy/blob/master/resources/screenshot13.png)
-Camera DOF and Image-based lighting. Artwork by Mike Judge (@mikelovesrobots)
+![alt tag](https://github.com/joesfer/voxelToy/blob/master/resources/screenshot14.png)
+Lambert, Metal, emission. Artwork by Mike Judge (@mikelovesrobots)
 
 ![alt tag](https://github.com/joesfer/voxelToy/blob/master/resources/screenshot12.png)
 Image-based lighting. Biome model by MagicaVoxel (https://voxel.codeplex.com)
