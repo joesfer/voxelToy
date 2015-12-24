@@ -80,6 +80,6 @@ float getBackgroundLightPower()
 	else
 	{
 		const float sceneRadius = length(volumeBoundsMax - volumeBoundsMin) * 0.5;
-		return getBackgroundAverageColor() * (4.0 * PI * sceneRadius * sceneRadius);
+		return luminance(getBackgroundAverageColor()) * (4.0 * PI * sceneRadius * sceneRadius);
 	}
 }
