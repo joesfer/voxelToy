@@ -1,4 +1,4 @@
-#version 430
+//#version 430
 
 #include <focalDistance/focalDistanceDevice.h>
 #include <editVoxels/selectVoxelDevice.h>

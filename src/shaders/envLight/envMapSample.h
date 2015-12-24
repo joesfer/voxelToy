@@ -51,11 +51,11 @@ vec2 sampleEnvironmentTexture( vec2 uniformRandomSample )
 	// continuous sampling of the CDF to get the final u and v coordinates.
 	const float cdfLowerU = texelFetch(backgroundCDFUTexture, index, 0).r;
 	const float cdfUpperU = texelFetch(backgroundCDFUTexture, ivec2(index.x + 1, index.y), 0).r;
-	const float du = (sampleU - cdfLowerU) / (cdfUpperU - cdfLowerU);
+	const float du = float(sampleU - cdfLowerU) / (cdfUpperU - cdfLowerU);
 
 	const float cdfLowerV = texelFetch(backgroundCDFVTexture, index.y, 0).r;
 	const float cdfUpperV = texelFetch(backgroundCDFVTexture, index.y + 1, 0).r;
-	const float dv = (sampleV - cdfLowerV) / (cdfUpperV - cdfLowerV);
+	const float dv = float(sampleV - cdfLowerV) / (cdfUpperV - cdfLowerV);
 
 	// Texture lookup coordinate.
 	const float u = (float(index.x) + du) / float(sizeU - 1);

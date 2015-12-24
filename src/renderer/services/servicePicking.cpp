@@ -18,9 +18,9 @@ bool RendererServicePicking::reloadShader(const std::string& shaderPath,
 
     if ( !Shader::compileProgramFromFile(shaderName,
 										shaderPath,
-                                        vs, "#define PINHOLE\n",
-                                        fs, "",
-                                        m_program,
+										vs, "#version 430\n#define PINHOLE\n",
+										fs, "#version 430\n",
+										m_program,
 										logger) )
 	{
 		return false;

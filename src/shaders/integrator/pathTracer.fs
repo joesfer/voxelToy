@@ -1,4 +1,4 @@
-#version 430
+//#version 430
 
 #include <focalDistance/focalDistanceDevice.h>
 #include <editVoxels/selectVoxelDevice.h>
@@ -87,7 +87,7 @@ vec3 directLighting(in int materialDataOffset,
 		int voxelIndex = int(u.x * numEmissiveVoxels);
 
 		// sample light from an emissive voxel
-		int emissiveVoxelIndex = texelFetch(emissiveVoxelIndicesTexture, voxelIndex, 0);
+		int emissiveVoxelIndex = texelFetch(emissiveVoxelIndicesTexture, voxelIndex, 0).r;
 		vsEmissiveVoxelPos = voxelIndexToVoxelPos(emissiveVoxelIndex, voxelResolution);
 		int emissiveVoxelMaterialDataOffset = texelFetch(materialOffsetTexture, vsEmissiveVoxelPos, 0).r;
 		lightRadiance = emissionBSDF(emissiveVoxelMaterialDataOffset); 

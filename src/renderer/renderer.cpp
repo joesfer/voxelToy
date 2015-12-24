@@ -159,8 +159,8 @@ bool Renderer::reloadTexturedShader(const std::string& shaderPath)
 
 	if ( !Shader::compileProgramFromFile("textured",
 										shaderPath,
-										vs, "",
-										fs, "",
+										vs, "#version 120\n",
+										fs, "#version 130\n",
 										m_settingsTextured.m_program,
 										m_logger) )
 	{
@@ -190,8 +190,8 @@ bool Renderer::reloadAverageShader(const std::string& shaderPath)
 
 	if ( !Shader::compileProgramFromFile("accumulation",
 										shaderPath,
-										vs, "",
-										fs, "",
+										vs, "#version 120\n",
+										fs, "#version 130\n",
 										m_settingsAverage.m_program,
 										m_logger) )
 	{
@@ -223,8 +223,8 @@ bool Renderer::reloadIntegratorShader(const std::string& shaderPath,
 
 	if ( !Shader::compileProgramFromFile(name,
 										shaderPath,
-										vs, "",
-										fs, "#define PINHOLE\n#define THINLENS\n",
+										vs, "#version 120\n",
+										fs, "#version 430\n#define PINHOLE\n#define THINLENS\n",
 										settings.m_program,
 										m_logger) )
 	{

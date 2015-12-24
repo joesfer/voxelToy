@@ -13,9 +13,9 @@ bool RendererServiceAddVoxel::reload(const std::string& shaderPath, Logger* logg
 
     if ( !Shader::compileProgramFromFile("AddVoxel",
 										 shaderPath,
-                                         vs, "",
-                                         fs, "",
-                                         m_program,
+										 vs, "#version 430\n",
+										 fs, "#version 130\n",
+										 m_program,
 										 logger) )
 	{
 		return false;

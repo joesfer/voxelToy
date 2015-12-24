@@ -13,8 +13,8 @@ bool RendererServiceRemoveVoxel::reload(const std::string& shaderPath, Logger* l
 
     if ( !Shader::compileProgramFromFile("RemoveVoxel",
 										 shaderPath,
-                                         vs, "",
-                                         fs, "",
+                                         vs, "#version 430\n",
+                                         fs, "#version 430\n",
                                          m_program,
 										 logger) )
 	{

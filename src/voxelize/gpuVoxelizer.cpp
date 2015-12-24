@@ -17,9 +17,9 @@ GPUVoxelizer::GPUVoxelizer(const std::string& shaderPath,
 
 	if ( !Shader::compileProgramFromFile("Voxelize",
 										 shaderPath,
-										 vs, "",
-										 gs, "",
-										 fs, "",
+										 vs, "#version 430\n",
+										 gs, "#version 430\n",
+										 fs, "#version 430\n",
 										 m_program,
 										 logger) )
 	{

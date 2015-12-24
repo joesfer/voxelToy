@@ -1,4 +1,4 @@
-#version 130
+//#version 130
 
 uniform sampler2D sampleTexture;
 uniform sampler2D averageTexture;
