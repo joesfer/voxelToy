@@ -22,3 +22,14 @@ public:
 signals:
 	void logMessage(QString);
 };
+
+class QtFileLogger : public QtLogger
+{
+public:
+	QtFileLogger();
+	virtual ~QtFileLogger();
+
+	virtual void operator()(const std::string& msg);
+private:
+	FILE* m_fd;
+};

@@ -87,6 +87,6 @@ private:
     RenderPropertiesUI::ResolutionMode m_resolutionMode;
     unsigned int                       m_resolutionLongestAxis;
 	Tool*                              m_activeTool;
-	QtLogger						   m_logger;
+	QtFileLogger						   m_logger;
 
 };
